@@ -176,12 +176,12 @@ const swimmers=[];
 const colors=['#ffa960','#79dfd0','#f9a5bd','#f5d47c','#a8b8f5','#ff9c8c'];
 function makeFish(i){
 const root=new T.Group();
-const skin=new T.MeshStandardMaterial({vertexColors:true,roughness:.38,metalness:.17,side:T.DoubleSide});
-const finMaterial=new T.MeshStandardMaterial({vertexColors:true,roughness:.43,metalness:.06,transparent:true,opacity:.91,side:T.DoubleSide,depthWrite:false});
+const skin=new T.MeshStandardMaterial({vertexColors:true,roughness:.3,metalness:.12,side:T.DoubleSide});
+const finMaterial=new T.MeshStandardMaterial({vertexColors:true,roughness:.38,metalness:.02,transparent:true,opacity:.77,side:T.DoubleSide,depthWrite:false});
 const dark=mat('#152532',.13),iris=mat('#d8a95b',.2),highlight=new T.MeshBasicMaterial({color:'#ffffff'});
 // Anatomically tapered guppy body: broad chest, narrow caudal peduncle.
 const ringCount=36,radial=24,verts=[],cols=[],faces=[];
-const base=new T.Color(i%2?'#60c9c3':'#e4b76c');
+const base=new T.Color(i%2?'#a2bcb5':'#b7b9a2');
 for(let j=0;j<=ringCount;j++){
 const u=j/ringCount,x=-1.18+u*2.35;
 const bulge=Math.pow(Math.max(.001,Math.sin(Math.PI*Math.pow(u,.78))),.8);
@@ -190,9 +190,9 @@ for(let k=0;k<=radial;k++){
 const v=k/radial*Math.PI*2,y=Math.cos(v)*h,z=Math.sin(v)*w;
 verts.push(x,y,z);
 const back=Math.max(0,Math.cos(v)),belly=Math.max(0,-Math.cos(v));
-const color=base.clone().lerp(new T.Color('#244e62'),back*.62).lerp(new T.Color('#f5e8c8'),belly*.52);
-if(u>.63)color.lerp(new T.Color('#ef8b4c'),(u-.63)*.55);
-const stripe=Math.exp(-Math.pow((u-.68)/.075,2))*.32;
+const color=base.clone().lerp(new T.Color('#536f70'),back*.32).lerp(new T.Color('#e5dfc7'),belly*.48);
+if(u>.63)color.lerp(new T.Color('#9b8c70'),(u-.63)*.25);
+const stripe=Math.exp(-Math.pow((u-.68)/.09,2))*.12;
 color.lerp(new T.Color('#193a45'),stripe);
 cols.push(color.r,color.g,color.b);
 if(j<ringCount&&k<radial){const q=j*(radial+1)+k;faces.push(q,q+radial+1,q+1,q+1,q+radial+1,q+radial+2)}
@@ -206,33 +206,33 @@ const tailPivot=new T.Group();tailPivot.position.x=-1.16;root.add(tailPivot);
 const pectoralFins=[];
 const finVein=new T.LineBasicMaterial({color:'#f8e7b8',transparent:true,opacity:.42});
 // Iridescent guppy spots along both flanks, flush with the tapered body.
-const spotPalette=['#284d73','#f5e6b0','#e87748','#2d7387'];
+const spotPalette=['#52696a','#c5c0a4','#9b907a','#68858a'];
 for(const sign of [-1,1]){
-for(let n=0;n<10;n++){
-const u=.25+n*.065,x=-1.18+u*2.35;
+for(let n=0;n<6;n++){
+const u=.32+n*.085,x=-1.18+u*2.35;
 const bulge=Math.pow(Math.max(.001,Math.sin(Math.PI*Math.pow(u,.78))),.8);
 const w=.055+.27*bulge*(1-.32*u);
 const y=Math.sin(n*2.1)*.11;
-const spot=add(new T.SphereGeometry(.055+(n%3)*.018,10,8),mat(spotPalette[(n+i)%4],.3),root,x,y,sign*(w-.012));
-spot.scale.set(1.3,.6,.17);
+const spot=add(new T.SphereGeometry(.035+(n%3)*.012,10,8),mat(spotPalette[(n+i)%4],.3),root,x,y,sign*(w-.012));
+spot.scale.set(1.15,.5,.12);
 }
 }
 // Fan tail with scalloped edge, curved surface, orange-to-blue gradient.
 const fanVertices=[[0,0,0]],fanColors=['#e0ad64'],rays=32;
 for(let k=0;k<=rays;k++){const t=k/rays,angle=-1.12+t*2.24;const radius=1.04+.10*Math.cos(t*Math.PI*4);
 fanVertices.push([-radius*Math.cos(angle),radius*Math.sin(angle),.12*Math.sin(t*Math.PI*2)]);
-fanColors.push(t>.35&&t<.7?'#f6c76d':(k%4===0?'#246f99':'#e87856'))}
+fanColors.push(t>.35&&t<.7?'#b3c4ae':(k%4===0?'#718e91':'#c9aa88'))}
 ribbon(tailPivot,fanVertices,fanColors);
-const rayMat=new T.LineBasicMaterial({color:'#f8d9a1',transparent:true,opacity:.55});
+const rayMat=new T.LineBasicMaterial({color:'#e4dac0',transparent:true,opacity:.38});
 for(let k=0;k<=16;k++){const t=k/16,angle=-1.12+t*2.24,r=1.04+.10*Math.cos(t*Math.PI*4);
 const points=[new T.Vector3(0,0,.014),new T.Vector3(-r*Math.cos(angle),r*Math.sin(angle),.12*Math.sin(t*Math.PI*2)+.014)];
 tailPivot.add(new T.Line(new T.BufferGeometry().setFromPoints(points),rayMat))}
 // Dorsal fin, anal fin and translucent paired pectorals.
-ribbon(root,[[-.38,.29,0],[-.55,.68,0],[-.16,.89,0],[.16,.67,0],[.28,.36,0]],['#ecae64','#e57b51','#f9d08b','#78aeb0','#d8b66c']);
-ribbon(root,[[-.44,-.26,0],[-.32,-.57,0],[.12,-.52,0],[.29,-.31,0]],['#d8b66c','#e88d6c','#6dbcb3','#c7b88d']);
+ribbon(root,[[-.38,.29,0],[-.55,.68,0],[-.16,.89,0],[.16,.67,0],[.28,.36,0]],['#a1afa2','#a5b3a7','#c7c6ac','#91afb0','#a6b7a6']);
+ribbon(root,[[-.44,-.26,0],[-.32,-.57,0],[.12,-.52,0],[.29,-.31,0]],['#aab6aa','#c1b5a4','#8fb6b3','#b6b5a5']);
 for(const sign of [-1,1]){
 const pecPivot=new T.Group();pecPivot.position.set(.15,-.08,sign*.23);root.add(pecPivot);
-ribbon(pecPivot,[[.09,0,0],[-.16,-.22,sign*.2],[-.46,-.19,sign*.27],[-.12,.11,0]],['#d1c6a4','#78cfc1','#65aab1','#e4c58b']);
+ribbon(pecPivot,[[.09,0,0],[-.16,-.22,sign*.2],[-.46,-.19,sign*.27],[-.12,.11,0]],['#c5c6b4','#a4c6bb','#8faeaa','#c6c1a7']);
 pectoralFins.push({pivot:pecPivot,sign});
 const eye=add(new T.SphereGeometry(.095,18,12),iris,root,.73,.095,sign*.2);eye.scale.set(.95,1,.56);
 add(new T.SphereGeometry(.062,16,12),dark,root,.753,.103,sign*.246);
@@ -263,9 +263,9 @@ function frame(time){requestAnimationFrame(frame);if(document.hidden)return;cons
 swimmers.forEach((f,i)=>{const a=t*f.speed+f.phase;f.root.position.set(Math.sin(a)*9.7,f.y+Math.sin(t*.9+i)*.14,f.z);f.root.rotation.y=Math.cos(a)>0?0:Math.PI;
 f.root.rotation.z=Math.sin(t*.7+i)*.045;
 f.root.rotation.x=Math.sin(t*1.1+i)*.035;
-f.tailPivot.rotation.y=Math.sin(t*12+i)*.52;
+f.tailPivot.rotation.y=Math.sin(t*11+i)*.31;
 f.tailPivot.rotation.z=Math.sin(t*6+i)*.075;
-f.pectoralFins.forEach(p=>p.pivot.rotation.y=Math.sin(t*17+i+p.sign)*.28*p.sign)});
+f.pectoralFins.forEach(p=>p.pivot.rotation.y=Math.sin(t*17+i+p.sign)*.2*p.sign)});
 plants.children.forEach((p,i)=>p.rotation.z=Math.sin(t*.8+i)*.055);
 bubbles.forEach((b,i)=>{b.position.y+=.009+(i%5)*.003;if(b.position.y>6)b.position.y=-3});
 if(time-last>32){renderer.render(world,camera);last=time}}
