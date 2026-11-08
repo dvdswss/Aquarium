@@ -281,6 +281,10 @@ html,body{max-width:100%;overflow-x:hidden}
 #game .pixel-controls .row{gap:5px!important}
 #game .pixel-controls .row button{min-height:39px!important;padding:5px 2px!important;font-size:10px!important;line-height:1.2!important;border-radius:5px!important}
 @media(max-width:400px){#game .pixel-controls .row button{font-size:9px!important}}
+</style><style id="aquaria-lower-ui">
+/* Lower the entire compact HUD without changing its size. */
+#game .pixel-game>.tank{height:72dvh!important;min-height:400px!important}
+@media(max-width:400px){#game .pixel-game>.tank{height:70dvh!important;min-height:380px!important}}
 </style><script>
 (function(){
 const host=document.getElementById('scene');if(!host)return;
