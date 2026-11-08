@@ -89,9 +89,8 @@ main,#game,#game section:first-child{position:fixed!important;inset:0!important;
 <div><span>⭐ 레벨</span><strong id="level"></strong></div>
 </div>
 <div class="oceanHudBottom">
-<div class="oceanLevel"><span>레벨 진행</span><span id="xpText"></span></div>
+<div class="oceanLevel"><span>EXP <span id="xpText"></span></span><span class="oceanClean">✨ <strong id="cleanliness"></strong>% · 🪸 <strong id="plantCount"></strong></span></div>
 <div class="gameBar"><span id="xpBar"></span></div>
-<p class="oceanClean">✨ 청결도 <strong id="cleanliness"></strong>% · 🌿 수초 <strong id="plantCount"></strong>개</p>
 </div></div>
 <div class="row game-actions-primary"><button onclick="feed()">🍤 먹이 주기 (+5)</button><button onclick="buyFish()">🐟 물고기 구매 (20)</button><button onclick="buyPlant()">🪸 산호 구매 (10)</button></div>
 <div class="row game-actions-secondary"><button onclick="cleanGame()">🧽 청소하기 (+3 XP)</button><button onclick="collectBonus()">🎁 일일 보상 (+15 코인)</button></div>
@@ -285,6 +284,19 @@ html,body{max-width:100%;overflow-x:hidden}
 /* Lower the entire compact HUD without changing its size. */
 #game .pixel-game>.tank{height:72dvh!important;min-height:400px!important}
 @media(max-width:400px){#game .pixel-game>.tank{height:70dvh!important;min-height:380px!important}}
+</style><style id="aquaria-ui-final-compact">
+#game .pixel-controls{gap:5px!important;padding:6px 9px 10px!important}
+#game .pixel-controls .oceanHud{display:flex!important;flex-direction:column!important;gap:4px!important;height:auto!important;min-height:0!important;max-height:none!important;padding:6px 8px!important}
+#game .pixel-controls .gameStats{height:auto!important;min-height:0!important;grid-template-columns:repeat(3,minmax(0,1fr))!important}
+#game .pixel-controls .gameStats>div{min-height:36px!important;height:auto!important;padding:2px 0!important;gap:1px!important;font-size:10px!important}
+#game .pixel-controls .gameStats strong{font-size:15px!important;line-height:1.1!important}
+#game .pixel-controls .oceanHudBottom{display:flex!important;flex-direction:column!important;gap:4px!important;height:auto!important;min-height:0!important;padding:2px 0 0!important;margin:0!important}
+#game .pixel-controls .oceanLevel{display:flex!important;align-items:center!important;justify-content:space-between!important;width:100%!important;min-height:0!important;gap:8px!important;font-size:10px!important;line-height:1.3!important;white-space:nowrap!important}
+#game .pixel-controls .oceanClean{display:inline!important;width:auto!important;margin:0!important;padding:0!important;flex:none!important;font-size:10px!important;line-height:1.3!important;white-space:nowrap!important}
+#game .pixel-controls .gameBar{display:block!important;width:100%!important;height:5px!important;min-height:5px!important;margin:0!important;background:#0a1b3b!important;border:1px solid #42668c!important;overflow:hidden!important}
+#game .pixel-controls .gameBar span{display:block!important;height:100%!important;background:#91dded!important}
+#game .pixel-controls .row{gap:5px!important}
+#game .pixel-controls .row button{min-height:38px!important;padding:5px 2px!important;font-size:10px!important;line-height:1.2!important}
 </style><script>
 (function(){
 const host=document.getElementById('scene');if(!host)return;
