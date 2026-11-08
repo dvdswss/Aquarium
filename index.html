@@ -173,6 +173,13 @@ body:has(#game:not(.hidden)) #game{max-width:none!important}
 #game .tank{background:#238ba5!important}
 #game .tank:before{height:100%!important;inset:0!important;background:radial-gradient(ellipse 90% 65% at 26% -12%,rgba(217,255,250,.34),transparent 74%),linear-gradient(180deg,rgba(47,174,194,.12) 0%,transparent 64%)!important;mix-blend-mode:screen!important}
 #game .tank:after{display:none!important}
+</style><style>
+/* Compact top HUD on mobile */
+#game .oceanHud{padding-top:8px!important}
+#game .oceanHud .gameStats{width:min(78%,290px)!important;gap:5px!important;margin:0 8px 0 auto!important}
+#game .oceanHud .gameStats>div{padding:5px 3px!important;border-radius:9px!important;font-size:10px!important;line-height:1.35!important}
+#game .oceanHud .gameStats strong{font-size:15px!important}
+@media(min-width:700px){#game .oceanHud .gameStats{width:320px!important}#game .oceanHud .gameStats>div{font-size:11px!important}#game .oceanHud .gameStats strong{font-size:17px!important}}
 </style><script type="module">
 import * as T from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
 try {
