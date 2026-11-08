@@ -148,8 +148,29 @@ add(new T.BoxGeometry(30,.65,20),sand,world,0,-4,-3);
 add(new T.PlaneGeometry(32,17),mat('#27758b'),world,0,1,-12);
 for(let i=0;i<34;i++){const x=-13+(i*7.71)%26,z=-11+(i*4.17)%19,r=.2+(i%6)*.17;const rock=add(new T.DodecahedronGeometry(r,1),i%2?stone:stone2,world,x,-3.5+r*.23,z);rock.scale.set(1.4,.6,1.05)}
 const plants=new T.Group();world.add(plants);
-const stems=mat('#2b8169'),greens=[mat('#3aa989'),mat('#58c99a'),mat('#81d7a5')];
-function makePlant(i){const g=new T.Group();g.position.set(-12+(i*3.83)%24,-3.65,-9+(i*4.9)%16);const h=1.6+(i%5)*.48;add(new T.CylinderGeometry(.035,.08,h,6),stems,g,0,h/2,0);for(let j=0;j<7;j++){const a=j*2.4;const leaf=add(new T.SphereGeometry(.26,10,7),greens[(i+j)%3],g,Math.sin(a)*.3,.3+j*h/8,Math.cos(a)*.2);leaf.scale.set(.48,1.7,.23);leaf.rotation.z=Math.sin(a)*.75}plants.add(g)}
+const stems=mat('#337e62'),greens=['#399e70','#56bb80','#79c98b','#317d65'].map(c=>new T.MeshStandardMaterial({color:c,roughness:.8,side:T.DoubleSide}));
+function blade(parent,length,width,material,angle=0){
+const verts=[],inds=[],steps=9;
+for(let j=0;j<=steps;j++){const u=j/steps,spread=Math.sin(Math.PI*u)*width,curve=Math.sin(u*Math.PI)*.18;
+verts.push(-spread+curve,u*length,Math.sin(u*Math.PI)*.08,spread+curve,u*length,Math.sin(u*Math.PI)*.08);
+if(j<steps){const q=j*2;inds.push(q,q+1,q+2,q+1,q+3,q+2)}}
+const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(verts,3));geo.setIndex(inds);geo.computeVertexNormals();const o=new T.Mesh(geo,material);o.rotation.z=angle;parent.add(o);return o}
+function makePlant(i){
+const g=new T.Group();g.position.set(-12+(i*3.83)%24,-3.65,-9+(i*4.9)%16);
+const type=i%4,h=1.4+(i%5)*.42;
+if(type===0){ // broad-leaf anubias
+for(let j=0;j<7;j++){const a=j*2.4,stemH=.45+(j%4)*.22;const branch=new T.Group();branch.rotation.y=a;g.add(branch);
+const stem=add(new T.CylinderGeometry(.025,.038,stemH,6),stems,branch,Math.sin(a)*.12,stemH/2,0);
+const leaf=blade(branch,.55+(j%3)*.13,.19,greens[j%4],-.25+(j%3)*.23);leaf.position.set(Math.sin(a)*.14,stemH,0);leaf.rotation.y=a*.25}}
+else if(type===1){ // long flowing vallisneria
+for(let j=0;j<9;j++){const a=j*2.4,leaf=blade(g,h*(.7+(j%4)*.12),.055,greens[j%4],Math.sin(a)*.14);leaf.position.set(Math.cos(a)*.22,0,Math.sin(a)*.22);leaf.rotation.y=a}}
+else if(type===2){ // bushy stem plants
+for(let j=0;j<5;j++){const a=j*2.4,branch=new T.Group();branch.position.set(Math.cos(a)*.18,0,Math.sin(a)*.18);branch.rotation.z=Math.sin(a)*.12;g.add(branch);const tall=h*(.7+(j%3)*.13);
+add(new T.CylinderGeometry(.018,.04,tall,5),stems,branch,0,tall/2,0);
+for(let k=0;k<7;k++){const sprig=blade(branch,.25+(k%3)*.09,.065,greens[(j+k)%4],k%2?.95:-.95);sprig.position.y=.2+k*tall/8;sprig.rotation.y=k*2.4}}}
+else{ // rosette sword plant
+for(let j=0;j<11;j++){const a=j*Math.PI*2/11,leaf=blade(g,h*(.6+(j%4)*.12),.13,greens[j%4],Math.sin(a)*.5);leaf.position.set(Math.cos(a)*.13,0,Math.sin(a)*.13);leaf.rotation.y=a}}
+plants.add(g)}
 const fishGroup=new T.Group();world.add(fishGroup);
 const swimmers=[];
 const colors=['#ffa960','#79dfd0','#f9a5bd','#f5d47c','#a8b8f5','#ff9c8c'];
