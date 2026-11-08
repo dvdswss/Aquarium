@@ -147,6 +147,39 @@ function add(geo,material,parent,x=0,y=0,z=0){const m=new T.Mesh(geo,material);m
 add(new T.BoxGeometry(30,.65,20),sand,world,0,-4,-3);
 add(new T.PlaneGeometry(32,17),mat('#4e9db3'),world,0,1,-12);
 for(let i=0;i<34;i++){const x=-13+(i*7.71)%26,z=-11+(i*4.17)%19,r=.2+(i%6)*.17;const rock=add(new T.DodecahedronGeometry(r,1),i%2?stone:stone2,world,x,-3.5+r*.23,z);rock.scale.set(1.4,.6,1.05)}
+// Sculpted layered reef: distinct silhouettes, coral colonies and foreground depth.
+const reef=new T.Group();world.add(reef);
+const reefRock=[mat('#8baba7'),mat('#b5b9a7'),mat('#708f94')];
+for(let i=0;i<23;i++){
+const angle=i*2.39996,ring=Math.sqrt(i/23),x=Math.cos(angle)*ring*8.7,z=-5.8+Math.sin(angle)*ring*3.5;
+const r=.6+(i%5)*.21;
+const rock=add(new T.DodecahedronGeometry(r,0),reefRock[i%3],reef,x,-3.55+r*.36,z);
+rock.rotation.set(i*.43,i*.77,i*.17);rock.scale.set(1.55,.68+(i%3)*.16,1.2);
+}
+const coralMats=['#ffb0a2','#ffcf95','#b3a8e9','#9bd6ca','#ed9cc1'].map(c=>mat(c,.87));
+function coralBranch(parent,x,y,z,length,angle,depth,material){
+const tipX=x+Math.sin(angle)*length,tipY=y+Math.cos(angle)*length;
+const branch=add(new T.CylinderGeometry(Math.max(.012,length*.085),Math.max(.025,length*.15),length,5),material,parent,(x+tipX)/2,(y+tipY)/2,z);
+branch.rotation.z=-angle;
+if(depth<=0)return;
+coralBranch(parent,tipX,tipY,z,length*.65,angle-.57,depth-1,material);
+coralBranch(parent,tipX,tipY,z,length*.62,angle+.62,depth-1,material);
+}
+for(let i=0;i<17;i++){
+const a=i*2.39996,x=Math.sin(a)*(.9+(i%5)*1.7),z=-4.4+Math.cos(a)*2.7;
+const cluster=new T.Group();cluster.position.set(x,-3.25,z);reef.add(cluster);
+const color=coralMats[i%coralMats.length];
+if(i%3===0){
+for(let j=0;j<7;j++){const theta=j*2.4,stem=add(new T.CylinderGeometry(.055,.12,.6+(j%3)*.23,6),color,cluster,Math.cos(theta)*.18,.3,Math.sin(theta)*.18);stem.rotation.z=Math.sin(theta)*.28;
+const cup=add(new T.TorusGeometry(.17+(j%3)*.03,.06,6,9),color,cluster,Math.cos(theta)*.18,.63+(j%3)*.23,Math.sin(theta)*.18);cup.rotation.x=Math.PI/2;}
+}else if(i%3===1){coralBranch(cluster,0,0,0,.56,0,3,color)}
+else{for(let j=0;j<10;j++){const a=j*2.4;const o=add(new T.IcosahedronGeometry(.16+(j%3)*.08,0),color,cluster,Math.cos(a)*.3,.15+(j%4)*.18,Math.sin(a)*.3);o.scale.set(1,1.3,1)}}
+}
+const lightShaftMaterial=new T.MeshBasicMaterial({color:'#c6f8ff',transparent:true,opacity:.045,depthWrite:false,side:T.DoubleSide});
+for(let i=0;i<5;i++){const shaft=add(new T.ConeGeometry(1.6+(i%3)*.5,13,3,1,true),lightShaftMaterial,world,-8+i*4,2,-7);shaft.rotation.z=.14+i*.045;shaft.rotation.x=Math.PI;}
+// Rock pedestal with open swim space around it.
+for(let i=0;i<7;i++){const x=(i-3)*1.05,z=-7+(i%3)*.6;const r=1.2+(i%3)*.3;
+const m=add(new T.DodecahedronGeometry(r,0),reefRock[i%3],reef,x,-3.05+r*.48,z);m.scale.set(1.25,.68,1.1);m.rotation.y=i*.6;}
 const plants=new T.Group();world.add(plants);
 const stems=mat('#337e62'),greens=['#399e70','#56bb80','#79c98b','#317d65'].map(c=>new T.MeshStandardMaterial({color:c,roughness:.8,side:T.DoubleSide}));
 function blade(parent,length,width,material,angle=0){
