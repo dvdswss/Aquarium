@@ -132,8 +132,8 @@ renderer.toneMappingExposure=1.0;
 host.classList.add('aquarium3d');
 host.append(renderer.domElement);
 const world=new T.Scene();
-world.background=new T.Color('#5daec7');
-world.fog=new T.Fog('#5daec7',35,90);
+world.background=new T.Color('#438ea7');
+world.fog=new T.Fog('#438ea7',17,48);
 const camera=new T.PerspectiveCamera(48,1,.1,90);
 camera.position.set(0,1.6,19);
 camera.lookAt(0,0,-2);
@@ -180,6 +180,39 @@ for(let i=0;i<5;i++){const shaft=add(new T.ConeGeometry(1.6+(i%3)*.5,13,3,1,true
 // Rock pedestal with open swim space around it.
 for(let i=0;i<7;i++){const x=(i-3)*1.05,z=-7+(i%3)*.6;const r=1.2+(i%3)*.3;
 const m=add(new T.DodecahedronGeometry(r,0),reefRock[i%3],reef,x,-3.05+r*.48,z);m.scale.set(1.25,.68,1.1);m.rotation.y=i*.6;}
+// Depth composition: distant muted cliffs, middle reef, and foreground framing.
+const farRock=mat('#397a8b'),midRock=mat('#648d92'),frontRock=mat('#4c777d');
+for(let i=0;i<16;i++){
+const side=i%2?-1:1,x=side*(3.7+(i%5)*1.7),z=-10.9+(i%3)*.32;
+const r=1.1+(i%4)*.37;
+const m=add(new T.IcosahedronGeometry(r,1),farRock,world,x,-2.95+(i%3)*.55,z);
+m.scale.set(1.2,1.25+(i%3)*.35,.68);m.rotation.set(.15,i*.61,.1);
+}
+for(let i=0;i<13;i++){
+const x=-10.8+i*1.8,z=-8.7+(i%3)*.9,r=.5+(i%4)*.23;
+const m=add(new T.DodecahedronGeometry(r,1),midRock,world,x,-3.12+r*.35,z);
+m.scale.set(1.8,.75,1.2);m.rotation.y=i*.47;
+}
+for(let side of [-1,1]){
+for(let i=0;i<5;i++){
+const x=side*(7.5+i*.9),z=1.4+(i%2)*1.1,r=.65+i*.18;
+const m=add(new T.DodecahedronGeometry(r,1),frontRock,world,x,-3.55+r*.48,z);
+m.scale.set(1.3,1.1,1.15);m.rotation.y=i*.53;
+}
+}
+// Sandy seabed with soft pools of caustic light at different depths.
+const causticMat=new T.MeshBasicMaterial({color:'#d6fff4',transparent:true,opacity:.11,depthWrite:false,side:T.DoubleSide});
+const caustics=[];
+for(let i=0;i<18;i++){
+const x=-11+(i*3.91)%22,z=-10+(i*4.63)%16;
+const c=add(new T.RingGeometry(.34+(i%3)*.15,.39+(i%3)*.16,22),causticMat,world,x,-3.659,z);
+c.rotation.x=-Math.PI/2;c.scale.set(1.5,.7,1);caustics.push(c);
+}
+const hazeMat=new T.MeshBasicMaterial({color:'#c8f7ff',transparent:true,opacity:.045,depthWrite:false,side:T.DoubleSide});
+for(let i=0;i<4;i++){
+const shaft=add(new T.PlaneGeometry(2.4+i*.35,14),hazeMat,world,-6+i*3.8,1,-9+i*.4);
+shaft.rotation.z=-.2;shaft.rotation.y=.17;
+}
 const plants=new T.Group();world.add(plants);
 const stems=mat('#337e62'),greens=['#399e70','#56bb80','#79c98b','#317d65'].map(c=>new T.MeshStandardMaterial({color:c,roughness:.8,side:T.DoubleSide}));
 function blade(parent,length,width,material,angle=0){
@@ -343,6 +376,7 @@ p.pivot.rotation.z=Math.cos(t*12+i+j)*.12;
 });
 });
 plants.children.forEach((p,i)=>p.rotation.z=Math.sin(t*.8+i)*.055);
+caustics.forEach((c,i)=>{c.material=causticMat;c.rotation.z=Math.sin(t*.35+i)*.08;c.scale.x=1.35+Math.sin(t*.7+i)*.15});
 bubbles.forEach((b,i)=>{b.position.y+=.009+(i%5)*.003;if(b.position.y>6)b.position.y=-3});
 if(time-last>32){renderer.render(world,camera);last=time}}
 requestAnimationFrame(frame);
