@@ -40,7 +40,24 @@ strong{color:#ffda99}.gameStats{display:grid;grid-template-columns:repeat(3,minm
 #game .gameStats div{background:#0a3244;border-color:#60a5a3}
 #game .tank .bubble{font-size:20px}
 @media(max-width:420px){.pixel-fish{width:47px;height:36px}#game h2{font-size:18px}}
-</style><style>/* Wide immersive virtual aquarium */@media(min-width:800px){body:has(#game:not(.hidden)) header,body:has(#game:not(.hidden)) nav,body:has(#game:not(.hidden)) main{max-width:1440px}#game .tank{height:min(72vh,780px);min-height:520px}#game section:first-child{padding:26px 34px}}@media(max-width:799px){body:has(#game:not(.hidden)) main{padding-left:8px;padding-right:8px}#game section:first-child{padding:12px;margin:8px 0}#game .tank{height:65vh;min-height:430px;max-height:760px;border-width:5px}#game .pixel-fish{width:58px;height:44px}}@media(max-width:420px){#game .tank{height:68vh;min-height:430px}#game .pixel-fish{width:50px;height:40px}}</style><style>body header,body main{max-width:1440px}#real{display:none!important}#game section:first-child{max-width:1440px;margin:12px auto}#game .tank{width:100%}nav{display:none!important}</style><style>
+</style><style>
+/* AQUARIA immersive mobile redesign */
+body:has(#game:not(.hidden)){background:linear-gradient(180deg,#07354c 0%,#0c6c89 44%,#063b59 100%)}
+body:has(#game:not(.hidden)) header{background:#06334a;border:0;padding:14px 16px 8px}
+body:has(#game:not(.hidden)) header h1{font-size:24px;letter-spacing:3px}
+body:has(#game:not(.hidden)) main{padding:0 0 40px;max-width:100%}
+body:has(#game:not(.hidden)) #game{max-width:100%}
+#game section:first-child{padding:0;margin:0;border:0;border-radius:0;box-shadow:none;background:transparent}
+#game section:first-child:before{display:none}
+#game .tank{height:clamp(560px,76dvh,900px)!important;border:0!important;outline:0!important;border-radius:0!important;box-shadow:none!important;background:linear-gradient(#05789b,#064a72)!important}
+#game .tank:before{background:linear-gradient(105deg,transparent 10%,#d6faff0a 27%,transparent 42%,#b3f4ff0c 55%,transparent 70%)!important}
+#game .tank:after{display:none!important}
+#game .gameStats{position:relative;z-index:4;max-width:380px;margin:0 12px 0 auto;padding:10px 0}
+#game .gameStats div{border:1px solid #7bcfc8;border-radius:12px;background:#07374dcc;box-shadow:0 4px 14px #032c4770}
+#game .row button{border-radius:12px;border:2px solid #83e1ce;background:linear-gradient(180deg,#165f75,#093b56);box-shadow:inset 0 0 0 3px #0b344b,0 5px 16px #02283c80}
+#game section:first-child>.row,#game section:first-child>p{margin-left:12px;margin-right:12px}
+@media(max-width:600px){#game .tank{height:70dvh!important;min-height:530px}#game .gameStats strong{font-size:19px}}
+<style>/* Wide immersive virtual aquarium */@media(min-width:800px){body:has(#game:not(.hidden)) header,body:has(#game:not(.hidden)) nav,body:has(#game:not(.hidden)) main{max-width:1440px}#game .tank{height:min(72vh,780px);min-height:520px}#game section:first-child{padding:26px 34px}}@media(max-width:799px){body:has(#game:not(.hidden)) main{padding-left:8px;padding-right:8px}#game section:first-child{padding:12px;margin:8px 0}#game .tank{height:65vh;min-height:430px;max-height:760px;border-width:5px}#game .pixel-fish{width:58px;height:44px}}@media(max-width:420px){#game .tank{height:68vh;min-height:430px}#game .pixel-fish{width:50px;height:40px}}</style><style>body header,body main{max-width:1440px}#real{display:none!important}#game section:first-child{max-width:1440px;margin:12px auto}#game .tank{width:100%}nav{display:none!important}</style><style>
 html,body{width:100%;height:100%;overflow:hidden}body{background:#0b4660}
 header{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;z-index:20;max-width:none!important;padding:9px 15px;border:0;background:linear-gradient(#052638cc,transparent);pointer-events:none}
 header h1{font-size:clamp(17px,3vw,25px);letter-spacing:2px}header span{display:none}header:before{display:none}
@@ -132,8 +149,8 @@ renderer.toneMappingExposure=1.0;
 host.classList.add('aquarium3d');
 host.append(renderer.domElement);
 const world=new T.Scene();
-world.background=new T.Color('#5daec7');
-world.fog=new T.Fog('#5daec7',35,90);
+world.background=new T.Color('#137c9d');
+world.fog=new T.FogExp2('#137c9d',.018);
 const camera=new T.PerspectiveCamera(48,1,.1,90);
 camera.position.set(0,1.6,19);
 camera.lookAt(0,0,-2);
@@ -142,7 +159,7 @@ const sunlight=new T.DirectionalLight('#fff9e8',2.2);
 sunlight.position.set(-7,11,9);world.add(sunlight);
 const blueLight=new T.PointLight('#b9f0ff',16,24);blueLight.position.set(5,3,3);world.add(blueLight);
 const mat=(color,roughness=.78)=>new T.MeshStandardMaterial({color,roughness,metalness:.02});
-const sand=mat('#aa9374'),stone=mat('#536e72'),stone2=mat('#778b84');
+const sand=mat('#d5c7a4'),stone=mat('#718f9d'),stone2=mat('#a2b9b7');
 function add(geo,material,parent,x=0,y=0,z=0){const m=new T.Mesh(geo,material);m.position.set(x,y,z);parent.add(m);return m}
 add(new T.BoxGeometry(30,.65,20),sand,world,0,-4,-3);
 add(new T.PlaneGeometry(32,17),mat('#4e9db3'),world,0,1,-12);
@@ -180,6 +197,41 @@ for(let i=0;i<5;i++){const shaft=add(new T.ConeGeometry(1.6+(i%3)*.5,13,3,1,true
 // Rock pedestal with open swim space around it.
 for(let i=0;i<7;i++){const x=(i-3)*1.05,z=-7+(i%3)*.6;const r=1.2+(i%3)*.3;
 const m=add(new T.DodecahedronGeometry(r,0),reefRock[i%3],reef,x,-3.05+r*.48,z);m.scale.set(1.25,.68,1.1);m.rotation.y=i*.6;}
+// Large sculptural arch: two buttresses and a vaulted bridge, with a luminous grotto.
+const arch=new T.Group();arch.position.set(0,-3.45,-7.3);world.add(arch);
+const archMat=mat('#91b3bb'),innerMat=mat('#557e94');
+for(const sign of [-1,1]){
+for(let j=0;j<5;j++){
+const r=1.04+(j%3)*.2;
+const b=add(new T.DodecahedronGeometry(r,0),j%2?archMat:reefRock[2],arch,sign*(2.65-j*.19),.35+j*.5,0);
+b.scale.set(1.2,.75,1.1);b.rotation.set(j*.12,j*.35,sign*j*.12);
+}}
+for(let j=0;j<9;j++){
+const a=Math.PI*(.12+j*.095),x=Math.cos(a)*2.9,y=1.15+Math.sin(a)*2.45;
+const b=add(new T.DodecahedronGeometry(.85+(j%3)*.1,0),j%2?archMat:reefRock[1],arch,x,y,0);
+b.scale.set(1.05,.68,1.25);b.rotation.z=a;
+}
+const grotto=add(new T.SphereGeometry(1.65,20,12),new T.MeshBasicMaterial({color:'#1d7596',transparent:true,opacity:.16,side:T.BackSide}),arch,0,1.05,-.55);
+grotto.scale.set(1.6,.9,.5);
+const crystalMats=['#82eaff','#a3baff','#e1a8f7'].map(c=>new T.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.65,roughness:.24}));
+for(let i=0;i<19;i++){
+const a=i*2.4,r=.3+(i%5)*.17,h=.22+(i%4)*.18;
+const c=add(new T.ConeGeometry(.09+(i%3)*.045,h,5),crystalMats[i%3],arch,Math.cos(a)*r,.16+h/2,Math.sin(a)*r-.55);
+c.rotation.z=Math.sin(a)*.24;
+}
+const caveLight=new T.PointLight('#77dfff',6,7);caveLight.position.set(0,1.2,-7.2);world.add(caveLight);
+const seaweedMat=['#4caa77','#83c68d','#8bd2a5'].map(c=>new T.MeshStandardMaterial({color:c,roughness:.8,side:T.DoubleSide}));
+for(let i=0;i<12;i++){
+const side=i%2?1:-1,group=new T.Group();group.position.set(side*(7.8+(i%3)*.55),-3.65,-4-(i%4));world.add(group);
+for(let j=0;j<5;j++){
+const bladeHeight=2.6+(i+j)%4*.6;
+const v=[],ind=[];
+for(let k=0;k<=12;k++){const u=k/12,yy=u*bladeHeight,bend=Math.sin(u*2.4+i+j)*.28*u,half=.13*Math.sin(Math.PI*u);
+v.push(bend-half,yy,0,bend+half,yy,0);
+if(k<12){const q=k*2;ind.push(q,q+1,q+2,q+1,q+3,q+2)}}
+const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(v,3));geo.setIndex(ind);geo.computeVertexNormals();
+const leaf=new T.Mesh(geo,seaweedMat[(i+j)%3]);leaf.rotation.y=j*1.25;leaf.rotation.z=(j-2)*.11;group.add(leaf);
+}}
 const plants=new T.Group();world.add(plants);
 const stems=mat('#337e62'),greens=['#399e70','#56bb80','#79c98b','#317d65'].map(c=>new T.MeshStandardMaterial({color:c,roughness:.8,side:T.DoubleSide}));
 function blade(parent,length,width,material,angle=0){
@@ -298,7 +350,7 @@ const operculum=add(new T.SphereGeometry(.19,16,12),new T.MeshPhysicalMaterial({
 const gillLine=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(.54,.2,sign*.21),new T.Vector3(.46,.06,sign*.25),new T.Vector3(.53,-.13,sign*.21)]),new T.LineBasicMaterial({color:'#6a8784',transparent:true,opacity:.6}));root.add(gillLine);
 }
 const mouth=add(new T.SphereGeometry(.07,12,10),new T.MeshStandardMaterial({color:'#b3a48b',roughness:.55}),root,1.13,-.055,0);mouth.scale.set(.65,.35,.75);
-root.scale.setScalar(1.25+(i%3)*.09);
+root.scale.setScalar(.66+(i%3)*.055);
 fishGroup.add(root);
 swimmers.push({root,tailPivot,pectoralFins,phase:i*2.43,speed:.18+(i%5)*.06,z:-2.5+(i%4)*.7,y:-.7+(i%4)*.48});
 }
@@ -314,11 +366,11 @@ window.syncAquarium3D();
 const bubbleMaterial=new T.MeshBasicMaterial({color:'#c6f6ff',transparent:true,opacity:.4,depthWrite:false});
 const bubbles=[];
 for(let i=0;i<45;i++){const b=add(new T.SphereGeometry(.035+(i%4)*.02,8,8),bubbleMaterial,world,-12+(i*5.73)%24,-3+(i*.57)%9,-10+(i*3.19)%17);bubbles.push(b)}
-function resize(){const w=host.clientWidth||innerWidth,h=host.clientHeight||innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w<h?66:48;camera.position.z=w<h?24:19;camera.updateProjectionMatrix()}
+function resize(){const w=host.clientWidth||innerWidth,h=host.clientHeight||innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w<h?57:48;camera.position.z=w<h?18.5:19;camera.updateProjectionMatrix()}
 addEventListener('resize',resize,{passive:true});resize();
 let last=0;
 function frame(time){requestAnimationFrame(frame);if(document.hidden)return;const t=time*.001;
-swimmers.forEach((f,i)=>{const a=t*f.speed+f.phase;f.root.position.set(Math.sin(a)*6.2,f.y+Math.sin(t*.9+i)*.14,f.z);f.root.rotation.y=Math.cos(a)>0?0:Math.PI;
+swimmers.forEach((f,i)=>{const a=t*f.speed+f.phase;f.root.position.set(Math.sin(a)*5.8,f.y+Math.sin(t*.9+i)*.14,f.z);f.root.rotation.y=Math.cos(a)>0?0:Math.PI;
 f.root.rotation.z=Math.sin(t*.7+i)*.045;
 f.root.rotation.x=Math.sin(t*1.1+i)*.035;
 f.tailPivot.rotation.y=Math.sin(t*11+i)*.31;f.root.position.y+=Math.sin(t*3+i)*.008;
