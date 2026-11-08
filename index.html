@@ -175,40 +175,57 @@ const fishGroup=new T.Group();world.add(fishGroup);
 const swimmers=[];
 const colors=['#ffa960','#79dfd0','#f9a5bd','#f5d47c','#a8b8f5','#ff9c8c'];
 function makeFish(i){
-const root=new T.Group(),c=colors[i%colors.length];
-const bodyMat=new T.MeshStandardMaterial({color:c,roughness:.42,metalness:.08,side:T.DoubleSide,vertexColors:true});
-const finMat=new T.MeshStandardMaterial({color:i%2?'#9de8d9':'#ffd4a1',transparent:true,opacity:.87,roughness:.48,side:T.DoubleSide});
-const black=mat('#102331',.1),white=mat('#ffffff',.1);
-const rings=22,sides=18,vertices=[],vertexColors=[],indices=[],base=new T.Color(c);
-for(let j=0;j<=rings;j++){
-const u=j/rings,x=-1.03+u*2.08;
-const width=.43*Math.pow(Math.max(0,Math.sin(Math.PI*u)),.66)+.055;
-const height=.51*Math.pow(Math.max(0,Math.sin(Math.PI*u)),.74)+.035;
-for(let k=0;k<=sides;k++){
-const v=k/sides*Math.PI*2;
-vertices.push(x,Math.cos(v)*height,Math.sin(v)*width);
-const shade=base.clone().multiplyScalar(.77+.22*Math.cos(v)+.07*Math.sin(u*19));
-vertexColors.push(shade.r,shade.g,shade.b);
-if(j<rings&&k<sides){const q=j*(sides+1)+k;indices.push(q,q+sides+1,q+1,q+1,q+sides+1,q+sides+2)}
+const root=new T.Group();
+const skin=new T.MeshStandardMaterial({vertexColors:true,roughness:.38,metalness:.17,side:T.DoubleSide});
+const finMaterial=new T.MeshStandardMaterial({vertexColors:true,roughness:.43,metalness:.06,transparent:true,opacity:.91,side:T.DoubleSide,depthWrite:false});
+const dark=mat('#152532',.13),iris=mat('#d8a95b',.2),highlight=new T.MeshBasicMaterial({color:'#ffffff'});
+// Anatomically tapered guppy body: broad chest, narrow caudal peduncle.
+const ringCount=36,radial=24,verts=[],cols=[],faces=[];
+const base=new T.Color(i%2?'#60c9c3':'#e4b76c');
+for(let j=0;j<=ringCount;j++){
+const u=j/ringCount,x=-1.18+u*2.35;
+const bulge=Math.pow(Math.max(.001,Math.sin(Math.PI*Math.pow(u,.78))),.8);
+const h=.075+.38*bulge*(1-.22*u),w=.055+.27*bulge*(1-.32*u);
+for(let k=0;k<=radial;k++){
+const v=k/radial*Math.PI*2,y=Math.cos(v)*h,z=Math.sin(v)*w;
+verts.push(x,y,z);
+const back=Math.max(0,Math.cos(v)),belly=Math.max(0,-Math.cos(v));
+const color=base.clone().lerp(new T.Color('#244e62'),back*.62).lerp(new T.Color('#f5e8c8'),belly*.52);
+if(u>.63)color.lerp(new T.Color('#ef8b4c'),(u-.63)*.55);
+const stripe=Math.exp(-Math.pow((u-.68)/.075,2))*.32;
+color.lerp(new T.Color('#193a45'),stripe);
+cols.push(color.r,color.g,color.b);
+if(j<ringCount&&k<radial){const q=j*(radial+1)+k;faces.push(q,q+radial+1,q+1,q+1,q+radial+1,q+radial+2)}
 }}
-const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(vertices,3));geometry.setAttribute('color',new T.Float32BufferAttribute(vertexColors,3));geometry.setIndex(indices);geometry.computeVertexNormals();
-root.add(new T.Mesh(geometry,bodyMat));
-function fin(points,material,parent=root){const shape=new T.Shape();shape.moveTo(points[0][0],points[0][1]);for(let j=1;j<points.length;j++)shape.lineTo(points[j][0],points[j][1]);shape.closePath();const g=new T.ShapeGeometry(shape,12);const m=new T.Mesh(g,material);parent.add(m);return m}
-const tailPivot=new T.Group();tailPivot.position.set(-1.03,0,0);root.add(tailPivot);
-fin([[.05,0],[-.45,.22],[-1.06,.74],[-.91,.2],[-.92,-.2],[-1.06,-.74],[-.45,-.22]],finMat,tailPivot);
-fin([[-.68,.23],[-.4,.53],[-.08,.85],[.2,.64],[.38,.31]],finMat);
-fin([[-.54,-.24],[-.34,-.53],[-.03,-.68],[.2,-.3]],finMat);
+const bodyGeo=new T.BufferGeometry();bodyGeo.setAttribute('position',new T.Float32BufferAttribute(verts,3));bodyGeo.setAttribute('color',new T.Float32BufferAttribute(cols,3));bodyGeo.setIndex(faces);bodyGeo.computeVertexNormals();root.add(new T.Mesh(bodyGeo,skin));
+function ribbon(parent,points,colors){
+const p=[],c=[],ids=[];for(let j=0;j<points.length;j++){p.push(...points[j]);const col=new T.Color(colors[j]);c.push(col.r,col.g,col.b)}
+for(let j=1;j<points.length-1;j++)ids.push(0,j,j+1);
+const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(p,3));g.setAttribute('color',new T.Float32BufferAttribute(c,3));g.setIndex(ids);g.computeVertexNormals();const m=new T.Mesh(g,finMaterial);parent.add(m);return m}
+const tailPivot=new T.Group();tailPivot.position.x=-1.16;root.add(tailPivot);
+// Fan tail with scalloped edge, curved surface, orange-to-blue gradient.
+const fanVertices=[[0,0,0]],fanColors=['#e0ad64'],rays=32;
+for(let k=0;k<=rays;k++){const t=k/rays,angle=-1.12+t*2.24;const radius=1.04+.10*Math.cos(t*Math.PI*4);
+fanVertices.push([-radius*Math.cos(angle),radius*Math.sin(angle),.12*Math.sin(t*Math.PI*2)]);
+fanColors.push(t>.35&&t<.7?'#f6c76d':(k%4===0?'#246f99':'#e87856'))}
+ribbon(tailPivot,fanVertices,fanColors);
+const rayMat=new T.LineBasicMaterial({color:'#f8d9a1',transparent:true,opacity:.55});
+for(let k=0;k<=16;k++){const t=k/16,angle=-1.12+t*2.24,r=1.04+.10*Math.cos(t*Math.PI*4);
+const points=[new T.Vector3(0,0,.014),new T.Vector3(-r*Math.cos(angle),r*Math.sin(angle),.12*Math.sin(t*Math.PI*2)+.014)];
+tailPivot.add(new T.Line(new T.BufferGeometry().setFromPoints(points),rayMat))}
+// Dorsal fin, anal fin and translucent paired pectorals.
+ribbon(root,[[-.38,.29,0],[-.55,.68,0],[-.16,.89,0],[.16,.67,0],[.28,.36,0]],['#ecae64','#e57b51','#f9d08b','#78aeb0','#d8b66c']);
+ribbon(root,[[-.44,-.26,0],[-.32,-.57,0],[.12,-.52,0],[.29,-.31,0]],['#d8b66c','#e88d6c','#6dbcb3','#c7b88d']);
 for(const sign of [-1,1]){
-const eye=add(new T.SphereGeometry(.084,16,12),black,root,.68,.115,sign*.23);
-eye.scale.set(1,.95,.55);
-add(new T.SphereGeometry(.026,10,8),white,root,.7,.14,sign*.27);
-const pectoral=fin([[.2,-.09],[-.12,-.28],[-.43,-.48],[-.25,-.1]],finMat);
-pectoral.position.z=sign*.35;pectoral.rotation.y=sign*.36;
-for(let stripe=0;stripe<3;stripe++){
-const x=-.37+stripe*.23,mark=add(new T.SphereGeometry(.14,10,8),finMat,root,x,.12,sign*(.35+stripe*.015));
-mark.scale.set(.19,.85,.13);
-}}
-root.scale.setScalar(.7+(i%4)*.09);fishGroup.add(root);
+ribbon(root,[[.24,-.1,sign*.23],[-.04,-.34,sign*.43],[-.36,-.28,sign*.45],[.04,.02,sign*.25]],['#d1c6a4','#78cfc1','#65aab1','#e4c58b']);
+const eye=add(new T.SphereGeometry(.095,18,12),iris,root,.73,.095,sign*.2);eye.scale.set(.95,1,.56);
+add(new T.SphereGeometry(.062,16,12),dark,root,.753,.103,sign*.246);
+add(new T.SphereGeometry(.019,8,8),highlight,root,.773,.13,sign*.287);
+const gill=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(.46,.22,sign*.235),new T.Vector3(.41,.04,sign*.3),new T.Vector3(.48,-.14,sign*.23)]),new T.LineBasicMaterial({color:'#54787c',transparent:true,opacity:.62}));root.add(gill);
+}
+// Tiny protruding mouth and tapered snout.
+const mouth=add(new T.SphereGeometry(.085,12,8),mat('#c4a98b'),root,1.19,-.06,0);mouth.scale.set(.7,.32,.75);
+root.scale.setScalar(.75+(i%4)*.065);fishGroup.add(root);
 swimmers.push({root,tailPivot,phase:i*2.43,speed:.18+(i%5)*.06,z:-8+(i%7)*1.45,y:-1.8+(i%6)*.65});
 }
 let fishCount=0,plantCount=0;
