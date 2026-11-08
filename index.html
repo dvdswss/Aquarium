@@ -170,7 +170,15 @@ surfaceTex.needsUpdate=true;
 }
 
 world.background=new T.Color('#2b819a');
-world.fog=new T.Fog('#2b819a',14,52);
+world.fog=new T.FogExp2('#328ca3',.026);
+// Camera-facing ocean gradient gives an infinite horizon without a visible back wall.
+const oceanBackdrop=new T.Mesh(new T.PlaneGeometry(150,110),new T.ShaderMaterial({
+depthWrite:false,depthTest:false,
+uniforms:{top:{value:new T.Color('#0c526e')},middle:{value:new T.Color('#248ea9')},bottom:{value:new T.Color('#6aadb0')}},
+vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+fragmentShader:'varying vec2 vUv;uniform vec3 top;uniform vec3 middle;uniform vec3 bottom;void main(){float y=vUv.y;vec3 c=mix(bottom,middle,smoothstep(.03,.58,y));c=mix(c,top,smoothstep(.55,1.,y));gl_FragColor=vec4(c,1.);}'
+}));
+oceanBackdrop.position.set(0,2,-46);oceanBackdrop.renderOrder=-100;world.add(oceanBackdrop);
 const camera=new T.PerspectiveCamera(48,1,.1,90);
 camera.position.set(0,1.6,19);
 camera.lookAt(0,0,-2);
@@ -182,7 +190,27 @@ const mat=(color,roughness=.78)=>new T.MeshStandardMaterial({color,roughness,met
 const sand=mat('#aa9374'),stone=mat('#536e72'),stone2=mat('#778b84');
 function add(geo,material,parent,x=0,y=0,z=0){const m=new T.Mesh(geo,material);m.position.set(x,y,z);parent.add(m);return m}
 // A continuous underwater landscape, not an aquarium with scattered decorations.
-const seabedMat=new T.MeshStandardMaterial({color:'#a6b6a0',roughness:1,flatShading:false,side:T.DoubleSide});
+// Deterministic hand-painted seabed texture: sand grains, mineral patches and soft ripples.
+function makeTexture(kind){
+const c=document.createElement('canvas');c.width=c.height=512;const ctx=c.getContext('2d');
+const base=kind==='sand'?'#b9b9a2':'#728f91';ctx.fillStyle=base;ctx.fillRect(0,0,512,512);
+let seed=kind==='sand'?7341:1919;
+function rnd(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}
+for(let i=0;i<11000;i++){
+const x=rnd()*512,y=rnd()*512,r=.25+rnd()*(kind==='sand'?1.6:3.4);
+ctx.fillStyle=kind==='sand'?(rnd()>.5?'rgba(245,236,200,.12)':'rgba(61,102,99,.09)'):(rnd()>.5?'rgba(221,236,216,.09)':'rgba(24,67,76,.11)');
+ctx.beginPath();ctx.ellipse(x,y,r,r*(.4+rnd()),rnd()*3.14,0,Math.PI*2);ctx.fill();
+}
+if(kind==='sand')for(let i=0;i<28;i++){
+ctx.beginPath();for(let x=0;x<512;x+=4){
+const y=i*20+Math.sin(x*.024+i*.9)*4+Math.sin(x*.065+i)*1.5;
+if(!x)ctx.moveTo(x,y);else ctx.lineTo(x,y)}
+ctx.strokeStyle='rgba(246,250,221,.10)';ctx.lineWidth=2;ctx.stroke();
+}
+const tex=new T.CanvasTexture(c);tex.wrapS=tex.wrapT=T.RepeatWrapping;tex.repeat.set(kind==='sand'?5:2,kind==='sand'?5:2);tex.colorSpace=T.SRGBColorSpace;tex.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());return tex;
+}
+const sandTexture=makeTexture('sand'),stoneTexture=makeTexture('stone');
+const seabedMat=new T.MeshStandardMaterial({map:sandTexture,color:'#e2e7d6',roughness:1,side:T.DoubleSide});
 const cliffMats=['#456e7b','#527c85','#638b89','#72968e'].map(color=>new T.MeshStandardMaterial({color,roughness:1,flatShading:true,side:T.DoubleSide}));
 function terrainHeight(x,z){
 const ridge=Math.exp(-Math.pow((Math.abs(x)-10.2)/4.5,2))*3.9;
@@ -202,7 +230,7 @@ geo.computeVertexNormals();
 world.add(new T.Mesh(geo,seabedMat));
 // Rounded, irregular reef stones: smooth silhouettes rather than angular polyhedra.
 const rockShape=new T.IcosahedronGeometry(1,3);
-const rockPalette=['#648d92','#769d9b','#89a9a3','#527d86'].map(color=>new T.MeshStandardMaterial({color,roughness:.96,metalness:0}));
+const rockPalette=['#a5b6b2','#b6c6b9','#a6c0bd','#88a7aa'].map(color=>new T.MeshStandardMaterial({map:stoneTexture,color,roughness:.96,metalness:0}));
 function rock(x,y,z,sx,sy,sz,variant){
 const mesh=add(rockShape,rockPalette[variant%rockPalette.length],world,x,y,z);
 mesh.scale.set(sx,sy,sz);mesh.rotation.set(variant*.13,variant*.47,variant*.08);return mesh;
@@ -277,6 +305,16 @@ for(let i=0;i<7;i++){
 const beam=add(new T.PlaneGeometry(2.4+(i%3),23),shaftMat,world,-13+i*4.5,5,-18-(i%3)*4);
 beam.rotation.z=-.23;beam.rotation.y=.15;
 }
+// Soft drifting marine snow, layered in actual 3D space.
+const motesCount=240,motesPositions=new Float32Array(motesCount*3);
+for(let i=0;i<motesCount;i++){
+motesPositions[i*3]=Math.sin(i*127.1)*10;
+motesPositions[i*3+1]=-3+((i*37)%110)/11;
+motesPositions[i*3+2]=2-((i*53)%280)/10;
+}
+const motesGeo=new T.BufferGeometry();motesGeo.setAttribute('position',new T.BufferAttribute(motesPositions,3));
+const motes=new T.Points(motesGeo,new T.PointsMaterial({color:'#d3fff1',size:.045,transparent:true,opacity:.36,depthWrite:false,sizeAttenuation:true}));
+world.add(motes);
 const caustics=[];
 const causticMat=new T.MeshBasicMaterial({color:'#d5fff2',transparent:true,opacity:.13,depthWrite:false,side:T.DoubleSide});
 for(let i=0;i<24;i++){
@@ -448,7 +486,8 @@ p.pivot.rotation.z=Math.cos(t*12+i+j)*.12;
 });
 });
 plants.children.forEach((p,i)=>p.rotation.z=Math.sin(t*.8+i)*.055);
-kelp.forEach((g,i)=>g.rotation.z=Math.sin(t*.65+i)*.035);
+kelp.forEach((g,i)=>g.rotation.z=Math.sin(t*.65+i)*.055);
+motes.position.y=Math.sin(t*.12)*.25;motes.rotation.y=Math.sin(t*.09)*.025;
 caustics.forEach((c,i)=>{c.material=causticMat;c.rotation.z=Math.sin(t*.35+i)*.08;c.scale.x=1.35+Math.sin(t*.7+i)*.15});
 bubbles.forEach((b,i)=>{b.position.y+=.009+(i%5)*.003;if(b.position.y>6)b.position.y=-3});
 if(time-last>32){renderer.render(world,camera);last=time}}
