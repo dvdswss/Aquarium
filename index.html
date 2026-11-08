@@ -142,10 +142,33 @@ const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'low-power'})
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
 renderer.outputColorSpace=T.SRGBColorSpace;
 renderer.toneMapping=T.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.0;
+renderer.toneMappingExposure=1.24;
 host.classList.add('aquarium3d');
 host.append(renderer.domElement);
 const world=new T.Scene();
+// Sunlit surface overhead, softly rippled with animated water shimmer.
+const surfaceCanvas=document.createElement('canvas');surfaceCanvas.width=256;surfaceCanvas.height=256;
+const surfaceCtx=surfaceCanvas.getContext('2d');
+const surfaceTex=new T.CanvasTexture(surfaceCanvas);surfaceTex.wrapS=surfaceTex.wrapT=T.RepeatWrapping;
+surfaceTex.repeat.set(5,5);
+const surface=new T.Mesh(new T.PlaneGeometry(140,140),new T.MeshBasicMaterial({map:surfaceTex,transparent:true,opacity:.62,side:T.DoubleSide,depthWrite:false}));
+surface.rotation.x=-Math.PI/2;surface.position.y=9.5;world.add(surface);
+function paintSurface(t){
+const w=256,h=256,grad=surfaceCtx.createLinearGradient(0,0,0,h);
+grad.addColorStop(0,'#a4ffff');grad.addColorStop(.5,'#4eb8c8');grad.addColorStop(1,'#146d91');
+surfaceCtx.fillStyle=grad;surfaceCtx.fillRect(0,0,w,h);
+for(let j=0;j<28;j++){
+const y=j*10+Math.sin(t*.5+j)*5;
+surfaceCtx.beginPath();
+for(let x=0;x<=256;x+=5){
+const yy=y+Math.sin(x*.037+j*1.3+t*.9)*3+Math.cos(x*.08-j+t*.7)*2;
+if(x===0)surfaceCtx.moveTo(x,yy);else surfaceCtx.lineTo(x,yy);
+}
+surfaceCtx.strokeStyle='rgba(216,255,250,.21)';surfaceCtx.lineWidth=1.7;surfaceCtx.stroke();
+}
+surfaceTex.needsUpdate=true;
+}
+
 world.background=new T.Color('#2b819a');
 world.fog=new T.Fog('#2b819a',14,52);
 const camera=new T.PerspectiveCamera(48,1,.1,90);
@@ -177,40 +200,57 @@ positions.setY(i,terrainHeight(x,z));
 }
 geo.computeVertexNormals();
 world.add(new T.Mesh(geo,seabedMat));
-const rockShape=new T.DodecahedronGeometry(1,1);
+// Rounded, irregular reef stones: smooth silhouettes rather than angular polyhedra.
+const rockShape=new T.IcosahedronGeometry(1,3);
+const rockPalette=['#648d92','#769d9b','#89a9a3','#527d86'].map(color=>new T.MeshStandardMaterial({color,roughness:.96,metalness:0}));
 function rock(x,y,z,sx,sy,sz,variant){
-const mesh=add(rockShape,cliffMats[variant%4],world,x,y,z);
+const mesh=add(rockShape,rockPalette[variant%rockPalette.length],world,x,y,z);
 mesh.scale.set(sx,sy,sz);mesh.rotation.set(variant*.13,variant*.47,variant*.08);return mesh;
 }
-// Huge underwater canyon walls frame an open swimming channel.
+// Broad, connected rock terraces form a submerged valley.
 for(const side of [-1,1]){
-for(let depth=0;depth<7;depth++){
-const z=4-depth*5.1,dist=8.5+depth*.8;
+for(let depth=0;depth<9;depth++){
+const z=5-depth*4.6,dist=8.4+depth*.72;
 for(let layer=0;layer<3;layer++){
-const x=side*(dist+layer*1.2),base=terrainHeight(x,z);
-rock(x,base+.8+layer*1.45,z,2.3+depth*.18,1.65+layer*.55,2.7,depth+layer);
+const x=side*(dist+layer*.95),base=terrainHeight(x,z);
+rock(x,base+.65+layer*1.15,z,2.6+depth*.15,1.45+layer*.5,3.3,depth+layer);
 }
 }
 }
-// A natural stone arch on the far seabed, partly obscured by depth fog.
+// Stone arch at mid distance with a genuine open passage.
 const arch=new T.Group();world.add(arch);
-arch.position.set(0,terrainHeight(0,-21),-21);
+arch.position.set(0,terrainHeight(0,-16),-16);
 for(const side of [-1,1]){
 for(let j=0;j<5;j++){
-const x=side*(3.1-j*.13),y=.75+j*.85;
-const b=new T.Mesh(rockShape,cliffMats[(j+1)%4]);b.position.set(x,y,0);
-b.scale.set(1.25,.95,1.4);b.rotation.z=side*j*.12;arch.add(b);
+const x=side*(3.1-j*.13),y=.75+j*.82;
+const b=new T.Mesh(rockShape,rockPalette[(j+1)%4]);b.position.set(x,y,0);
+b.scale.set(1.18,.92,1.35);b.rotation.z=side*j*.12;arch.add(b);
 }}
 for(let j=0;j<9;j++){
-const a=.15+j*(Math.PI-.3)/8,x=Math.cos(a)*3.05,y=4.05+Math.sin(a)*1.35;
-const b=new T.Mesh(rockShape,cliffMats[j%4]);b.position.set(x,y,0);b.scale.set(1,.75,1.35);b.rotation.z=a;arch.add(b);
+const angle=.15+j*(Math.PI-.3)/8,x=Math.cos(angle)*3.05,y=4.05+Math.sin(angle)*1.35;
+const b=new T.Mesh(rockShape,rockPalette[j%4]);b.position.set(x,y,0);b.scale.set(1.02,.78,1.32);b.rotation.z=angle;arch.add(b);
 }
-// Rock shelves and clusters shrink toward the vanishing point.
-for(let i=0;i<70;i++){
-const z=7-(i*7.31)%46,x=-20+(i*11.17)%40;
-if(Math.abs(x)<2.8&&z>-9)continue;
-const d=.35+(i%7)*.16,base=terrainHeight(x,z);
-rock(x,base+d*.34,z,d*1.4,d*.7,d*1.2,i);
+for(let i=0;i<54;i++){
+const z=6-(i*7.31)%39,x=-19+(i*11.17)%38;
+if(Math.abs(x)<3.3&&z>-8)continue;
+const d=.3+(i%7)*.16,base=terrainHeight(x,z);
+rock(x,base+d*.3,z,d*1.6,d*.7,d*1.3,i);
+}
+// Branching corals with tapered twigs, placed naturally on rocky terraces.
+const coralColors=['#f2aa9d','#efc4aa','#e9a9c3','#a9cbd4','#b6b1e8'].map(color=>new T.MeshStandardMaterial({color,roughness:.85}));
+function coralTwig(group,x,y,z,len,angle,depth,material){
+const tx=x+Math.sin(angle)*len,ty=y+Math.cos(angle)*len;
+const branch=add(new T.CylinderGeometry(Math.max(.012,len*.075),Math.max(.024,len*.14),len,7),material,group,(x+tx)/2,(y+ty)/2,z);
+branch.rotation.z=-angle;
+if(depth>0){
+coralTwig(group,tx,ty,z,len*.68,angle-.52,depth-1,material);
+coralTwig(group,tx,ty,z,len*.63,angle+.59,depth-1,material);
+}}
+for(let i=0;i<26;i++){
+const x=-10+(i*5.39)%20,z=2-(i*4.17)%24;
+const group=new T.Group();group.position.set(x,terrainHeight(x,z)+.06,z);world.add(group);
+coralTwig(group,0,0,0,.43+(i%4)*.11,0,3,coralColors[i%5]);
+group.scale.setScalar(.65+(i%4)*.18);
 }
 // Kelp forests follow the canyon edges rather than a decorative aquarium row.
 const kelpMat=['#3b8e76','#65a989','#4b9d8a'].map(color=>new T.MeshStandardMaterial({color,side:T.DoubleSide,roughness:.9}));
@@ -382,6 +422,7 @@ function resize(){const w=host.clientWidth||innerWidth,h=host.clientHeight||inne
 addEventListener('resize',resize,{passive:true});resize();
 let last=0;
 function frame(time){requestAnimationFrame(frame);if(document.hidden)return;const t=time*.001;
+if(time-last>32)paintSurface(t);
 swimmers.forEach((f,i)=>{
 // Each fish follows a lively looping route with quick dashes and calm glides.
 const u=t*(.42+f.speed*.55)+f.phase;
