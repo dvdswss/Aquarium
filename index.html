@@ -115,7 +115,7 @@ if(!pts.length){el('text',{x:160,y:76,'text-anchor':'middle',fill:'#a3c1cd','fon
 document.getElementById('graphInfo').textContent='수온 기록 '+pts.length+'건 · 최근 12건 표시'}
 renderExtra();
 </script><style>
-#scene.aquarium3d{background:#75c9e4!important;box-shadow:none!important;touch-action:pan-y}
+#scene.aquarium3d{background:#5daec7!important;box-shadow:none!important;touch-action:pan-y}
 #scene.aquarium3d:before,#scene.aquarium3d:after{display:none!important}
 #scene canvas{display:block;width:100%;height:100%;position:absolute;inset:0}
 #scene .plant,#scene .fish,#scene .pixel-fish,#scene .pixel-plant,#scene .pixel-rock,#scene .bubble{display:none}
@@ -128,24 +128,24 @@ const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'low-power'})
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
 renderer.outputColorSpace=T.SRGBColorSpace;
 renderer.toneMapping=T.ACESFilmicToneMapping;
-renderer.toneMappingExposure=2.05;
+renderer.toneMappingExposure=1.0;
 host.classList.add('aquarium3d');
 host.append(renderer.domElement);
 const world=new T.Scene();
-world.background=new T.Color('#75c9e4');
-world.fog=new T.Fog('#80d6ee',32,78);
+world.background=new T.Color('#5daec7');
+world.fog=new T.Fog('#5daec7',35,90);
 const camera=new T.PerspectiveCamera(48,1,.1,90);
 camera.position.set(0,1.6,19);
 camera.lookAt(0,0,-2);
-world.add(new T.HemisphereLight('#f7ffff','#78c8db',4.2));
-const sunlight=new T.DirectionalLight('#fff9e8',4.5);
+world.add(new T.HemisphereLight('#f7ffff','#56828d',1.8));
+const sunlight=new T.DirectionalLight('#fff9e8',2.2);
 sunlight.position.set(-7,11,9);world.add(sunlight);
-const blueLight=new T.PointLight('#d2faff',90,32);blueLight.position.set(5,3,3);world.add(blueLight);
+const blueLight=new T.PointLight('#b9f0ff',16,24);blueLight.position.set(5,3,3);world.add(blueLight);
 const mat=(color,roughness=.78)=>new T.MeshStandardMaterial({color,roughness,metalness:.02});
-const sand=mat('#d5bb91'),stone=mat('#6b8a8a'),stone2=mat('#94a6a0');
+const sand=mat('#aa9374'),stone=mat('#536e72'),stone2=mat('#778b84');
 function add(geo,material,parent,x=0,y=0,z=0){const m=new T.Mesh(geo,material);m.position.set(x,y,z);parent.add(m);return m}
 add(new T.BoxGeometry(30,.65,20),sand,world,0,-4,-3);
-add(new T.PlaneGeometry(32,17),mat('#73c4db'),world,0,1,-12);
+add(new T.PlaneGeometry(32,17),mat('#4e9db3'),world,0,1,-12);
 for(let i=0;i<34;i++){const x=-13+(i*7.71)%26,z=-11+(i*4.17)%19,r=.2+(i%6)*.17;const rock=add(new T.DodecahedronGeometry(r,1),i%2?stone:stone2,world,x,-3.5+r*.23,z);rock.scale.set(1.4,.6,1.05)}
 const plants=new T.Group();world.add(plants);
 const stems=mat('#337e62'),greens=['#399e70','#56bb80','#79c98b','#317d65'].map(c=>new T.MeshStandardMaterial({color:c,roughness:.8,side:T.DoubleSide}));
