@@ -79,7 +79,7 @@ main,#game,#game section:first-child{position:fixed!important;inset:0!important;
 <section><h2>📅 관리 일정</h2><div class="row"><select id="taskType"><option>환수</option><option>먹이</option><option>여과기 청소</option><option>수질 검사</option><option>기타</option></select><input id="taskDays" type="number" min="1" value="7" placeholder="주기(일)"><button onclick="addTask()">일정 추가</button></div><ul id="tasksList"></ul><p class="muted">앱을 열면 예정일을 확인할 수 있어. 푸시 알림은 아직 지원하지 않아.</p></section>
 <section><h2>📈 수온 및 관리 기록</h2><p class="muted">수온은 어항 저장 버튼을 누를 때마다 기록돼.</p><svg id="tempGraph" viewBox="0 0 320 145" style="width:100%;background:#092235;border-radius:8px" role="img" aria-label="최근 수온 변화 그래프"></svg><p id="graphInfo" class="muted"></p><div id="logSummary"></div></section>
 <section><h2>🐣 번식 관리</h2><div class="row"><input id="breedSpecies" placeholder="물고기 종류"><select id="breedStage"><option>임신 관찰</option><option>출산</option><option>치어 성장</option><option>산란</option></select><input id="breedCount" type="number" min="0" placeholder="치어 수 (선택)"></div><button onclick="addBreed()">번식 기록 추가</button><ul id="breedList"></ul></section>
-<section><h2>🌿 수초 관리</h2><div class="row"><input id="plantName" placeholder="수초 이름"><input id="plantCountReal" type="number" min="1" value="1"><button onclick="addRealPlant()">수초 등록</button></div><ul id="realPlantsList"></ul></section><section><h2>나의 실제 수족관</h2><p class="muted">기록은 이 기기 브라우저에 저장돼.</p><div class="row"><input id="tankName" placeholder="어항 이름"><input id="temp" type="number" step=".1" placeholder="수온 °C"><button onclick="saveTank()">어항 저장</button></div><p id="tankInfo"></p><button id="waterToggle" aria-expanded="false" onclick="toggleWater()">＋ 수질 기록 (선택)</button><div id="waterPanel" class="hidden"><p class="muted">수질 측정 도구가 있을 때만 기록해. 입력하지 않아도 돼.</p><div class="row"><input id="ph" type="number" step=".1" placeholder="pH"><input id="ammonia" type="number" step=".01" placeholder="암모니아 mg/L"><input id="nitrite" type="number" step=".01" placeholder="아질산염 mg/L"></div><button onclick="saveWater()">수질 기록 저장</button><p id="waterInfo" class="muted"></p><p id="waterHistory" class="muted"></p></div></section><section><h2>🐟 물고기 등록</h2><div class="row"><input id="species" placeholder="종류 (예: 구피)"><input id="count" type="number" min="1" value="1"><button onclick="addFish()">등록</button></div><ul id="fishList"></ul></section><section><h2>🗓️ 관리 일지</h2><div class="row"><select id="event"><option>먹이</option><option>환수</option><option>수질 검사</option><option>청소</option><option>기타</option></select><input id="memo" placeholder="메모"><button onclick="addLog()">기록</button></div><p id="waterChange" class="muted"></p><ul id="logs"></ul></section></div><div id="game"><section><h2>✦ 끝없이 펼쳐진 푸른 바다 ✦</h2><div class="tank" id="scene"><div class="oceanHud"><div class="gameStats"><div>🪙 코인<br><strong id="coins"></strong></div><div>🐟 물고기<br><strong id="population"></strong></div><div>⭐ 레벨<br><strong id="level"></strong></div></div><div class="oceanHudBottom"><div class="oceanLevel"><span>레벨 진행</span><span id="xpText"></span></div><div class="gameBar"><span id="xpBar"></span></div><p class="oceanClean">✨ 청결도 <strong id="cleanliness"></strong>% <span>· 🌿 수초 <strong id="plantCount"></strong>개</span></p></div></div></div><div class="row game-actions-primary"><button onclick="feed()">🍤 먹이 주기 (+5)</button><button onclick="buyFish()">🐟 물고기 구매 (20)</button><button onclick="buyPlant()">🌿 수초 구매 (10)</button></div><div class="row game-actions-secondary"><button onclick="cleanGame()">🧽 청소하기 (+3 XP)</button><button onclick="collectBonus()">🎁 일일 보상 (+15 코인)</button></div><p id="notice" class="muted">바닷속 친구들과 함께 푸른 세계를 탐험해 봐!</p></section></div></main><script>const key='aquaria-v1';let state;try{state=JSON.parse(localStorage.getItem(key))||{name:'25큐브',temp:'',fish:[],logs:[],coins:20,virtual:2,plants:0}}catch(e){state={name:'25큐브',temp:'',fish:[],logs:[],coins:20,virtual:2,plants:0}}function save(){localStorage.setItem(key,JSON.stringify(state));render()}function tab(t){document.getElementById('real').classList.toggle('hidden',t!=='real');document.getElementById('game').classList.toggle('hidden',t!=='game')}function saveTank(){state.name=document.getElementById('tankName').value.trim()||'나의 어항';state.temp=document.getElementById('temp').value;save()}function toggleWater(){let p=document.getElementById("waterPanel"),b=document.getElementById("waterToggle");p.classList.toggle("hidden");let open=!p.classList.contains("hidden");b.textContent=open?"－ 수질 기록 닫기":"＋ 수질 기록 (선택)";b.setAttribute("aria-expanded",String(open))}function saveWater(){let ph=document.getElementById("ph").value,ammonia=document.getElementById("ammonia").value,nitrite=document.getElementById("nitrite").value;if([ph,ammonia,nitrite].every(v=>v===""))return alert("수질 수치를 입력해줘");if(ph!==""&&(Number(ph)<0||Number(ph)>14))return alert("pH는 0~14 사이로 입력해줘");if([ammonia,nitrite].some(v=>v!==""&&Number(v)<0))return alert("농도는 음수가 될 수 없어");state.water={ph,ammonia,nitrite,date:new Date().toLocaleString("ko-KR")};state.waterHistory=state.waterHistory||[];state.waterHistory.unshift({...state.water});state.waterHistory=state.waterHistory.slice(0,30);save()}function addFish(){const n=document.getElementById('species').value.trim(),c=Number(document.getElementById('count').value);if(!n||!Number.isInteger(c)||c<1)return alert('종류와 마릿수를 입력해줘');state.fish.push({n,c});document.getElementById('species').value='';save()}function addLog(){state.logs.unshift({date:new Date().toLocaleString('ko-KR'),timestamp:Date.now(),type:document.getElementById('event').value,memo:document.getElementById('memo').value.trim()});document.getElementById('memo').value='';save()}function pixelFish(i){let colors=[['#ffce82','#ee815f','#fff1c4'],['#92eadc','#3ca8b0','#e7fff6'],['#ffc2d2','#d66b9e','#ffe7f0'],['#e9d77d','#b59b45','#fff2ae']][i%4];return '<svg viewBox="0 0 48 32" aria-hidden="true"><path fill="'+colors[1]+'" d="M3 8h6v5h5v6H9v5H3v-6H0v-5h3z"/><path fill="'+colors[0]+'" d="M13 10h5V6h17v4h6v5h4v7h-5v4H19v-4h-6z"/><path fill="'+colors[2]+'" d="M20 10h16v4H20zM22 22h14v3H22z"/><path fill="#153446" d="M36 14h4v4h-4z"/><path fill="'+colors[1]+'" d="M24 6V2h8v4zM25 26v4h8v-4z"/></svg>'}
+<section><h2>🌿 수초 관리</h2><div class="row"><input id="plantName" placeholder="수초 이름"><input id="plantCountReal" type="number" min="1" value="1"><button onclick="addRealPlant()">수초 등록</button></div><ul id="realPlantsList"></ul></section><section><h2>나의 실제 수족관</h2><p class="muted">기록은 이 기기 브라우저에 저장돼.</p><div class="row"><input id="tankName" placeholder="어항 이름"><input id="temp" type="number" step=".1" placeholder="수온 °C"><button onclick="saveTank()">어항 저장</button></div><p id="tankInfo"></p><button id="waterToggle" aria-expanded="false" onclick="toggleWater()">＋ 수질 기록 (선택)</button><div id="waterPanel" class="hidden"><p class="muted">수질 측정 도구가 있을 때만 기록해. 입력하지 않아도 돼.</p><div class="row"><input id="ph" type="number" step=".1" placeholder="pH"><input id="ammonia" type="number" step=".01" placeholder="암모니아 mg/L"><input id="nitrite" type="number" step=".01" placeholder="아질산염 mg/L"></div><button onclick="saveWater()">수질 기록 저장</button><p id="waterInfo" class="muted"></p><p id="waterHistory" class="muted"></p></div></section><section><h2>🐟 물고기 등록</h2><div class="row"><input id="species" placeholder="종류 (예: 구피)"><input id="count" type="number" min="1" value="1"><button onclick="addFish()">등록</button></div><ul id="fishList"></ul></section><section><h2>🗓️ 관리 일지</h2><div class="row"><select id="event"><option>먹이</option><option>환수</option><option>수질 검사</option><option>청소</option><option>기타</option></select><input id="memo" placeholder="메모"><button onclick="addLog()">기록</button></div><p id="waterChange" class="muted"></p><ul id="logs"></ul></section></div><div id="game"><section><h2>✦ 끝없이 펼쳐진 푸른 바다 ✦</h2><div class="tank" id="scene"></div><div class="oceanHud"><div class="gameStats"><div>🪙 코인<br><strong id="coins"></strong></div><div>🐟 물고기<br><strong id="population"></strong></div><div>⭐ 레벨<br><strong id="level"></strong></div></div><div class="oceanHudBottom"><div class="oceanLevel"><span>레벨 진행</span><span id="xpText"></span></div><div class="gameBar"><span id="xpBar"></span></div><p class="oceanClean">✨ 청결도 <strong id="cleanliness"></strong>% <span>· 🌿 수초 <strong id="plantCount"></strong>개</span></p></div></div><div class="row game-actions-primary"><button onclick="feed()">🍤 먹이 주기 (+5)</button><button onclick="buyFish()">🐟 물고기 구매 (20)</button><button onclick="buyPlant()">🌿 수초 구매 (10)</button></div><div class="row game-actions-secondary"><button onclick="cleanGame()">🧽 청소하기 (+3 XP)</button><button onclick="collectBonus()">🎁 일일 보상 (+15 코인)</button></div><p id="notice" class="muted">바닷속 친구들과 함께 푸른 세계를 탐험해 봐!</p></section></div></main><script>const key='aquaria-v1';let state;try{state=JSON.parse(localStorage.getItem(key))||{name:'25큐브',temp:'',fish:[],logs:[],coins:20,virtual:2,plants:0}}catch(e){state={name:'25큐브',temp:'',fish:[],logs:[],coins:20,virtual:2,plants:0}}function save(){localStorage.setItem(key,JSON.stringify(state));render()}function tab(t){document.getElementById('real').classList.toggle('hidden',t!=='real');document.getElementById('game').classList.toggle('hidden',t!=='game')}function saveTank(){state.name=document.getElementById('tankName').value.trim()||'나의 어항';state.temp=document.getElementById('temp').value;save()}function toggleWater(){let p=document.getElementById("waterPanel"),b=document.getElementById("waterToggle");p.classList.toggle("hidden");let open=!p.classList.contains("hidden");b.textContent=open?"－ 수질 기록 닫기":"＋ 수질 기록 (선택)";b.setAttribute("aria-expanded",String(open))}function saveWater(){let ph=document.getElementById("ph").value,ammonia=document.getElementById("ammonia").value,nitrite=document.getElementById("nitrite").value;if([ph,ammonia,nitrite].every(v=>v===""))return alert("수질 수치를 입력해줘");if(ph!==""&&(Number(ph)<0||Number(ph)>14))return alert("pH는 0~14 사이로 입력해줘");if([ammonia,nitrite].some(v=>v!==""&&Number(v)<0))return alert("농도는 음수가 될 수 없어");state.water={ph,ammonia,nitrite,date:new Date().toLocaleString("ko-KR")};state.waterHistory=state.waterHistory||[];state.waterHistory.unshift({...state.water});state.waterHistory=state.waterHistory.slice(0,30);save()}function addFish(){const n=document.getElementById('species').value.trim(),c=Number(document.getElementById('count').value);if(!n||!Number.isInteger(c)||c<1)return alert('종류와 마릿수를 입력해줘');state.fish.push({n,c});document.getElementById('species').value='';save()}function addLog(){state.logs.unshift({date:new Date().toLocaleString('ko-KR'),timestamp:Date.now(),type:document.getElementById('event').value,memo:document.getElementById('memo').value.trim()});document.getElementById('memo').value='';save()}function pixelFish(i){let colors=[['#ffce82','#ee815f','#fff1c4'],['#92eadc','#3ca8b0','#e7fff6'],['#ffc2d2','#d66b9e','#ffe7f0'],['#e9d77d','#b59b45','#fff2ae']][i%4];return '<svg viewBox="0 0 48 32" aria-hidden="true"><path fill="'+colors[1]+'" d="M3 8h6v5h5v6H9v5H3v-6H0v-5h3z"/><path fill="'+colors[0]+'" d="M13 10h5V6h17v4h6v5h4v7h-5v4H19v-4h-6z"/><path fill="'+colors[2]+'" d="M20 10h16v4H20zM22 22h14v3H22z"/><path fill="#153446" d="M36 14h4v4h-4z"/><path fill="'+colors[1]+'" d="M24 6V2h8v4zM25 26v4h8v-4z"/></svg>'}
 function pixelPlant(i){let c=i%2?'#6cc5a0':'#4fae88';return '<svg viewBox="0 0 38 85" aria-hidden="true"><path stroke="#276c69" stroke-width="5" d="M19 85V12"/><path fill="'+c+'" d="M18 66H6V48h8v10h4zM21 54h12V36h-8v10h-4zM18 36H7V18h8v11h3zM21 25h11V8h-8v11h-3zM16 16V3h8v13z"/></svg>'}
 function gainXP(n){state.xp=(state.xp||0)+n}function cleanGame(){state.cleanliness=100;gainXP(3);document.getElementById('notice').textContent='어항 청소 완료!';save()}function collectBonus(){let today=new Date().toLocaleDateString('en-CA');if(state.bonusDate===today)return alert('오늘 보상은 이미 받았어!');state.bonusDate=today;state.coins+=15;gainXP(5);document.getElementById('notice').textContent='오늘의 보상 +15 코인!';save()}function feed(){state.coins+=5;gainXP(2);state.cleanliness=Math.max(0,(state.cleanliness??100)-3);document.getElementById('notice').textContent='냠냠! 물고기들이 맛있게 먹었어 🫧';save()}function buyFish(){if(state.coins<20)return alert('코인이 부족해');state.coins-=20;state.virtual++;gainXP(10);save()}function buyPlant(){if(state.coins<10)return alert('코인이 부족해');state.coins-=10;state.plants++;gainXP(5);save()}function render(){document.getElementById('tankInfo').textContent=state.name+' · '+(state.temp?state.temp+'°C':'수온 미기록');document.getElementById('tankName').value=state.name;let w=state.water||{};for(let id of ['ph','ammonia','nitrite'])document.getElementById(id).value=w[id]??'';document.getElementById('waterInfo').textContent=w.date?'최근 수질 ('+w.date+'): pH '+(w.ph||'—')+' · 암모니아 '+(w.ammonia||'—')+' mg/L · 아질산염 '+(w.nitrite||'—')+' mg/L':'수질 미기록';document.getElementById('waterHistory').textContent='수질 측정 횟수: '+(state.waterHistory||[]).length;document.getElementById('temp').value=state.temp;document.getElementById('fishList').replaceChildren(...state.fish.map((f,i)=>{let li=document.createElement('li');li.textContent=f.n+' × '+f.c+' ';let b=document.createElement('button');b.textContent='삭제';b.onclick=()=>{state.fish.splice(i,1);save()};li.append(b);return li}));let change=state.logs.find(x=>x.type==='환수');document.getElementById('waterChange').textContent=change?'마지막 환수: '+change.date+' ('+Math.max(0,Math.floor((Date.now()-new Date(change.timestamp||change.date).getTime())/86400000)||0)+'일 전)':'아직 환수 기록이 없어';document.getElementById('logs').replaceChildren(...state.logs.map(x=>{let li=document.createElement('li');li.textContent=x.date+' · '+x.type+' '+x.memo;return li}));document.getElementById('coins').textContent=state.coins;document.getElementById('population').textContent=state.virtual;let xp=state.xp||0,lv=Math.floor(xp/50)+1;document.getElementById('level').textContent=lv;document.getElementById('xpText').textContent=(xp%50)+'/50';document.getElementById('xpBar').style.width=(xp%50)*2+'%';document.getElementById('cleanliness').textContent=state.cleanliness??100;document.getElementById('plantCount').textContent=state.plants;if(window.syncAquarium3D){window.syncAquarium3D()}else{const scene=document.getElementById('scene');scene.querySelectorAll('.fish,.extraPlant,.bubble,.pixel-fish,.pixel-plant,.pixel-rock').forEach(x=>x.remove());for(let i=0;i<Math.min(state.virtual,35);i++){let f=document.createElement('span');f.className='pixel-fish';f.innerHTML=pixelFish(i);f.style.top=(12+(i*23)%63)+'%';f.style.setProperty('--duration',(7+i%6*1.3)+'s');f.style.setProperty('--delay',(-i*1.7)+'s');scene.append(f)}for(let i=0;i<Math.min(state.plants+2,24);i++){let p=document.createElement('span');p.className='pixel-plant';p.innerHTML=pixelPlant(i);p.style.left=(4+(i*17)%89)+'%';scene.append(p)}for(let i=0;i<3;i++){let r=document.createElement('span');r.className='pixel-rock';r.style.left=(10+i*33)+'%';r.innerHTML='<svg viewBox="0 0 60 40"><path fill="#496f79" d="M6 34V22h8V12h12V6h18v8h10v20z"/><path fill="#77999a" d="M14 24V16h12V10h12v6H26v8z"/><path fill="#284d5c" d="M42 18h8v16H26v-6h16z"/></svg>';scene.append(r)}for(let i=0;i<9;i++){let b=document.createElement('span');b.className='bubble';b.textContent='◦';b.style.left=(5+i*11)+'%';b.style.animationDelay=(-i*.65)+'s';scene.append(b)}}}render();
 const extraKey='aquaria-real-v2';
@@ -187,6 +187,15 @@ body:has(#game:not(.hidden)) #game{max-width:none!important}
 #game .tank:before{display:none!important}
 #game .oceanHud .gameStats>div{border-radius:5px!important;backdrop-filter:none!important}
 #game .oceanHudBottom{border-radius:5px!important;backdrop-filter:none!important;padding:8px 10px!important}
+</style><style>
+/* Keep the ocean artwork unobstructed: controls and progress below the scene. */
+#game .oceanHud{position:relative!important;inset:auto!important;display:block!important;padding:10px 12px!important;background:#073d5b!important}
+#game .tank{height:68dvh!important;min-height:480px!important;overflow:hidden!important}
+#game .oceanHud .gameStats{width:100%!important;max-width:440px!important;margin:0 auto 9px!important}
+#game .oceanHudBottom{width:100%!important;max-width:440px!important;margin:0 auto!important;padding:8px 10px!important}
+#game .row{margin-top:9px!important;margin-bottom:9px!important}
+#game #notice{margin:6px auto!important}
+@media(max-width:600px){#game .tank{height:69dvh!important;min-height:450px!important}#game .oceanHud{padding:8px 12px!important}}
 </style><script>
 (function(){
 const host=document.getElementById('scene');if(!host)return;
@@ -198,7 +207,7 @@ const palette=['#ffbd82','#9ee9e0','#f9a4be','#ffe6a0','#b8a7f3','#9ad1ff'];
 const fish=[];
 function sync(){
 const count=Math.min(38,Math.max(0,Number(state.virtual)||0));
-while(fish.length<count){const i=fish.length;fish.push({x:30+rand(i+12)*180,y:95+rand(i+44)*155,z:.55+rand(i+7)*.65,dir:i%2?1:-1,speed:.16+rand(i+23)*.24,phase:i*2.4,color:palette[i%palette.length]})}
+while(fish.length<count){const i=fish.length;fish.push({x:30+rand(i+12)*180,y:95+rand(i+44)*155,z:.55+rand(i+7)*.65,dir:i%2?1:-1,speed:.16+rand(i+23)*.24,phase:i*2.4,color:palette[i%palette.length],kind:i%7})}
 fish.length=count;
 }
 window.syncAquarium3D=sync;sync();
@@ -223,16 +232,35 @@ if(depth>0){branch(nx,ny,len*.72,angle-.52,depth-1);branch(nx,ny,len*.69,angle+.
 branch(x,y,size,0,3);
 }
 function fishDraw(f,t){
-const bob=Math.sin(t*.003+f.phase)*2;
-const x=Math.round(f.x),y=Math.round(f.y+bob),z=f.z;
+const bob=Math.sin(t*.003+f.phase)*2,x=Math.round(f.x),y=Math.round(f.y+bob),z=f.z;
 ctx.save();ctx.translate(x,y);ctx.scale(f.dir*z,z);
-const c=f.color;
-polygon([[-10,0],[-20,-7],[-20,7]],c);
-rect(-10,-4,18,9,c);rect(-6,-6,11,2,c);rect(-4,5,8,2,'#d7f1dc');
-rect(7,-2,3,4,'#fff7dc');rect(8,-1,2,2,'#203d51');
-const flick=Math.sin(t*.019+f.phase)*3;
-polygon([[-11,0],[-18,-6-flick],[-18,6+flick]],c);
-rect(-4,-7,5,2,'#d9f5ea');ctx.restore();
+const c=f.color,kind=f.kind||0,flick=Math.sin(t*.018+f.phase)*3;
+if(kind===0){ // Guppy: flowing fan tail
+polygon([[-9,0],[-23,-9-flick],[-21,9+flick]],'#f49c8a');
+rect(-10,-4,19,9,c);rect(-5,-6,9,2,'#f9e2b2');rect(7,-2,2,2,'#163c53');
+}else if(kind===1){ // Angelfish: tall triangular fins
+polygon([[-4,-2],[2,-18],[9,-2]],'#bde8f2');polygon([[-5,3],[3,18],[9,3]],'#8cc8d9');
+polygon([[-10,0],[-18,-8],[-18,9]],'#91c3e0');rect(-9,-5,18,11,'#dcebd8');rect(-2,-5,3,11,'#647f99');rect(7,-2,2,2,'#263d57');
+}else if(kind===2){ // Clownfish: orange with white bands
+polygon([[-10,0],[-19,-6-flick],[-19,6+flick]],'#f48a54');
+rect(-10,-5,20,11,'#f58d52');rect(-4,-5,4,11,'#fff4d8');rect(3,-5,4,11,'#fff4d8');rect(7,-2,2,2,'#263648');
+}else if(kind===3){ // Neon tetra: slim and bright
+polygon([[-12,0],[-19,-4-flick],[-19,4+flick]],'#e68b97');
+rect(-12,-3,24,7,'#497e9e');rect(-8,-3,17,2,'#6ff4ee');rect(-1,1,12,3,'#e98298');rect(9,-1,2,2,'#172f4e');
+}else if(kind===4){ // Pufferfish: round
+polygon([[-10,0],[-18,-5-flick],[-18,5+flick]],'#e6b36d');
+rect(-9,-7,17,15,'#f5d88c');rect(-6,-9,10,2,'#f5d88c');rect(-5,8,10,2,'#f5d88c');rect(5,-3,2,2,'#243c4d');rect(-4,-4,2,2,'#d69d6c');
+}else if(kind===5){ // Butterflyfish: pointed nose
+polygon([[-9,0],[-20,-11-flick],[-20,11+flick]],'#f6d06f');
+polygon([[-10,0],[-2,-9],[7,-7],[14,0],[7,7],[-2,9]],'#f9d67d');
+rect(-3,-7,3,14,'#354f6d');rect(9,-2,2,2,'#20334e');
+}else{ // Betta: large rippling fins
+polygon([[-8,0],[-22,-11-flick],[-21,11+flick]],'#b69bf1');
+polygon([[-6,-3],[-1,-13],[9,-6]],'#e5b4ef');
+polygon([[-5,4],[2,14],[9,5]],'#a2a6e9');
+rect(-9,-4,18,9,'#8cc5d5');rect(7,-2,2,2,'#253b5b');
+}
+ctx.restore();
 }
 function draw(t){
 const grad=ctx.createLinearGradient(0,0,0,H);
@@ -248,6 +276,15 @@ const pts=[[0,H],[0,base]];
 for(let x=0;x<=W;x+=8)pts.push([x,base+Math.sin(x*.027+layer*1.9)*12+Math.cos(x*.065+layer)*5]);
 pts.push([W,H]);polygon(pts,['#226e83','#287e85','#8eaa98'][layer]);
 }
+// Pixelated surface sparkle, dappled sunlight and reef depth.
+for(let i=0;i<18;i++){
+const xx=(i*37+Math.sin(t*.0004+i)*7)%W;
+rect(xx,6+(i%4)*3,12+(i%3)*7,1,'rgba(210,255,242,.27)');
+}
+for(let i=0;i<7;i++){
+const cx=20+i*37;
+polygon([[cx,0],[cx+7,0],[cx+40,210],[cx-22,210]],'rgba(226,255,237,.035)');
+}
 // Distant coral silhouettes, then foreground reef formations.
 for(let i=0;i<26;i++){const x=rand(i+81)*W,y=242+rand(i+93)*42;plant(x,y,13+rand(i+42)*28,i,t,true)}
 for(let i=0;i<20;i++){
@@ -255,8 +292,8 @@ const x=rand(i+11)*W,y=296+rand(i+56)*50,r=5+rand(i+7)*13;
 polygon([[x-r,y],[x-r*.8,y-r*.55],[x-r*.3,y-r],[x+r*.45,y-r*.8],[x+r,y-r*.2],[x+r*.8,y+3],[x-r*.6,y+4]],i%3===0?'#7b9994':'#577f86');
 polygon([[x-r*.8,y-r*.55],[x-r*.3,y-r],[x+r*.45,y-r*.8],[x+r*.1,y-r*.3]],'#9eb5a9');
 }
-for(let i=0;i<21;i++){
-const x=rand(i+72)*W,y=299+rand(i+37)*47;
+for(let i=0;i<35;i++){
+const x=rand(i+72)*W,y=288+rand(i+37)*58;
 if(i%3===0)plant(x,y,24+rand(i+13)*32,i,t);
 else coral(x,y,9+rand(i+25)*8,i);
 }
