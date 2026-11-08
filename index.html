@@ -315,11 +315,31 @@ window.syncAquarium3D=sync;sync();
 function rect(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h))}
 function polygon(points,color){ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);for(let i=1;i<points.length;i++)ctx.lineTo(points[i][0],points[i][1]);ctx.closePath();ctx.fill()}
 function plant(x,y,h,i,t,far=false){
-const sway=Math.sin(t*.0007+i)*2;
-rect(x-1,y-h,2,h,far?'#367e83':'#347b72');
-for(let k=0;k<6;k++){
-const yy=y-5-k*h/7,xx=x+sway*k/7,side=k%2?1:-1;
-polygon([[xx,yy],[xx+side*(far?5:8),yy-7],[xx+side*(far?6:9),yy-12],[xx+side*2,yy-10]],far?'#4e9f91':(k%3?'#64c69c':'#94db91'));
+const sway=Math.sin(t*.0008+i*1.7)*(far?1:3);
+const type=i%4,stem=far?'#367985':'#387d76';
+if(type===0){ // long ribbon kelp
+for(let j=0;j<3;j++){
+const xx=x+(j-1)*4,hh=h*(.65+j*.14);
+const tip=xx+Math.sin(t*.0008+i+j)*4;
+polygon([[xx-2,y],[xx-3,y-hh*.5],[tip-2,y-hh],[tip+1,y-hh+4],[xx+2,y-hh*.5],[xx+2,y]],j===1?'#6cb9a0':'#428f91');
+}
+}else if(type===1){ // delicate feather seaweed
+rect(x,y-h,1,h,stem);
+for(let k=0;k<9;k++){
+const yy=y-4-k*h/10,side=k%2?1:-1,xx=x+sway*k/10;
+polygon([[xx,yy],[xx+side*6,yy-3],[xx+side*9,yy-8],[xx+side*2,yy-6]],far?'#408e8b':(k%3?'#69bca0':'#8ed5b1'));
+}
+}else if(type===2){ // broad paddle leaves
+rect(x-1,y-h*.8,2,h*.8,stem);
+for(let k=0;k<4;k++){
+const yy=y-7-k*h/5,side=k%2?1:-1,xx=x+sway*k/5;
+polygon([[xx,yy+3],[xx+side*7,yy-1],[xx+side*9,yy-9],[xx+side*4,yy-11],[xx,yy-3]],far?'#3c8588':'#80c9a0');
+}
+}else{ // low grassy sea fan
+for(let j=0;j<6;j++){
+const ang=(j-2.5)*.23,hh=h*(.45+(j%3)*.13);
+polygon([[x,y],[x+Math.sin(ang)*hh+sway,y-hh],[x+Math.sin(ang)*hh+2+sway,y-hh+7],[x+2,y]],j%2?'#75bfa1':'#4a9d8f');
+}
 }
 }
 function coral(x,y,size,i){
@@ -390,11 +410,18 @@ const x=rand(i+201)*W,y=250+rand(i+305)*104,r=5+rand(i+411)*17;
 polygon([[x-r,y],[x-r*.7,y-r*.7],[x+r*.35,y-r],[x+r,y-r*.25],[x+r*.7,y+5],[x-r*.7,y+5]],i%3?'#456787':'#547b91');
 polygon([[x-r*.7,y-r*.7],[x+r*.35,y-r],[x+r*.2,y-r*.5]],'#7b9eb2');
 }
-for(let i=0;i<35;i++){const x=rand(i+81)*W,y=245+rand(i+93)*80;plant(x,y,16+rand(i+42)*35,i,t,true)}
-for(let i=0;i<75;i++){
-const x=rand(i+72)*W,y=275+rand(i+37)*78;
-if(i%5===0)plant(x,y,25+rand(i+13)*44,i,t);
-else coral(x,y,7+rand(i+25)*13,i);
+// Sparse clustered vegetation: keep open sandy channels between distinct reefs.
+for(let i=0;i<13;i++){
+const side=i%3===0?0:(i%2===0?-1:1);
+const x=side===0?30+rand(i+81)*180:(side<0?7+rand(i+81)*53:180+rand(i+81)*52);
+const y=264+rand(i+93)*48;
+plant(x,y,15+rand(i+42)*33,i,t,true);
+}
+for(let i=0;i<32;i++){
+const zone=i%4, x=zone===0?8+rand(i+72)*55:zone===1?180+rand(i+72)*53:55+rand(i+72)*130;
+const y=291+rand(i+37)*59;
+if(i%3===0)plant(x,y,17+rand(i+13)*37,i+17,t);
+else coral(x,y,8+rand(i+25)*12,i);
 }
 // Anemones, tube corals and glowing pearls in foreground.
 for(let i=0;i<21;i++){
