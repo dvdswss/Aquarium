@@ -193,9 +193,19 @@ skin.bumpMap=bump;skin.bumpScale=.014;skin.needsUpdate=true;
 const bodyColors=['#a9c9b4','#d3c8a1','#a2c5d0','#e0bd9f'];
 const base=new T.Color(bodyColors[i%4]);
 const vs=[],cs=[],uv=[],ids=[],rings=72,segments=32;
-function dims(u){const main=Math.pow(Math.max(.0001,Math.sin(Math.PI*u)),.8);return {h:.045+.37*main*(1-.27*u),w:.045+.25*main*(1-.32*u)}}
+function dims(u){
+// Fish anatomy: blunt tapered snout, deeper chest, rounded abdomen, narrow caudal peduncle.
+const profile=[[0,.055,.05],[.055,.13,.10],[.14,.29,.19],[.26,.38,.255],[.39,.405,.27],[.52,.36,.24],[.65,.28,.19],[.79,.16,.12],[.91,.085,.075],[1,.067,.058]];
+let n=0;while(n<profile.length-2&&u>profile[n+1][0])n++;
+const a=profile[n],b=profile[n+1],t=Math.max(0,Math.min(1,(u-a[0])/(b[0]-a[0]))),q=t*t*(3-2*t);
+return {h:a[1]+(b[1]-a[1])*q,w:a[2]+(b[2]-a[2])*q}
+}
 for(let j=0;j<=rings;j++){const u=j/rings,x=1.1-2.22*u,{h,w}=dims(u);
-for(let k=0;k<=segments;k++){const v=k/segments*Math.PI*2;vs.push(x,Math.cos(v)*h,Math.sin(v)*w);uv.push(u,k/segments);
+for(let k=0;k<=segments;k++){const v=k/segments*Math.PI*2;
+const dorsal=Math.cos(v),ventral=Math.max(0,-dorsal);
+const bellyDrop=Math.sin(Math.PI*Math.min(1,u/.77))*.045*ventral;
+const headSlope=u<.15?(.15-u)*.25:0;
+vs.push(x,Math.cos(v)*h-bellyDrop+headSlope,Math.sin(v)*w);uv.push(u,k/segments);
 const col=base.clone().lerp(new T.Color('#547d7c'),Math.max(0,Math.cos(v))*.33).lerp(new T.Color('#eee6cf'),Math.max(0,-Math.cos(v))*.45);
 const pattern=Math.sin(u*165+k*.8)*Math.sin(u*92-k*.65);col.multiplyScalar(1+pattern*.035);
 if(u>.63)col.lerp(new T.Color('#e1a65e'),(u-.63)*.7);
@@ -205,15 +215,22 @@ if(j<rings&&k<segments){const q=j*(segments+1)+k;ids.push(q,q+1,q+segments+1,q+1
 const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(vs,3));geo.setAttribute('color',new T.Float32BufferAttribute(cs,3));geo.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geo.setIndex(ids);geo.computeVertexNormals();
 root.add(new T.Mesh(geo,skin));
 function surface(parent,points,colors){
-const v=[],c=[],ind=[];points.forEach((p,j)=>{v.push(...p);const col=new T.Color(colors[j]);c.push(col.r,col.g,col.b)});
-for(let j=1;j<points.length-1;j++)ind.push(0,j,j+1);
-const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(v,3));g.setAttribute('color',new T.Float32BufferAttribute(c,3));g.setIndex(ind);g.computeVertexNormals();const m=new T.Mesh(g,finMat);parent.add(m);return m}
-// Thin lateral line and irregular pigment along the flank.
-const lineMat=new T.LineBasicMaterial({color:'#758d86',transparent:true,opacity:.24});
-for(const sign of [-1,1]){
-const pts=[];for(let j=0;j<=38;j++){const u=.16+j/38*.72,{w}=dims(u);pts.push(new T.Vector3(1.1-2.22*u,.025*Math.sin(u*5),sign*(w+.006)))}
-root.add(new T.Line(new T.BufferGeometry().setFromPoints(pts),lineMat));
-}
+// Subdivided Catmull-Rom contour with membrane depth and smoothly curved surface.
+const edge=new T.CatmullRomCurve3(points.slice(1).map(p=>new T.Vector3(...p)),false,'centripetal',.5);
+const origin=new T.Vector3(...points[0]),count=Math.max(24,points.length*9),radial=5;
+const verts=[],rgb=[],uv=[],indices=[];
+const center=new T.Color(colors[0]);
+for(let j=0;j<=count;j++){
+const t=j/count,p=edge.getPoint(t),edgeColor=new T.Color(colors[Math.min(colors.length-1,1+Math.floor(t*(colors.length-1)))]);
+for(let k=0;k<=radial;k++){
+const r=k/radial,curve=Math.sin(Math.PI*r)*.12*Math.sin(Math.PI*t);
+verts.push(origin.x+(p.x-origin.x)*r,origin.y+(p.y-origin.y)*r,origin.z+(p.z-origin.z)*r+curve);
+const col=center.clone().lerp(edgeColor,r);rgb.push(col.r,col.g,col.b);uv.push(t,r);
+if(j<count&&k<radial){const q=j*(radial+1)+k;indices.push(q,q+radial+1,q+1,q+1,q+radial+1,q+radial+2)}
+}}
+const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(verts,3));geo.setAttribute('color',new T.Float32BufferAttribute(rgb,3));geo.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geo.setIndex(indices);geo.computeVertexNormals();
+const fin=new T.Mesh(geo,finMat);parent.add(fin);return fin}
+
 const tailPivot=new T.Group();tailPivot.position.x=-1.12;root.add(tailPivot);
 const tailPoints=[[0,0,0]],tailColors=['#dfb97d'];
 const tailRays=48;
