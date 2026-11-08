@@ -154,14 +154,40 @@ const fishGroup=new T.Group();world.add(fishGroup);
 const swimmers=[];
 const colors=['#ffa960','#79dfd0','#f9a5bd','#f5d47c','#a8b8f5','#ff9c8c'];
 function makeFish(i){
-const root=new T.Group(),body=mat(colors[i%colors.length],.4),fin=mat(i%2?'#c1f8e5':'#ffe3a5',.5),black=mat('#142a39',.12),white=mat('#ffffff',.12);
-const core=add(new T.SphereGeometry(.62,28,20),body,root);core.scale.set(1.45,.78,.52);
-const tailPivot=new T.Group();tailPivot.position.x=-.87;root.add(tailPivot);
-const tail=add(new T.ConeGeometry(.48,.95,4),fin,tailPivot,-.42,0,0);tail.rotation.z=Math.PI/2;tail.rotation.y=Math.PI/4;tail.scale.z=.55;
-const dorsal=add(new T.ConeGeometry(.28,.7,4),fin,root,-.12,.54,0);dorsal.rotation.z=-.25;dorsal.scale.z=.6;
-for(const sign of [-1,1]){add(new T.SphereGeometry(.085,12,10),black,root,.49,.13,sign*.31);add(new T.SphereGeometry(.025,8,8),white,root,.52,.16,sign*.39)}
-const sideFin=add(new T.ConeGeometry(.18,.5,3),fin,root,-.05,-.17,.31);sideFin.rotation.z=1.2;
-root.scale.setScalar(.65+(i%4)*.09);fishGroup.add(root);
+const root=new T.Group(),c=colors[i%colors.length];
+const bodyMat=new T.MeshStandardMaterial({color:c,roughness:.42,metalness:.08,side:T.DoubleSide,vertexColors:true});
+const finMat=new T.MeshStandardMaterial({color:i%2?'#9de8d9':'#ffd4a1',transparent:true,opacity:.87,roughness:.48,side:T.DoubleSide});
+const black=mat('#102331',.1),white=mat('#ffffff',.1);
+const rings=22,sides=18,vertices=[],vertexColors=[],indices=[],base=new T.Color(c);
+for(let j=0;j<=rings;j++){
+const u=j/rings,x=-1.03+u*2.08;
+const width=.43*Math.pow(Math.max(0,Math.sin(Math.PI*u)),.66)+.055;
+const height=.51*Math.pow(Math.max(0,Math.sin(Math.PI*u)),.74)+.035;
+for(let k=0;k<=sides;k++){
+const v=k/sides*Math.PI*2;
+vertices.push(x,Math.cos(v)*height,Math.sin(v)*width);
+const shade=base.clone().multiplyScalar(.77+.22*Math.cos(v)+.07*Math.sin(u*19));
+vertexColors.push(shade.r,shade.g,shade.b);
+if(j<rings&&k<sides){const q=j*(sides+1)+k;indices.push(q,q+sides+1,q+1,q+1,q+sides+1,q+sides+2)}
+}}
+const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(vertices,3));geometry.setAttribute('color',new T.Float32BufferAttribute(vertexColors,3));geometry.setIndex(indices);geometry.computeVertexNormals();
+root.add(new T.Mesh(geometry,bodyMat));
+function fin(points,material,parent=root){const shape=new T.Shape();shape.moveTo(points[0][0],points[0][1]);for(let j=1;j<points.length;j++)shape.lineTo(points[j][0],points[j][1]);shape.closePath();const g=new T.ShapeGeometry(shape,12);const m=new T.Mesh(g,material);parent.add(m);return m}
+const tailPivot=new T.Group();tailPivot.position.set(-1.03,0,0);root.add(tailPivot);
+fin([[.05,0],[-.45,.22],[-1.06,.74],[-.91,.2],[-.92,-.2],[-1.06,-.74],[-.45,-.22]],finMat,tailPivot);
+fin([[-.68,.23],[-.4,.53],[-.08,.85],[.2,.64],[.38,.31]],finMat);
+fin([[-.54,-.24],[-.34,-.53],[-.03,-.68],[.2,-.3]],finMat);
+for(const sign of [-1,1]){
+const eye=add(new T.SphereGeometry(.084,16,12),black,root,.68,.115,sign*.23);
+eye.scale.set(1,.95,.55);
+add(new T.SphereGeometry(.026,10,8),white,root,.7,.14,sign*.27);
+const pectoral=fin([[.2,-.09],[-.12,-.28],[-.43,-.48],[-.25,-.1]],finMat);
+pectoral.position.z=sign*.35;pectoral.rotation.y=sign*.36;
+for(let stripe=0;stripe<3;stripe++){
+const x=-.37+stripe*.23,mark=add(new T.SphereGeometry(.14,10,8),finMat,root,x,.12,sign*(.35+stripe*.015));
+mark.scale.set(.19,.85,.13);
+}}
+root.scale.setScalar(.7+(i%4)*.09);fishGroup.add(root);
 swimmers.push({root,tailPivot,phase:i*2.43,speed:.18+(i%5)*.06,z:-8+(i%7)*1.45,y:-1.8+(i%6)*.65});
 }
 let fishCount=0,plantCount=0;
