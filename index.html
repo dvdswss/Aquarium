@@ -201,9 +201,9 @@ const camera=new T.PerspectiveCamera(48,1,.1,90);
 camera.position.set(0,1.2,19);
 camera.lookAt(0,1.0,-9);
 world.add(new T.HemisphereLight('#f7ffff','#56828d',1.8));
-const sunlight=new T.DirectionalLight('#fff9e8',2.2);
+const sunlight=new T.DirectionalLight('#fff9e8',2.7);
 sunlight.position.set(-7,11,9);world.add(sunlight);
-const blueLight=new T.PointLight('#b9f0ff',16,24);blueLight.position.set(5,3,3);world.add(blueLight);
+const blueLight=new T.PointLight('#b9f0ff',22,30);blueLight.position.set(5,3,3);world.add(blueLight);
 const mat=(color,roughness=.78)=>new T.MeshStandardMaterial({color,roughness,metalness:.02});
 const sand=mat('#aa9374'),stone=mat('#536e72'),stone2=mat('#778b84');
 function add(geo,material,parent,x=0,y=0,z=0){const m=new T.Mesh(geo,material);m.position.set(x,y,z);parent.add(m);return m}
@@ -282,6 +282,54 @@ const x=-10+(i*5.39)%20,z=-6-(i*4.17)%25;
 const group=new T.Group();group.position.set(x,terrainHeight(x,z)+.06,z);world.add(group);
 coralTwig(group,0,0,0,.43+(i%4)*.11,0,3,coralColors[i%5]);
 group.scale.setScalar(1.7+(i%4)*.32);
+}
+// Reef garden: layered sculptural coral colonies and broad sea fans near the camera.
+const reefGarden=new T.Group();world.add(reefGarden);
+const gardenColors=['#f8b5a8','#ffcf9d','#d8b8ed','#a7e5d8','#f4a6c7','#c7e7a4'];
+const gardenMats=gardenColors.map(color=>new T.MeshStandardMaterial({color,roughness:.72,side:T.DoubleSide}));
+const coralCylinder=new T.CylinderGeometry(.055,.11,1,7);
+const coralSphere=new T.IcosahedronGeometry(1,1);
+function gardenBranch(group,x,y,z,length,angle,depth,material){
+const nx=x+Math.sin(angle)*length,ny=y+Math.cos(angle)*length;
+const stem=new T.Mesh(coralCylinder,material);
+stem.position.set((x+nx)/2,(y+ny)/2,z);stem.scale.set(.7,length,.7);stem.rotation.z=-angle;group.add(stem);
+if(depth>0){gardenBranch(group,nx,ny,z,length*.72,angle-.48,depth-1,material);gardenBranch(group,nx,ny,z,length*.68,angle+.53,depth-1,material)}
+else {const tip=new T.Mesh(new T.SphereGeometry(.055,6,5),material);tip.position.set(nx,ny,z);group.add(tip)}
+}
+for(let i=0;i<42;i++){
+const z=5-(i*3.67)%24,x=-12+(i*5.23)%24;
+const y=terrainHeight(x,z),group=new T.Group();group.position.set(x,y+.05,z);reefGarden.add(group);
+const material=gardenMats[i%gardenMats.length];
+if(i%3===0){
+for(let j=0;j<5;j++){
+const stalk=new T.Mesh(new T.CylinderGeometry(.13,.2,.75+(j%3)*.27,10),material);
+stalk.position.set((j-2)*.21,.4+(j%3)*.13,Math.sin(j*2)*.12);stalk.rotation.z=(j-2)*.12;group.add(stalk);
+const rim=new T.Mesh(new T.TorusGeometry(.14,.035,5,10),material);rim.position.copy(stalk.position);rim.position.y+=.38+(j%3)*.135;rim.rotation.x=Math.PI/2;group.add(rim);
+}
+}else if(i%3===1){
+gardenBranch(group,0,0,0,.45+(i%4)*.09,0,3,material);
+}else{
+for(let j=0;j<8;j++){
+const a=j*2.399,rad=.18+.12*Math.sqrt(j),height=.18+(j%4)*.16;
+const m=new T.Mesh(coralSphere,material);m.position.set(Math.cos(a)*rad,height,Math.sin(a)*rad);m.scale.set(.25+(j%3)*.09,.2+(j%3)*.07,.25+(j%3)*.09);group.add(m);
+}
+}
+group.scale.setScalar(.85+(i%5)*.22);
+}
+// Larger botanical silhouettes on the near edges, small details deeper into the scene.
+const frondMaterial=new T.MeshStandardMaterial({color:'#65ba88',roughness:.83,side:T.DoubleSide});
+const fronds=[];
+for(let i=0;i<22;i++){
+const side=i%2?-1:1,x=side*(4.9+(i%5)*1.2),z=7-(i*3.43)%24;
+const group=new T.Group();group.position.set(x,terrainHeight(x,z),z);reefGarden.add(group);
+const height=2.2+(i%6)*.45;
+for(let j=0;j<7;j++){
+const y=.4+j*height/8;
+const leaf=new T.Mesh(new T.SphereGeometry(1,8,6),frondMaterial);
+leaf.position.set((j%2?-1:1)*(.22+j*.035),y,0);
+leaf.scale.set(.34,.12,.09);leaf.rotation.z=(j%2?-.5:.5);group.add(leaf);
+}
+const stalk=new T.Mesh(new T.CylinderGeometry(.035,.065,height,7),frondMaterial);stalk.position.y=height/2;group.add(stalk);fronds.push(group);
 }
 // Kelp forests follow the canyon edges rather than a decorative aquarium row.
 const kelpMat=['#3b8e76','#65a989','#4b9d8a'].map(color=>new T.MeshStandardMaterial({color,side:T.DoubleSide,roughness:.9}));
@@ -490,6 +538,7 @@ p.pivot.rotation.z=Math.cos(t*12+i+j)*.12;
 });
 plants.children.forEach((p,i)=>p.rotation.z=Math.sin(t*.8+i)*.055);
 kelp.forEach((g,i)=>g.rotation.z=Math.sin(t*.65+i)*.055);
+fronds.forEach((g,i)=>g.rotation.z=Math.sin(t*.7+i*.6)*.035);
 motes.position.y=Math.sin(t*.12)*.25;motes.rotation.y=Math.sin(t*.09)*.025;
 caustics.forEach((c,i)=>{c.material=causticMat;c.rotation.z=Math.sin(t*.35+i)*.08;c.scale.x=1.35+Math.sin(t*.7+i)*.15});
 bubbles.forEach((b,i)=>{b.position.y+=.009+(i%5)*.003;if(b.position.y>6)b.position.y=-3});
