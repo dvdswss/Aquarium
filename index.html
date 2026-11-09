@@ -1,4 +1,11 @@
-<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#071725"><title>AQUARIA</title><style>
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#071725"><title>AQUARIA</title><script>
+try{if(localStorage.getItem('aquaria-preferred-view')==='3d')document.documentElement.classList.add('aquaria-restoring-3d')}catch(e){}
+</script><style id="aquaria-view-restore-guard">
+html.aquaria-restoring-3d #game #scene>canvas{visibility:hidden!important}
+html.aquaria-restoring-3d #game #scene{background:radial-gradient(ellipse at 50% 32%,#284b70 0%,#172c50 55%,#0b1c36 100%)!important}
+html.aquaria-restoring-3d #game #scene::after{content:'3D 바닷속을 불러오는 중…';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#b5e9e8;font:12px sans-serif;letter-spacing:.5px;pointer-events:none;z-index:10}
+html.aquaria-restoring-3d #game #scene.is-3d::after{display:none}
+</style><style>
 :root{--deep:#071725;--panel:#102d3b;--edge:#3c7382;--mint:#88f0d4;--sand:#f9c98d;--text:#eafbf8}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--text);font-family:ui-monospace,Menlo,Consolas,monospace;background:radial-gradient(circle at 80% 0%,#164c5a 0,transparent 35%),linear-gradient(180deg,#0a2334,#061320 70%);min-height:100vh;font-size:14px;line-height:1.55}
 header{max-width:760px;margin:auto;padding:29px 20px 17px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #285364}
@@ -1951,11 +1958,11 @@ async function setAquaria3D(){
  button.textContent='3D 불러오는 중…';button.disabled=true;
  try{
   await load();if(!initialized)build();
-  active=true;host.classList.add('is-3d');button.textContent='▤ 2D 보기';
+  active=true;host.classList.add('is-3d');document.documentElement.classList.remove('aquaria-restoring-3d');button.textContent='▤ 2D 보기';
   localStorage.setItem(viewPreferenceKey,'3d');
   start3DFrame();return true;
  }catch(err){
-  button.textContent='3D 재시도';console.error('AQUARIA 3D error:',err);
+  document.documentElement.classList.remove('aquaria-restoring-3d');button.textContent='3D 재시도';console.error('AQUARIA 3D error:',err);
   hint.textContent='3D 오류: '+String(err?.message||err).slice(0,85);
   hint.style.whiteSpace='normal';hint.style.maxWidth='85%';hint.style.textAlign='center';
   layer.style.display='block';setTimeout(()=>{if(!active)layer.style.display='none'},8000);
@@ -1964,7 +1971,7 @@ async function setAquaria3D(){
 }
 button.addEventListener('click',async()=>{
  if(active){
-  active=false;host.classList.remove('is-3d');
+  active=false;host.classList.remove('is-3d');document.documentElement.classList.remove('aquaria-restoring-3d');
   button.textContent='◈ 3D 보기';
   localStorage.setItem(viewPreferenceKey,'2d');
   return;
