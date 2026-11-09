@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#071725"><title>AQUARIA</title><style>
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#071725"><title>AQUARIA</title><style>
 :root{--deep:#071725;--panel:#102d3b;--edge:#3c7382;--mint:#88f0d4;--sand:#f9c98d;--text:#eafbf8}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--text);font-family:ui-monospace,Menlo,Consolas,monospace;background:radial-gradient(circle at 80% 0%,#164c5a 0,transparent 35%),linear-gradient(180deg,#0a2334,#061320 70%);min-height:100vh;font-size:14px;line-height:1.55}
 header{max-width:760px;margin:auto;padding:29px 20px 17px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #285364}
@@ -458,5 +458,21 @@ fishDraw(f,t);
 }
 let last=0;function frame(t){requestAnimationFrame(frame);if(document.hidden||t-last<32)return;last=t;draw(t)}
 requestAnimationFrame(frame);
+})();
+</script><style id="aquaria-no-zoom-drag">
+html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%}
+html,body,main,.tank,#scene,canvas{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+img,canvas{ -webkit-user-drag:none;user-drag:none}
+.tank,#scene,canvas{touch-action:none}
+button{touch-action:manipulation}
+</style>
+<script id="aquaria-no-zoom-drag-script">
+(function(){
+document.addEventListener('dragstart',function(e){e.preventDefault()});
+document.addEventListener('gesturestart',function(e){e.preventDefault()},{passive:false});
+document.addEventListener('gesturechange',function(e){e.preventDefault()},{passive:false});
+document.addEventListener('gestureend',function(e){e.preventDefault()},{passive:false});
+document.addEventListener('touchmove',function(e){if(e.touches.length>1)e.preventDefault()},{passive:false});
+document.addEventListener('dblclick',function(e){e.preventDefault()});
 })();
 </script></html>
