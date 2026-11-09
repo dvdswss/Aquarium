@@ -1148,7 +1148,8 @@ function fishShape(p,k){
   [.1,.2,.4,.62,.82,.96,1,.98,.9,.75,.54,.3,.1]
  ];
  const profile=profiles[k];
- const cross=[ [1,0],[.78,.65],[.34,1],[-.34,1],[-.78,.65],[-1,0],[-.78,-.65],[-.34,-1],[.34,-1],[.78,-.65] ];
+ // 14-sided anatomical section: planar dorsal ridge, broad cheeks, narrow belly.
+ const cross=[[1,0],[.91,.39],[.65,.77],[.26,1],[-.24,1],[-.65,.77],[-.91,.39],[-1,0],[-.91,-.39],[-.65,-.77],[-.24,-1],[.26,-1],[.65,-.77],[.91,-.39]];
  const facets=cross.length;
  // 13 fixed longitudinal slices, joined only by flat triangles.
  for(let i=0;i<profile.length;i++){
@@ -1156,6 +1157,9 @@ function fishShape(p,k){
   let h=p.h*profile[i]*(k===3?1.13:1),w=p.w*profile[i];
   if(k===5&&i>=6&&i<=9)h*=1.07;
   if(k===1&&i>=3&&i<=8)w*=.88;
+  // Character proportions are sculpted into the mesh, not glued on.
+  if(i>=8&&i<=10){w*=k===5?1.2:1.13;h*=k===3?1.04:1.025;}
+  if(i===11){w*=.92;h*=.95;}
   for(let j=0;j<facets;j++){
    const v=cross[j];
    // Discrete polygonal gill notch, cut into the cheek vertices.
@@ -1298,7 +1302,8 @@ function createFish(k,i){
  const tailAccentLow=new T.Shape();tailAccentLow.moveTo(-.27,-.11);tailAccentLow.lineTo(-p.tail*.74,-.39);tailAccentLow.lineTo(-p.tail*.49,-.11);tailAccentLow.closePath();
  mesh(new T.ShapeGeometry(tailAccentLow),finAccent,tailPivot,0,0,.012);
  for(const side of [-1,1]){
-  const z=side*p.w*.88;
+  // Eyes sit just above the actual polygon cheek surface, not buried inside it.
+  const z=side*p.w*.68;
   // Cute but anatomical: faceted iris, dark pupil and two tiny polygon highlights.
   const eyeSize=k===5?1.34:k===6?.94:1.16;
   const socket=mesh(eyeGeo,iris,g,p.l*.69,p.h*.15,z);
@@ -1311,7 +1316,7 @@ function createFish(k,i){
   smallGlint.scale.set(1,.8,.5);
   const mouth=mesh(new T.OctahedronGeometry(1,0),dark,g,p.l*.985,-.12,side*.035);
   mouth.scale.set(.025,.023,.11);
-  const gill=mesh(polygonRing(.2,.012,8,Math.PI*.82),dark,g,p.l*.38,-.08,side*p.w*.93);
+  const gill=mesh(polygonRing(.2,.012,8,Math.PI*.82),dark,g,p.l*.38,-.08,side*p.w*.8);
   gill.rotation.z=-.28;
  }
  // Subtle faceted cheek shading and angular eyebrows, avoiding cartoon stickers.
@@ -1337,6 +1342,11 @@ function createFish(k,i){
    plate.scale.set(1.1,.7,.23);
   }
  }
+ // Angular lower jaw with a short dark mouth slit and faceted lower lip.
+ const jaw=mesh(new T.TetrahedronGeometry(.115),main,g,p.l*.955,-.2,0);
+ jaw.scale.set(1.15,.56,1.45);
+ const mouthSlit=mesh(new T.BoxGeometry(.045,.018,.15),dark,g,p.l*1.008,-.155,0);
+ mouthSlit.rotation.z=-.16;
  // Species-specific facial anatomy and fin silhouettes.
  if(k===0){
   // Clownfish: short rounded snout and broad paddle-like pectorals.
