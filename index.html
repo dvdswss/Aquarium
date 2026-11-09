@@ -122,7 +122,12 @@ function aquariaLifeStep(){
  for(let step=0;step<elapsed;step++){
   const tick=state.lifeCheckedAt+(step+1)*period;
   const before=state.fishLives.length;
-  state.fishLives=state.fishLives.filter(f=>tick-f.born<(f.lifeDays||28)*86400000);
+  state.fishLives=state.fishLives.filter(f=>{
+   const stress=Math.max(0,(Number(f.stress)||0)-Math.max(0,tick-(f.stressAt||tick))/60000*1.5);
+   f.stress=stress;f.stressAt=tick;
+   const penalty=stress>=75?0.45:stress>=50?0.2:0;
+   return tick-f.born<(f.lifeDays||28)*(1-penalty)*86400000;
+  });
   deaths+=before-state.fishLives.length;
   if(state.fishLives.length>=2&&state.fishLives.length<38&&(state.cleanliness??100)>=55&&Math.random()<.12){
    const parent=state.fishLives[Math.floor(Math.random()*state.fishLives.length)];
@@ -201,7 +206,9 @@ window.aquariaFishTouched=function(index){
  const now=Date.now();
  fish.stress=Math.max(0,(Number(fish.stress)||0)-Math.max(0,now-(fish.stressAt||now))/60000*1.5);
  fish.stressAt=now;
- fish.stress=Math.min(100,fish.stress+15);
+ fish.touchHistory=(Array.isArray(fish.touchHistory)?fish.touchHistory:[]).filter(t=>now-t<60000);
+ fish.touchHistory.push(now);
+ if(fish.touchHistory.length>=4)fish.stress=Math.min(100,fish.stress+8+Math.min(12,(fish.touchHistory.length-4)*3));
  const stressed=fish.stress>=60;
  aquariaMissionProgress('touch');
  let reward=0;
