@@ -251,18 +251,10 @@ function aquariaFoodBonus(group){
  }
  return matching?Math.min(12,Math.round(matching/Math.max(1,count)*12)):0;
 }
-const aquariaFishScientific=['Amphiprion ocellaris','Paracanthurus hepatus','Zebrasoma flavescens','Chaetodon auriga','Gramma loreto','Pterapogon kauderni','Pterois volitans'];
-const aquariaFishPhotos=Array(7).fill(null);
-async function loadAquariaFishPhoto(i,img){
- if(aquariaFishPhotos[i]){img.src=aquariaFishPhotos[i];return;}
- try{
-  const url='https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages&piprop=thumbnail&pithumbsize=180&titles='+encodeURIComponent(aquariaFishScientific[i]);
-  const response=await fetch(url);if(!response.ok)throw Error('photo');
-  const data=await response.json();
-  const page=Object.values(data.query?.pages||{})[0];
-  const src=page?.thumbnail?.source;
-  if(src){aquariaFishPhotos[i]=src;img.src=src;}
- }catch(e){img.style.display='none';}
+function loadAquariaFishPhoto(i,img){
+ if(typeof window.aquariaFishPreview!=='function')return;
+ const src=window.aquariaFishPreview(i);
+ if(src)img.src=src;
 }
 let aquariaShopMode='fish';
 function openAquariaShop(mode){
@@ -519,7 +511,7 @@ const host=document.getElementById('scene');if(!host)return;
 const canvas=document.createElement('canvas');canvas.setAttribute('aria-label','움직이는 도트 바닷속 풍경');host.querySelectorAll('canvas').forEach(el=>el.remove());host.prepend(canvas);
 // Direct low-resolution rendering avoids iOS GPU canvas tiling and blank blits.
 const W=240,H=360;
-const ctx=canvas.getContext('2d',{alpha:false});
+let ctx=canvas.getContext('2d',{alpha:false});
 if(!ctx)return;
 function resizeScene(){
   const bounds=host.getBoundingClientRect();
@@ -909,6 +901,18 @@ if(breathing>.3)rect(12.3,1,.6,.45,'rgba(28,41,56,.72)');
 rect(-3+Math.sin(t*.001+f.phase)*2,-8,.5,1,'rgba(245,250,255,.42)');
 ctx.restore();
 }
+window.aquariaFishPreview=function(kind){
+ const preview=document.createElement('canvas');preview.width=144;preview.height=88;
+ const pc=preview.getContext('2d');if(!pc)return '';
+ const original=ctx;
+ try{
+  ctx=pc;
+  const bg=pc.createLinearGradient(0,0,0,88);bg.addColorStop(0,'#24577b');bg.addColorStop(1,'#142947');
+  pc.fillStyle=bg;pc.fillRect(0,0,144,88);
+  fishDraw({kind,x:72,y:44,z:3.3,dir:1,phase:kind*.9,tx:110,ty:44,swimRate:1.2},1200);
+  return preview.toDataURL('image/png');
+ }catch(e){return '';}finally{ctx=original;}
+};
 function draw(t){
 const grad=ctx.createLinearGradient(0,0,0,H);
 grad.addColorStop(0,'#80d8e8');grad.addColorStop(.16,'#438db8');grad.addColorStop(.43,'#344e92');grad.addColorStop(.72,'#332f76');grad.addColorStop(1,'#191e50');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
