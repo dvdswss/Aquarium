@@ -1234,7 +1234,7 @@ const fishBodies=fishProfiles.map(fishShape);
 const eyeGeo=new T.SphereGeometry(.075,12,9);
 function createFish(k,i){
  const g=new T.Group();scene.add(g);
- const p=fishProfiles[k],size=[.34,.47,.42,.39,.3,.31,.49][k]*(.88+(i%4)*.045);
+ const p=fishProfiles[k],size=[.36,.49,.43,.41,.31,.32,.5][k]*(.88+(i%4)*.045);
  const main=mat(colors[k],.44),dark=mat(k===1?0x10275a:0x45364b),white=mat(0xfff0dc);
  const finMat=new T.MeshStandardMaterial({color:colors[k],roughness:.48,transparent:true,opacity:.88,side:T.DoubleSide,depthWrite:false});
  const eye=mat(0x101923,.14),iris=mat(0xe3d6ad,.2);
@@ -1262,6 +1262,61 @@ function createFish(k,i){
   mouth.scale.set(.025,.023,.11);
   const gill=mesh(new T.TorusGeometry(.2,.012,4,18,Math.PI*.82),dark,g,p.l*.38,-.08,side*p.w*.93);
   gill.rotation.z=-.28;
+ }
+ // Species-specific facial anatomy and fin silhouettes.
+ if(k===0){
+  // Clownfish: short rounded snout and broad paddle-like pectorals.
+  const snout=mesh(new T.SphereGeometry(1,14,10),main,g,p.l*.91,-.1,0);
+  snout.scale.set(.16,.16,.2);
+  for(const side of [-1,1]){
+   const pFin=mesh(new T.SphereGeometry(1,12,8),finMat,g,.03,-.2,side*.33);
+   pFin.scale.set(.26,.13,.055);pFin.rotation.z=-.35;
+  }
+ }
+ if(k===1||k===2){
+  // Surgeonfish: pointed beak and a flattened, sharp-edged tail root.
+  const beak=mesh(new T.ConeGeometry(.15,.32,12),main,g,p.l*.97,-.11,0);
+  beak.rotation.z=-Math.PI/2;
+  const blade=mesh(new T.SphereGeometry(1,12,8),k===1?mat(0xf2d963):white,g,-p.l*.89,-.05,0);
+  blade.scale.set(.09,.035,.23);
+ }
+ if(k===3){
+  // Butterflyfish: narrow protruding feeding snout and a trailing dorsal crest.
+  const snout=mesh(new T.CylinderGeometry(.065,.11,.32,10),main,g,p.l*1.02,-.18,0);
+  snout.rotation.z=-Math.PI/2;
+  const crest=mesh(new T.SphereGeometry(1,14,8),finMat,g,-.18,p.h*.94,0);
+  crest.scale.set(.65,.16,.045);
+  for(const side of [-1,1]){
+   const eyespot=mesh(new T.SphereGeometry(.12,12,9),dark,g,-p.l*.65,.21,side*p.w*.89);
+   eyespot.scale.z=.3;
+  }
+ }
+ if(k===4){
+  // Royal gramma: small pointed muzzle and elongated rear fin.
+  const muzzle=mesh(new T.SphereGeometry(1,12,8),main,g,p.l*.91,-.09,0);
+  muzzle.scale.set(.18,.1,.14);
+ }
+ if(k===5){
+  // Cardinalfish: exceptionally large eyes and extended ventral fin streamers.
+  for(const side of [-1,1]){
+   const eyeRim=mesh(new T.TorusGeometry(.112,.017,6,18),dark,g,p.l*.69,p.h*.15,side*p.w*.93);
+   cylinderBetween(g,new T.Vector3(-.28,-.34,side*.12),new T.Vector3(-.55,-1.02,side*.23),.015,.003,white,5);
+  }
+ }
+ if(k===6){
+  // Lionfish: fan-shaped pectorals, long separated spines and a broad head.
+  const head=mesh(new T.SphereGeometry(1,14,10),main,g,.62,-.04,0);
+  head.scale.set(.44,.37,.42);
+  for(const side of [-1,1]){
+   const fan=new T.Group();fan.position.set(.1,-.07,side*.33);g.add(fan);
+   const pts=[[0,0],[-.48,.3],[-1.12,.16],[-1.25,-.14],[-1.08,-.51],[-.65,-.7]];
+   sculptFin(fan,pts,finMat,0x634258,side*.008);
+   fan.rotation.y=side*.3;
+   for(let j=0;j<6;j++){
+    const angle=-.55+j*.19;
+    cylinderBetween(fan,new T.Vector3(0,0,0),new T.Vector3(-.85-Math.sin(j)*.28,.26-j*.17,0),.012,.003,j%2?white:dark,4);
+   }
+  }
  }
  // Anatomical tail base and curved gill covers for a continuous silhouette.
  const peduncle=mesh(new T.SphereGeometry(1,14,10),main,g,-p.l*.91,0,0);
