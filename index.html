@@ -401,15 +401,42 @@ rect(-6,2,4,1,'rgba(255,255,255,.35)');ctx.restore();
 }
 function draw(t){
 const grad=ctx.createLinearGradient(0,0,0,H);
-grad.addColorStop(0,'#66c5f3');grad.addColorStop(.12,'#286ba8');grad.addColorStop(.56,'#163f7b');grad.addColorStop(1,'#101f53');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+grad.addColorStop(0,'#80d8e8');grad.addColorStop(.16,'#438db8');grad.addColorStop(.43,'#344e92');grad.addColorStop(.72,'#332f76');grad.addColorStop(1,'#191e50');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+// Dreamlike submerged aurora: translucent lavender and turquoise halos.
+for(let i=0;i<5;i++){
+const x=35+i*49+Math.sin(t*.00015+i)*8,y=75+i%3*62;
+const glow=ctx.createRadialGradient(x,y,2,x,y,64+i%2*24);
+glow.addColorStop(0,i%2?'rgba(195,133,237,.17)':'rgba(100,233,226,.18)');
+glow.addColorStop(1,'rgba(30,35,100,0)');
+ctx.fillStyle=glow;ctx.fillRect(x-95,y-95,190,190);
+}
+// Soft moonlit caustics drift across the upper water.
+for(let i=0;i<16;i++){
+const x=rand(i+203)*W,y=15+rand(i+310)*165;
+const shift=Math.sin(t*.0004+i*2)*5;
+rect(x+shift,y,12+rand(i+13)*18,1,'rgba(189,236,250,.12)');
+}
+
 // Moving sunlit ripples, light shafts and distant suspended particles.
 for(let i=0;i<68;i++){const x=rand(i+34)*W,y=rand(i+99)*33;rect(x+Math.sin(t*.0005+i)*2,y,3+(i%6)*2,1,i%3?'#a1e7ff':'#d8fbff')}
-for(let i=0;i<11;i++){const x=8+i*24+Math.sin(t*.0003+i)*3;polygon([[x,5],[x+4,5],[x+28,245],[x-24,245]],'rgba(185,235,255,.022)')}
-for(let i=0;i<14;i++){const x=rand(i+920)*W,y=75+rand(i+101)*170;rect(x,y,1,1,'rgba(164,213,245,.18)')}
+for(let i=0;i<11;i++){const x=8+i*24+Math.sin(t*.0003+i)*3;polygon([[x,5],[x+4,5],[x+28,245],[x-24,245]],'rgba(206,199,255,.042)')}
+for(let i=0;i<14;i++){const x=rand(i+920)*W,y=75+rand(i+101)*170;rect(x,y,1,1,'rgba(211,188,255,.26)')}
+// Rare floating bioluminescent spores, with pixel cores and faint halos.
+for(let i=0;i<27;i++){
+const x=rand(i+770)*W+Math.sin(t*.00032+i)*3;
+const y=(rand(i+880)*H-t*(.0012+rand(i+23)*.002)+H)%H;
+const pulse=.55+.45*Math.sin(t*.0016+i*3);
+const r=i%5===0?9:5;
+const light=ctx.createRadialGradient(x,y,0,x,y,r);
+light.addColorStop(0,i%3?'rgba(181,255,231,'+(.20*pulse)+')':'rgba(237,181,255,'+(.24*pulse)+')');
+light.addColorStop(1,'rgba(180,190,255,0)');
+ctx.fillStyle=light;ctx.fillRect(x-r,y-r,r*2,r*2);
+if(i%3===0)rect(x,y,1,1,i%2?'#b8ffe7':'#edc8ff');
+}
 // Ruins behind coral reefs, with shadowed archways.
 function arch(x,y,w,h){
-rect(x,y,w,5,'#6587a7');rect(x+3,y-5,w-6,3,'#91a9c1');
-rect(x+3,y+5,5,h,'#567a9a');rect(x+w-8,y+5,5,h,'#567a9a');
+rect(x,y,w,5,'#657d9f');rect(x+3,y-5,w-6,3,'#91a2c2');
+rect(x+3,y+5,5,h,'#52688f');rect(x+w-8,y+5,5,h,'#52688f');
 rect(x+8,y+7,w-16,h-7,'#204a76');
 for(let k=0;k<3;k++){rect(x+3,y+10+k*9,5,1,'#8ea6b6');rect(x+w-8,y+10+k*9,5,1,'#8ea6b6')}
 }
@@ -418,12 +445,12 @@ for(let layer=0;layer<3;layer++){
 const base=236+layer*40;
 const pts=[[0,H],[0,base]];
 for(let x=0;x<=W;x+=6)pts.push([x,base+Math.sin(x*.03+layer*2)*13+Math.cos(x*.075+layer)*6]);
-pts.push([W,H]);polygon(pts,['#1b517b','#245d7d','#426d85'][layer]);
+pts.push([W,H]);polygon(pts,['#2d4276','#3b557f','#496784'][layer]);
 }
 // Varied rock shelves and bright highlight edges.
 for(let i=0;i<44;i++){
 const x=rand(i+201)*W,y=250+rand(i+305)*104,r=5+rand(i+411)*17;
-polygon([[x-r,y],[x-r*.7,y-r*.7],[x+r*.35,y-r],[x+r,y-r*.25],[x+r*.7,y+5],[x-r*.7,y+5]],i%3?'#456787':'#547b91');
+polygon([[x-r,y],[x-r*.7,y-r*.7],[x+r*.35,y-r],[x+r,y-r*.25],[x+r*.7,y+5],[x-r*.7,y+5]],i%3?'#4d6389':'#60769a');
 polygon([[x-r*.7,y-r*.7],[x+r*.35,y-r],[x+r*.2,y-r*.5]],'#7b9eb2');
 }
 // Five intentional plant clusters tucked beside rocks; open middle channel.
