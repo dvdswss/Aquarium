@@ -722,7 +722,7 @@ function drawNewSpecies(f,t,k){
  const z=(f.z||1)*.95,phase=f.phase||0,sw=Math.sin(t*.014+phase)*2;
  ctx.save();ctx.translate(f.x,f.y+Math.sin(t*.0026+phase)*.65);ctx.scale((f.dir||1)*z,z);
  const C=ctx;
- function shape(pts,fill,stroke){C.beginPath();C.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)C.lineTo(pts[i][0],pts[i][1]);C.closePath();C.fillStyle=fill;C.fill();if(stroke){C.strokeStyle=stroke;C.lineWidth=.55;C.stroke();}}
+ function shape(pts,fill,stroke){C.beginPath();C.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++){const p=pts[i],n=pts[(i+1)%pts.length];C.quadraticCurveTo(p[0],p[1],(p[0]+n[0])/2,(p[1]+n[1])/2);}C.quadraticCurveTo(pts[0][0],pts[0][1],(pts[0][0]+pts[1][0])/2,(pts[0][1]+pts[1][1])/2);C.closePath();C.fillStyle=fill;C.fill();if(stroke){C.strokeStyle=stroke;C.lineWidth=.55;C.stroke();}}
  function ellipse(x,y,rx,ry,color){C.beginPath();C.ellipse(x,y,rx,ry,0,0,Math.PI*2);C.fillStyle=color;C.fill();}
  function line(x,y,X,Y,color,w=.55){C.strokeStyle=color;C.lineWidth=w;C.beginPath();C.moveTo(x,y);C.lineTo(X,Y);C.stroke();}
  function curved(points,color,w=1){C.strokeStyle=color;C.lineWidth=w;C.lineCap='round';C.beginPath();C.moveTo(points[0],points[1]);for(let i=2;i<points.length;i+=2)C.lineTo(points[i],points[i+1]);C.stroke();}
@@ -1000,7 +1000,7 @@ window.aquariaFishPreview=function(kind){
   ctx=pc;
   const bg=pc.createLinearGradient(0,0,0,88);bg.addColorStop(0,'#24577b');bg.addColorStop(1,'#142947');
   pc.fillStyle=bg;pc.fillRect(0,0,144,88);
-  fishDraw({kind,x:72,y:44,z:5.4,dir:1,phase:kind*.9,tx:110,ty:44,swimRate:1.2},1200);
+  fishDraw({kind,x:72,y:45,z:2.65,dir:1,phase:kind*.9,tx:110,ty:44,swimRate:1.2},1200);
   return preview.toDataURL('image/png');
  }catch(e){return '';}finally{ctx=original;}
 };
