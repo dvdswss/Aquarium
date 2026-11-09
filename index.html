@@ -907,4 +907,146 @@ document.addEventListener('dblclick',function(e){e.preventDefault()});
 </script><style id="aquaria-ios-canvas-sizing-v2">
 #game #scene{position:relative!important;overflow:hidden!important;contain:layout paint!important}
 #game #scene canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;image-rendering:auto!important;object-fit:fill!important;transform:none!important}
-</style></html>
+</style>
+<style id="aquaria-3d-style">
+#scene .view-switch{position:absolute;top:12px;right:12px;z-index:30;min-height:34px;padding:5px 11px;border:1px solid #9be9df;border-radius:18px;background:#0a3449df;color:#e8fffb;font-size:12px;box-shadow:0 2px 9px #041b30}
+#scene .three-world{position:absolute;inset:0;z-index:12;display:none;overflow:hidden;touch-action:none}
+#scene.is-3d .three-world{display:block}
+#scene.is-3d>canvas:not(.three-world canvas){visibility:hidden}
+#scene .three-hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:15;pointer-events:none;color:#e5faff;background:#092b45b8;padding:6px 10px;border-radius:20px;font-size:11px;white-space:nowrap}
+</style>
+<script id="aquaria-3d-world">
+(function(){
+const host=document.getElementById('scene');if(!host)return;
+const button=document.createElement('button');button.className='view-switch';button.textContent='◈ 3D 보기';button.type='button';host.append(button);
+const layer=document.createElement('div');layer.className='three-world';host.append(layer);
+const hint=document.createElement('div');hint.className='three-hint';hint.textContent='드래그: 360° 회전 · 두 손가락: 확대/이동';layer.append(hint);
+let initialized=false,active=false,renderer,scene,camera,fish=[],orbit={theta:0,phi:1.32,radius:17,targetY:2.2},pointer=new Map(),lastDistance=0;
+const colors=[0xf17d35,0x256dce,0xf3d347,0xf2e5b0,0x9255bc,0xe8e5d8,0xb87565];
+const THREE_URL='https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js';
+function load(){
+return new Promise((resolve,reject)=>{
+ if(window.THREE)return resolve(window.THREE);
+ const script=document.createElement('script');script.src=THREE_URL;script.onload=()=>window.THREE?resolve(window.THREE):reject(Error('3D library missing'));script.onerror=reject;document.head.append(script);
+});
+}
+function build(){
+const T=window.THREE;
+scene=new T.Scene();scene.background=new T.Color(0x123b67);scene.fog=new T.FogExp2(0x16466d,.022);
+camera=new T.PerspectiveCamera(54,1,.1,90);
+renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'default'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));renderer.outputColorSpace=T.SRGBColorSpace;
+layer.insertBefore(renderer.domElement,hint);
+scene.add(new T.HemisphereLight(0x91f6ff,0x18234d,2.2));
+const light=new T.DirectionalLight(0xb7f7ff,2.2);light.position.set(-4,13,5);scene.add(light);
+const glow=new T.PointLight(0x9e78e8,35,19);glow.position.set(2,4,-2);scene.add(glow);
+const mat=(c,rough=.8,transparent=false,opacity=1)=>new T.MeshStandardMaterial({color:c,roughness:rough,metalness:.04,transparent,opacity,side:T.DoubleSide});
+const sand=mat(0x314968),rock=mat(0x65768b),stone=mat(0x72879a),algae=mat(0x2d9b85),coral=[mat(0xec879c),mat(0xe4a5d8),mat(0x83d5cb),mat(0xf3b784)];
+function mesh(geo,m,parent,x=0,y=0,z=0){const o=new T.Mesh(geo,m);o.position.set(x,y,z);parent.add(o);return o}
+const floor=mesh(new T.CylinderGeometry(8.3,8.3,.4,72),sand,scene,0,-.3,0);
+const glass=mesh(new T.CylinderGeometry(8.4,8.4,8.6,72,1,true),new T.MeshPhysicalMaterial({color:0x85dff5,transparent:true,opacity:.035,roughness:.08,metalness:.05,side:T.DoubleSide,depthWrite:false}),scene,0,4.05,0);
+const ruins=mat(0x8295aa);
+for(let i=0;i<9;i++){
+ const a=i*2.399,r=2.5+(i%3)*1.7,x=Math.cos(a)*r,z=Math.sin(a)*r;
+ const h=1.4+(i%4)*.43;
+ mesh(new T.CylinderGeometry(.32,.44,h,7),ruins,scene,x,h/2,z);
+ if(i%3===0)mesh(new T.BoxGeometry(1.9,.23,.5),ruins,scene,x,h+.1,z);
+}
+for(let i=0;i<36;i++){
+ const a=i*2.4,r=1.5+(i%8)*.75,x=Math.cos(a)*r,z=Math.sin(a)*r;
+ const b=mesh(new T.DodecahedronGeometry(.22+(i%4)*.14,0),rock,scene,x,.12,z);b.scale.y=.6;
+}
+for(let i=0;i<35;i++){
+ const a=i*2.17,r=2+(i%7)*.8,x=Math.cos(a)*r,z=Math.sin(a)*r;
+ const group=new T.Group();group.position.set(x,0,z);scene.add(group);
+ const c=coral[i%coral.length];
+ for(let j=0;j<3+(i%3);j++){
+ const branch=mesh(new T.CylinderGeometry(.045,.1,.65+(j%3)*.25,6),c,group,(j-2)*.12,.36,0);
+ branch.rotation.z=(j-2)*.3;
+ }
+}
+for(let i=0;i<24;i++){
+ const a=i*2.7,r=2+(i%6)*1.05,x=Math.cos(a)*r,z=Math.sin(a)*r;
+ const blade=mesh(new T.ConeGeometry(.1,1.2+(i%4)*.35,5),algae,scene,x,.55,z);blade.rotation.z=(i%3-1)*.2;
+}
+const fishBody=new T.SphereGeometry(1,16,12);
+const finGeo=new T.ConeGeometry(1,1,3);
+function createFish(k,i){
+ const g=new T.Group();scene.add(g);
+ const size=[.35,.53,.44,.39,.29,.29,.58][k]*(.86+(i%4)*.06);
+ const main=mat(colors[k],.48),dark=mat(k===1?0x102e73:0x473b53),white=mat(0xfff4e0),eye=mat(0x101c28,.1);
+ const body=mesh(fishBody,main,g);body.scale.set(1.05,.58,.32);
+ const tail=mesh(finGeo,k===2?main:dark,g,-1.3,0,0);tail.rotation.z=-Math.PI/2;tail.scale.set(.52,.7,.17);
+ const dorsal=mesh(finGeo,k===6?dark:main,g,-.15,.69,0);dorsal.scale.set(.7,.55,.16);
+ const fin=mesh(finGeo,k===5?white:main,g,-.12,-.48,.23);fin.rotation.z=Math.PI;fin.scale.set(.45,.45,.15);
+ for(const side of [-1,1]){
+ const e=mesh(new T.SphereGeometry(.085,9,7),eye,g,.72,.14,side*.28);
+ if(k===0){
+ for(const x of [-.56,.15,.7]){const stripe=mesh(new T.SphereGeometry(1,12,10),white,g,x,0,0);stripe.scale.set(.12,.59,.325)}
+ }
+ if(k===5){for(const x of [-.55,.35]){const stripe=mesh(new T.BoxGeometry(.13,1.1,.66),dark,g,x,0,0)}}
+ }
+ if(k===1){const marking=mesh(new T.SphereGeometry(1,12,8),dark,g,-.12,.13,.13);marking.scale.set(.65,.23,.23)}
+ if(k===4){const purple=mesh(new T.SphereGeometry(1,12,8),mat(0x7036ac),g,.48,0,0);purple.scale.set(.57,.58,.32)}
+ if(k===6){for(let j=0;j<7;j++){const spine=mesh(new T.ConeGeometry(.035,.9+(j%3)*.2,5),j%2?white:dark,g,-.7+j*.23,.9,0);spine.rotation.z=(j-3)*.16}}
+ g.scale.setScalar(size);
+ const angle=i*2.399;
+ const data={g,tail,fin,k,phase:i*1.6,angle,radius:2.3+(i%6)*.65,height:1.5+(i%5)*.9,speed:[.00017,.0003,.00021,.00018,.00026,.00012,.0001][k]};
+ fish.push(data);
+}
+function syncFish(){
+ const count=Math.min(38,Math.max(0,Number((window.state||{}).virtual)||Number(document.getElementById('population')?.textContent)||5));
+ while(fish.length<count)createFish(fish.length%7,fish.length);
+ while(fish.length>count){const f=fish.pop();scene.remove(f.g)}
+}
+syncFish();
+function updateCamera(){
+ orbit.phi=Math.max(.18,Math.min(Math.PI-.18,orbit.phi));
+ orbit.radius=Math.max(5.5,Math.min(27,orbit.radius));
+ camera.position.set(Math.sin(orbit.theta)*Math.sin(orbit.phi)*orbit.radius,orbit.targetY+Math.cos(orbit.phi)*orbit.radius,Math.cos(orbit.theta)*Math.sin(orbit.phi)*orbit.radius);
+ camera.lookAt(0,orbit.targetY,0);
+}
+function resize(){const r=layer.getBoundingClientRect();if(!r.width||!r.height)return;camera.aspect=r.width/r.height;camera.updateProjectionMatrix();renderer.setSize(r.width,r.height,false)}
+let last=0;
+function frame(t){
+ if(!active)return;
+ requestAnimationFrame(frame);
+ if(t-last<30)return;last=t;
+ resize();syncFish();updateCamera();
+ for(const f of fish){
+ const a=f.angle+t*f.speed;
+ const r=f.radius+Math.sin(t*.00037+f.phase)*.23;
+ f.g.position.set(Math.cos(a)*r,f.height+Math.sin(t*.0018+f.phase)*.13,Math.sin(a)*r);
+ f.g.rotation.y=-a-Math.PI/2+Math.sin(t*.001+f.phase)*.05;
+ f.tail.rotation.y=Math.sin(t*[.018,.029,.015,.022,.025,.011,.009][f.k]+f.phase)*.4;
+ f.fin.rotation.x=Math.sin(t*.025+f.phase)*.45;
+ }
+ renderer.render(scene,camera);
+}
+layer.addEventListener('pointerdown',e=>{layer.setPointerCapture(e.pointerId);pointer.set(e.pointerId,{x:e.clientX,y:e.clientY});lastDistance=0});
+layer.addEventListener('pointermove',e=>{
+ if(!pointer.has(e.pointerId))return;
+ const old=pointer.get(e.pointerId);pointer.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(pointer.size===1){orbit.theta-=(e.clientX-old.x)*.008;orbit.phi-=(e.clientY-old.y)*.008}
+ else if(pointer.size===2){
+ const [a,b]=[...pointer.values()],dist=Math.hypot(a.x-b.x,a.y-b.y);
+ if(lastDistance)orbit.radius*=lastDistance/Math.max(10,dist);
+ lastDistance=dist;
+ }
+});
+function end(e){pointer.delete(e.pointerId);lastDistance=0}
+layer.addEventListener('pointerup',end);layer.addEventListener('pointercancel',end);
+layer.addEventListener('wheel',e=>{e.preventDefault();orbit.radius*=e.deltaY>0?1.09:.91},{passive:false});
+layer.addEventListener('dblclick',()=>{orbit.theta=0;orbit.phi=1.32;orbit.radius=17});
+initialized=true;resize();updateCamera();
+}
+button.addEventListener('click',async()=>{
+ if(active){active=false;host.classList.remove('is-3d');button.textContent='◈ 3D 보기';return}
+ button.textContent='3D 불러오는 중…';button.disabled=true;
+ try{await load();if(!initialized)build();active=true;host.classList.add('is-3d');button.textContent='▤ 2D 보기';requestAnimationFrame(frame)}
+ catch(err){button.textContent='3D 로딩 실패';console.error(err)}
+ finally{button.disabled=false}
+});
+})();
+</script>
+</html>
