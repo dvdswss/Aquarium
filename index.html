@@ -378,9 +378,17 @@ else{rect(nx-.7,ny-.7,1.5,1.5,tip);rect(nx+.5,ny-.5,.5,.5,'rgba(255,255,255,.65)
 branch(x,y,size,0,3);ctx.restore();
 }
 function fishDraw(f,t){
-const bob=Math.sin(t*.0028+f.phase)*1.7,x=Math.round(f.x*2)/2,y=Math.round((f.y+bob)*2)/2,z=f.z;
+const kind=f.kind||0;
+// Relative adult lengths: clownfish ~10cm, blue tang ~30cm, yellow tang ~20cm,
+// butterflyfish ~18cm, royal gramma ~8cm, Banggai cardinal ~8cm, lionfish ~30cm.
+// Compress real-world ratios for a readable miniature aquarium while preserving rank.
+const speciesSize=[.86,1.32,1.10,1.02,.72,.75,1.34];
+const individual= .94+rand((f.phase||0)*11+13)*.12;
+const z=f.z*speciesSize[kind]*individual;
+const bob=Math.sin(t*.0028+f.phase)*(kind===5?.55:kind===6?.8:1.3);
+const x=Math.round(f.x*2)/2,y=Math.round((f.y+bob)*2)/2;
 ctx.save();ctx.translate(x,y);ctx.scale(f.dir*z,z);
-const kind=f.kind||0,swimRate=[.019,.029,.016,.023,.025,.012,.010][kind],beat=Math.sin(t*swimRate+f.phase)*2.2;
+const swimRate=[.019,.029,.016,.023,.025,.012,.010][kind],beat=Math.sin(t*swimRate+f.phase)*2.2;
 function poly(p,c){polygon(p,c)}
 function body(p,base,highlight,shadow){
 poly(p,base);
