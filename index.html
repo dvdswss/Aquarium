@@ -302,7 +302,11 @@ html,body{max-width:100%;overflow-x:hidden}
 const host=document.getElementById('scene');if(!host)return;
 const canvas=document.createElement('canvas');canvas.setAttribute('aria-label','움직이는 도트 바닷속 풍경');host.prepend(canvas);
 const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)return;
-const W=240,H=360;canvas.width=W;canvas.height=H;ctx.imageSmoothingEnabled=false;
+// Render at 2x internal resolution for finer pixel edges and small details.
+const W=240,H=360,PIXEL_SCALE=2;
+canvas.width=W*PIXEL_SCALE;canvas.height=H*PIXEL_SCALE;
+ctx.setTransform(PIXEL_SCALE,0,0,PIXEL_SCALE,0,0);
+ctx.imageSmoothingEnabled=false;
 const rand=(n)=>{let x=Math.sin(n*127.1+78.23)*43758.5453;return x-Math.floor(x)};
 const palette=['#ffbd82','#9ee9e0','#f9a4be','#ffe6a0','#b8a7f3','#9ad1ff'];
 const fish=[];
@@ -312,7 +316,7 @@ while(fish.length<count){const i=fish.length;fish.push({x:30+rand(i+12)*180,y:95
 fish.length=count;
 }
 window.syncAquarium3D=sync;sync();
-function rect(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h))}
+function rect(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(Math.round(x*2)/2,Math.round(y*2)/2,Math.max(.5,Math.round(w*2)/2),Math.max(.5,Math.round(h*2)/2))}
 function polygon(points,color){ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);for(let i=1;i<points.length;i++)ctx.lineTo(points[i][0],points[i][1]);ctx.closePath();ctx.fill()}
 // Individually composed sea plants, not a repeated random carpet.
 function plant(x,y,h,i,t,far=false){
@@ -421,6 +425,12 @@ rect(x+shift,y,12+rand(i+13)*18,1,'rgba(189,236,250,.12)');
 for(let i=0;i<68;i++){const x=rand(i+34)*W,y=rand(i+99)*33;rect(x+Math.sin(t*.0005+i)*2,y,3+(i%6)*2,1,i%3?'#a1e7ff':'#d8fbff')}
 for(let i=0;i<11;i++){const x=8+i*24+Math.sin(t*.0003+i)*3;polygon([[x,5],[x+4,5],[x+28,245],[x-24,245]],'rgba(206,199,255,.042)')}
 for(let i=0;i<14;i++){const x=rand(i+920)*W,y=75+rand(i+101)*170;rect(x,y,1,1,'rgba(211,188,255,.26)')}
+// Half-unit glints now resolve as smaller, finer pixels on the 2x canvas.
+for(let i=0;i<52;i++){
+const x=rand(i+1240)*W,y=42+rand(i+1310)*252;
+const twinkle=.35+.65*Math.max(0,Math.sin(t*.001+i*2.7));
+rect(x,y,.5,.5,'rgba(211,239,255,'+(twinkle*.7)+')');
+}
 // Rare floating bioluminescent spores, with pixel cores and faint halos.
 for(let i=0;i<27;i++){
 const x=rand(i+770)*W+Math.sin(t*.00032+i)*3;
