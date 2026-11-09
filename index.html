@@ -1051,7 +1051,7 @@ const nextPoint=(f,i,k,t)=>{
 f.trip=(f.trip||0)+1;
 const seed=f.trip*17.17+i*29.37+k*5.1;
 const r=rand(seed),r2=rand(seed+9),r3=rand(seed+21);
-const sites=habitat[k];
+const sites=habitat[k]||[[45,170],[120,155],[195,180]];
 let tx=120,ty=165,wait=0,rate=1;
 if(k===0){ // Clownfish: defend one host, retreat and dart out.
 const host=sites[f.hostIndex];
@@ -1093,7 +1093,7 @@ f.swimRate=rate;f.waitDuration=wait;f.waitUntil=0;
 fish.forEach((f,i)=>{
 const k=f.kind||0;
 if(!f.aiReady){
-f.aiReady=true;f.trip=0;f.hostIndex=i%(habitat[k]?.length||1);
+f.aiReady=true;f.trip=0;f.hostIndex=i%((habitat[k]||[[120,170]]).length);
 f.tx=f.x;f.ty=f.y;f.waitUntil=0;f.waitDuration=0;
 f.turnEase=f.dir;f.lastMove=0;
 nextPoint(f,i,k,t);
