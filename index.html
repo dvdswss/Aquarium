@@ -1139,17 +1139,17 @@ const fishProfiles=[
 // Hand-authored polygon silhouettes. No spline, subdivision, or curved surface.
 function fishShape(p,k){
  const silhouettes=[
-  [.16,.27,.46,.68,.88,1,1.03,1.01,.95,.83,.68,.48,.27,.13],
-  [.12,.2,.37,.57,.77,.91,.98,1,.98,.91,.78,.58,.33,.11],
-  [.12,.22,.41,.64,.83,.96,1,1,.98,.91,.76,.53,.3,.12],
-  [.12,.24,.46,.72,.91,1,1.03,1.02,.96,.84,.65,.43,.22,.08],
-  [.14,.25,.44,.66,.85,.97,1,1,.96,.86,.7,.49,.28,.12],
-  [.14,.27,.49,.73,.92,1,1,.97,.91,.78,.62,.42,.23,.1],
-  [.14,.26,.46,.67,.84,.96,1,1,.95,.85,.69,.47,.27,.12]
+  [.10,.16,.28,.44,.64,.82,.97,1.06,1.12,1.12,1.04,.84,.52,.17],
+  [.08,.14,.25,.4,.58,.77,.93,1.03,1.09,1.09,1,.78,.46,.13],
+  [.08,.15,.28,.45,.65,.83,.98,1.08,1.12,1.1,1,.77,.46,.13],
+  [.08,.15,.3,.5,.72,.9,1.04,1.12,1.14,1.1,.96,.7,.39,.1],
+  [.1,.17,.31,.48,.67,.85,.99,1.08,1.11,1.08,.98,.76,.45,.14],
+  [.1,.18,.33,.53,.76,.94,1.08,1.14,1.13,1.06,.91,.68,.39,.12],
+  [.1,.17,.3,.47,.66,.83,.98,1.07,1.1,1.07,.97,.76,.45,.14]
  ];
  const profile=silhouettes[k],positions=[],uvs=[],indices=[];
  // Octagonal cross-sections with distinct planes, gentle overall silhouette.
- const section=[[1,0],[.72,.72],[0,1],[-.72,.72],[-1,0],[-.72,-.72],[0,-1],[.72,-.72]];
+ const section=[[1,0],[.87,.5],[.5,.87],[0,1],[-.5,.87],[-.87,.5],[-1,0],[-.87,-.5],[-.5,-.87],[0,-1],[.5,-.87],[.87,-.5]];
  const sides=section.length,last=profile.length-1;
  for(let i=0;i<=last;i++){
   const u=i/last,x=-p.l+2*p.l*u;
@@ -1159,7 +1159,7 @@ function fishShape(p,k){
   if(k===5)h*=1.07;
   if(k===1||k===2)w*=.91;
   // Cute silhouette comes from the forehead and cheeks, not facial stickers.
-  if(i>=9&&i<=11){w*=1.12;h*=1.035;}
+  if(i>=7&&i<=11){w*=1.18;h*=1.04;}
   for(let j=0;j<sides;j++){
    const [vy,vz]=section[j];
    const brow=(i===10||i===11)&&vy>0?.035:0;
@@ -1297,12 +1297,12 @@ function createFish(k,i){
  const iris=mat(k===1?0x344e74:k===5?0x70513f:0x483c38,.32);
  const black=mat(0x151d2b,.24);
  for(const side of [-1,1]){
-  const z=side*p.w*.95;
-  const eye=mesh(new T.OctahedronGeometry(.115,0),iris,g,p.l*.73,p.h*.17,z);
+  const z=side*p.w*1.03;
+  const eye=mesh(new T.OctahedronGeometry(.14,0),iris,g,p.l*.7,p.h*.22,z);
   eye.scale.set(1.02,1.08,.6);
-  const pupil=mesh(new T.OctahedronGeometry(.083,0),black,g,p.l*.747,p.h*.17,z+side*.055);
+  const pupil=mesh(new T.OctahedronGeometry(.103,0),black,g,p.l*.717,p.h*.22,z+side*.055);
   pupil.scale.set(1,1.05,.54);
-  const shine=mesh(new T.TetrahedronGeometry(.027),ivory,g,p.l*.733,p.h*.208,z+side*.101);
+  const shine=mesh(new T.TetrahedronGeometry(.027),ivory,g,p.l*.7,p.h*.265,z+side*.101);
   shine.scale.set(.7,.75,.45);
   const gill=mesh(polygonRing(.16,.008,7,Math.PI*.8),main,g,p.l*.38,-.075,side*p.w*.88);
   gill.rotation.z=-.18;
