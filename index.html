@@ -741,7 +741,7 @@ function drawReefFish(f,t,k){
  function path(fn,fill,stroke,width=.55){C.beginPath();fn();if(fill){C.fillStyle=fill;C.fill();}if(stroke){C.strokeStyle=stroke;C.lineWidth=width;C.stroke();}}
  function ellipse(x,y,rx,ry,fill){path(()=>C.ellipse(x,y,rx,ry,0,0,Math.PI*2),fill);}
  function line(x,y,X,Y,color,w=.6){path(()=>{C.moveTo(x,y);C.lineTo(X,Y)},null,color,w);}
- function fin(points,color,edge){path(()=>{C.moveTo(...points[0]);for(let i=1;i<points.length;i++){const p=points[i],n=points[(i+1)%points.length];C.quadraticCurveTo(p[0],p[1],(p[0]+n[0])/2,(p[1]+n[1])/2);}C.closePath()},color,edge,.4);}
+ function fin(points,color,edge){path(()=>{C.moveTo(...points[0]);for(let i=1;i<points.length;i++){const p=points[i],n=points[(i+1)%points.length];C.lineTo(p[0],p[1]);}C.closePath()},color,edge,.4);}
  const thin=[4,7,8,13].includes(k),deep=[2,3,9,10].includes(k),tall=k===5;
  const half=deep?9.3:tall?7.1:thin?4.5:k===6?6.2:6.9;
  const head=k===8||k===13?15:k===10?14:12;
@@ -771,11 +771,8 @@ function drawReefFish(f,t,k){
   fin([[-9,-3],[-6,-half-3],[-2,-half-5],[3,-half-4],[9,-4]],palette[0],palette[2]);
   fin([[-7,3],[-3,half+4],[4,half+4],[9,3]],palette[2]);
  }
- // Smooth tapered fish body: not a polygon or geometric block.
- const bodyPath=()=>{C.moveTo(-11,0);C.bezierCurveTo(-9,-half*.8,-3,-half*1.12,3,-half*.96);
- C.bezierCurveTo(8,-half*.82,head-2,-half*.45,head,0);
- C.bezierCurveTo(head+1,half*.25,7,half*.84,2,half);
- C.bezierCurveTo(-4,half*1.08,-9,half*.72,-11,0);C.closePath();};
+ // Angular hand-built fish body with straight-edged contours.
+ const bodyPath=()=>{C.moveTo(-11,0);C.lineTo(-9,-half*.75);C.lineTo(-3,-half);C.lineTo(3,-half*.96);C.lineTo(9,-half*.65);C.lineTo(head,0);C.lineTo(8,half*.72);C.lineTo(2,half);C.lineTo(-5,half*.9);C.lineTo(-11,0);C.closePath();};
  path(bodyPath,palette[0],palette[2],.55);
  C.save();C.beginPath();bodyPath();C.clip();
  const shade=C.createLinearGradient(0,-half,0,half);shade.addColorStop(0,'rgba(255,255,255,.24)');shade.addColorStop(.45,'rgba(255,255,255,0)');shade.addColorStop(1,'rgba(12,23,50,.29)');C.fillStyle=shade;C.fillRect(-13,-half-2,32,half*2+4);
@@ -821,7 +818,7 @@ function drawReefFish(f,t,k){
  const ex=head-3,ey=-half*.25;
  ellipse(ex,ey,1.12,1.17,'#172538');ellipse(ex-.3,ey-.4,.32,.35,'#fff8e9');
  line(head-.6,.65,head+.35,.75,'rgba(27,35,49,.72)',.45);
- path(()=>{C.moveTo(head-6,-2);C.quadraticCurveTo(head-8,0,head-6,3)},null,'rgba(24,41,57,.32)',.5);
+ path(()=>{C.moveTo(head-6,-2);C.lineTo(head-8,0);C.lineTo(head-6,3)},null,'rgba(24,41,57,.32)',.5);
  C.restore();
 }
 window.aquariaFishPreview=function(kind){
