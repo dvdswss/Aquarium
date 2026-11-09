@@ -1301,52 +1301,35 @@ function createFish(k,i){
  mesh(new T.ShapeGeometry(tailAccent),finAccent,tailPivot,0,0,.012);
  const tailAccentLow=new T.Shape();tailAccentLow.moveTo(-.27,-.11);tailAccentLow.lineTo(-p.tail*.74,-.39);tailAccentLow.lineTo(-p.tail*.49,-.11);tailAccentLow.closePath();
  mesh(new T.ShapeGeometry(tailAccentLow),finAccent,tailPivot,0,0,.012);
+ // Readable kawaii faces: two oversized faceted eyes, round-cheek silhouette,
+ // tiny smiling beak, no cluttered brows or glued-on scale ornaments.
+ const irisPalette=[0x6a3b27,0x325ba0,0x6a4b23,0x795a36,0x623a8d,0x9c643f,0x7c4b38];
+ const eyeIris=mat(irisPalette[k],.24),eyeBlack=mat(0x111527,.17);
+ const eyeWhite=mat(0xfff9ef,.2),blush=mat(k===1?0x7caee8:k===4?0xf4a0cb:k===6?0xf6a7a4:0xffbc92,.9,true,.7);
+ const eyeCenterX=p.l*.69,eyeCenterY=p.h*.23;
  for(const side of [-1,1]){
-  // Eyes sit just above the actual polygon cheek surface, not buried inside it.
-  const z=side*p.w*.68;
-  // Cute but anatomical: faceted iris, dark pupil and two tiny polygon highlights.
-  const eyeSize=k===5?1.34:k===6?.94:1.16;
-  const socket=mesh(eyeGeo,iris,g,p.l*.69,p.h*.15,z);
-  socket.scale.set(eyeSize*1.28,eyeSize*1.23,.52);
-  const pupil=mesh(eyeGeo,eye,g,p.l*.71,p.h*.15,z+side*.045);
-  pupil.scale.set(eyeSize*.9,eyeSize*.96,.49);
-  const glint=mesh(new T.OctahedronGeometry(.025,0),white,g,p.l*.735,p.h*.205,z+side*.083);
-  glint.scale.set(1,.8,.5);
-  const smallGlint=mesh(new T.OctahedronGeometry(.011,0),white,g,p.l*.69,p.h*.12,z+side*.085);
-  smallGlint.scale.set(1,.8,.5);
-  const mouth=mesh(new T.OctahedronGeometry(1,0),dark,g,p.l*.985,-.12,side*.035);
-  mouth.scale.set(.025,.023,.11);
-  const gill=mesh(polygonRing(.2,.012,8,Math.PI*.82),dark,g,p.l*.38,-.08,side*p.w*.8);
-  gill.rotation.z=-.28;
+  const z=side*p.w*.99;
+  // Large hexagonal sockets stay visible from oblique camera angles.
+  const socket=mesh(new T.OctahedronGeometry(.15,0),eyeWhite,g,eyeCenterX,eyeCenterY,z);
+  socket.scale.set(1.18,1.28,.57);
+  const iris=mesh(new T.OctahedronGeometry(.122,0),eyeIris,g,eyeCenterX+.018,eyeCenterY-.004,z+side*.061);
+  iris.scale.set(1.06,1.13,.6);
+  const pupil=mesh(new T.OctahedronGeometry(.094,0),eyeBlack,g,eyeCenterX+.034,eyeCenterY-.004,z+side*.11);
+  pupil.scale.set(1,1.12,.6);
+  const sparkle=mesh(new T.TetrahedronGeometry(.036),eyeWhite,g,eyeCenterX+.01,eyeCenterY+.047,z+side*.167);
+  sparkle.scale.set(.75,1,.4);
+  const sparkle2=mesh(new T.TetrahedronGeometry(.014),eyeWhite,g,eyeCenterX+.075,eyeCenterY-.04,z+side*.166);
+  sparkle2.scale.set(.8,.8,.45);
+  const cheek=mesh(new T.OctahedronGeometry(.11,0),blush,g,p.l*.51,-p.h*.21,side*p.w*.91);
+  cheek.scale.set(1.5,.55,.25);
+  const nostril=mesh(new T.TetrahedronGeometry(.012),dark,g,p.l*.91,-.03,side*p.w*.28);
+  nostril.scale.set(.6,.6,.5);
  }
- // Subtle faceted cheek shading and angular eyebrows, avoiding cartoon stickers.
- const cheekShade=mat(k===0?0xf7a35e:k===1?0x367cce:k===2?0xf6da69:k===3?0xf2d5ad:k===4?0xc69ad3:k===5?0xd8d2c5:0xc89584,.75,true,.7);
- for(const side of [-1,1]){
-  const cheek=mesh(new T.OctahedronGeometry(1,0),cheekShade,g,p.l*.54,-p.h*.23,side*p.w*.8);
-  cheek.scale.set(.18,.095,.024);
-  // Small angular upper eye ridge makes the face expressive from a distance.
-  const brow=mesh(new T.BoxGeometry(.19,.018,.025),main,g,p.l*.68,p.h*.31,side*p.w*.93);
-  brow.rotation.z=k===5?-.12:.12;
- }
- // Character-quality polygon details: subtle lower eyelids, angular nostrils and scale plates.
- const scaleMat=mat(k===0?0xffc078:k===1?0x5293d8:k===2?0xffe78b:k===3?0xffefc4:k===4?0xe0b1d9:k===5?0xfff3d8:0xe6ba9b,.7,true,.44);
- for(const side of [-1,1]){
-  const lid=mesh(new T.BoxGeometry(.105,.014,.016),main,g,p.l*.69,p.h*.065,side*(p.w*.91+.048));
-  lid.rotation.z=-.15;
-  const nostril=mesh(new T.TetrahedronGeometry(.018),dark,g,p.l*.9,-.005,side*p.w*.39);
-  nostril.scale.set(.65,.6,.35);
-  // Three tiny faceted scale plates per side, deliberately sparse at aquarium scale.
-  for(let n=0;n<3;n++){
-   const x=-.43+n*.29;
-   const plate=mesh(new T.TetrahedronGeometry(.07),scaleMat,g,x,.12-(n%2)*.13,side*p.w*.84);
-   plate.scale.set(1.1,.7,.23);
-  }
- }
- // Angular lower jaw with a short dark mouth slit and faceted lower lip.
- const jaw=mesh(new T.TetrahedronGeometry(.115),main,g,p.l*.955,-.2,0);
- jaw.scale.set(1.15,.56,1.45);
- const mouthSlit=mesh(new T.BoxGeometry(.045,.018,.15),dark,g,p.l*1.008,-.155,0);
- mouthSlit.rotation.z=-.16;
+ // Small open smile: dark inset polygon with a tiny pink lower lip.
+ const smile=mesh(new T.OctahedronGeometry(1,0),dark,g,p.l*1.012,-.165,0);
+ smile.scale.set(.033,.045,.108);
+ const tongue=mesh(new T.TetrahedronGeometry(.048),mat(0xf18fa4,.65),g,p.l*1.028,-.191,0);
+ tongue.scale.set(.43,.4,1.3);
  // Species-specific facial anatomy and fin silhouettes.
  if(k===0){
   // Clownfish: short rounded snout and broad paddle-like pectorals.
@@ -1419,8 +1402,6 @@ function createFish(k,i){
   cover.rotation.z=-.38;
  }
  // Additional sculpted anatomy: raised lips and delicate fin rays.
- const lip=mesh(new T.OctahedronGeometry(1,0),main,g,p.l*.97,-.12,0);
- lip.scale.set(.075,.065,.13);
  for(let n=0;n<6;n++){
   const x=-.65+n*.23;
   cylinderBetween(g,new T.Vector3(x,p.h*.68,0),new T.Vector3(x-.09,p.h+.18+Math.sin(n*.8)*.07,0),.008,.003,finMat,4);
