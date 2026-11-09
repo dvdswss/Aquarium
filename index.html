@@ -139,6 +139,22 @@ function openAquariaMissions(){
  });
  panel.hidden=false;
 }
+let aquariaRewardToastTimer;
+function aquariaShowRewardToast(amount){
+ const host=document.getElementById('scene');if(!host)return;
+ let toast=document.getElementById('aquariaRewardToast');
+ if(!toast){
+  toast=document.createElement('div');toast.id='aquariaRewardToast';toast.setAttribute('role','status');toast.setAttribute('aria-live','polite');
+  toast.innerHTML='<span class="reward-spark">✦</span><div class="reward-copy"><small>작은 행운을 발견했어!</small><strong></strong></div><span class="reward-coin">🪙</span>';
+  host.append(toast);
+ }
+ toast.querySelector('strong').textContent='+'+amount+' 코인 획득';
+ toast.classList.remove('show');
+ void toast.offsetWidth;
+ toast.classList.add('show');
+ clearTimeout(aquariaRewardToastTimer);
+ aquariaRewardToastTimer=setTimeout(()=>toast.classList.remove('show'),2100);
+}
 let aquariaLastTouchReward=0;
 window.aquariaFishTouched=function(){
  aquariaMissionProgress('touch');
@@ -150,7 +166,7 @@ window.aquariaFishTouched=function(){
  const reward=roll<.02?25:roll<.10?10:roll<.35?3:0;
  if(reward){
   state.coins=(Number(state.coins)||0)+reward;
-  save();
+  save();aquariaShowRewardToast(reward);
  }
  return reward;
 };
@@ -526,7 +542,7 @@ function touchFishAt(clientX,clientY){
  target.ty=Math.max(80,Math.min(306,target.y-12-Math.random()*22));
  target.swimRate=2.2;target.waitUntil=0;
  const reward=window.aquariaFishTouched?.()||0;
- if(reward){target.rewardText='🪙 '+reward+'코인 획득!';target.rewardUntil=performance.now()+1250;}
+ if(reward){target.rewardText='';target.rewardUntil=0;}
 }
 canvas.addEventListener('click',e=>touchFishAt(e.clientX,e.clientY));
 const visibleFood=[];
@@ -1198,6 +1214,14 @@ header h1{font-size:18px!important;letter-spacing:.11em!important;opacity:.83}
 #scene .aquaria-heart-shape svg{width:100%;height:100%;display:block}
 </style><style id="aquaria-coin-popup-fix">
 #scene .aquaria-coin-popup{font:700 15px/1.2 system-ui,sans-serif!important;color:#ffdf85!important;padding:5px 9px!important;border:1px solid rgba(255,226,144,.7)!important;border-radius:18px!important;background:rgba(16,32,53,.9)!important;box-shadow:0 3px 14px rgba(0,0,0,.35)!important;white-space:nowrap!important;z-index:40}
+</style><style id="aquaria-reward-toast-v2">
+#scene #aquariaRewardToast{position:absolute;left:50%;top:15%;z-index:90;display:flex;align-items:center;gap:10px;width:max-content;max-width:calc(100% - 32px);padding:11px 16px;border:1px solid rgba(243,223,174,.48);border-radius:16px;background:linear-gradient(135deg,rgba(21,47,71,.96),rgba(34,44,77,.96));box-shadow:0 8px 28px rgba(5,15,37,.3),inset 0 1px rgba(255,255,255,.14);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#fff4d6;pointer-events:none;opacity:0;visibility:hidden;transform:translate(-50%,-9px) scale(.96);transition:opacity .25s,transform .35s,visibility .25s}
+#scene #aquariaRewardToast.show{opacity:1;visibility:visible;transform:translate(-50%,0) scale(1)}
+#scene #aquariaRewardToast .reward-copy{display:flex;flex-direction:column;gap:2px;white-space:nowrap}
+#scene #aquariaRewardToast small{font:400 10px/1.4 system-ui,sans-serif;color:#b8d5db;letter-spacing:.2px}
+#scene #aquariaRewardToast strong{font:700 16px/1.4 system-ui,sans-serif;color:#ffe5a4}
+#scene #aquariaRewardToast .reward-spark{font-size:18px;color:#ffe3a0}
+#scene #aquariaRewardToast .reward-coin{font-size:19px}
 </style><style id="aquaria-3d-style">
 #scene .view-switch{position:absolute;top:12px;right:12px;z-index:30;min-height:34px;padding:5px 11px;border:1px solid #9be9df;border-radius:18px;background:#0a3449df;color:#e8fffb;font-size:12px;box-shadow:0 2px 9px #041b30}
 #scene .three-world{position:absolute;inset:0;z-index:12;display:none;overflow:hidden;touch-action:none}
@@ -1935,7 +1959,7 @@ layer.addEventListener('pointerup',e=>{
    if(distance<nearest){nearest=distance;touched=f;}
   }
  }
- if(touched){touched.behavior='burst';touched.behaviorUntil=performance.now()+900;touched.nextTurn=0;spawnFishHearts(touched);const reward=window.aquariaFishTouched?.()||0;if(reward){const p=touched.g.position.clone();p.y+=.7;const el=document.createElement('span');el.className='aquaria-floating-heart aquaria-coin-popup';el.textContent='🪙 '+reward+'코인 획득!';heartLayer.append(el);floatingHearts.push({el,fish:touched,born:performance.now(),offset:0,base:p,coin:true});}}
+ if(touched){touched.behavior='burst';touched.behaviorUntil=performance.now()+900;touched.nextTurn=0;spawnFishHearts(touched);const reward=window.aquariaFishTouched?.()||0;}
 });
 layer.addEventListener('pointerdown',e=>{layer.setPointerCapture(e.pointerId);pointer.set(e.pointerId,{x:e.clientX,y:e.clientY});lastDistance=0});
 layer.addEventListener('pointermove',e=>{
