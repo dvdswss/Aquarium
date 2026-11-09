@@ -1236,26 +1236,35 @@ function fishSkin(k){
 }
 const fishSkins=fishProfiles.map((_,k)=>fishSkin(k));
 // Curved fin membranes with individual rays and delicate dark edging.
+// Polygon-only fins: straight edges and straight fin rays.
 function sculptFin(parent,points,material,edgeColor,depth=0){
  const shape=new T.Shape();shape.moveTo(points[0][0],points[0][1]);
- for(let n=1;n<points.length;n++){
-  const prev=points[n-1],cur=points[n];
-  shape.quadraticCurveTo((prev[0]+cur[0])/2,(prev[1]+cur[1])/2+.025,cur[0],cur[1]);
- }
+ for(let n=1;n<points.length;n++)shape.lineTo(points[n][0],points[n][1]);
  shape.closePath();
- const fin=mesh(new T.ShapeGeometry(shape,8),material,parent,0,0,depth);
- const rim=new T.LineLoop(new T.BufferGeometry().setFromPoints(points.map(p=>new T.Vector3(p[0],p[1],depth+.003))),new T.LineBasicMaterial({color:edgeColor,transparent:true,opacity:.38}));
+ const fin=mesh(new T.ShapeGeometry(shape),material,parent,0,0,depth);
+ const rim=new T.LineLoop(new T.BufferGeometry().setFromPoints(points.map(p=>new T.Vector3(p[0],p[1],depth+.003))),new T.LineBasicMaterial({color:edgeColor,transparent:true,opacity:.4}));
  parent.add(rim);
- const root=new T.Vector3(points[0][0],points[0][1],depth+.005);
- const rayMat=new T.LineBasicMaterial({color:0xffe8d7,transparent:true,opacity:.32});
+ const rayMat=new T.LineBasicMaterial({color:0xffe8d7,transparent:true,opacity:.34});
  for(let n=2;n<points.length-1;n++){
-  const tip=points[n],curve=new T.QuadraticBezierCurve3(root,new T.Vector3((root.x+tip[0])/2,(root.y+tip[1])/2+.06,depth+.02),new T.Vector3(tip[0],tip[1],depth+.006));
-  parent.add(new T.Line(new T.BufferGeometry().setFromPoints(curve.getPoints(7)),rayMat));
+  const p=points[n];
+  parent.add(new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(points[0][0],points[0][1],depth+.005),new T.Vector3(p[0],p[1],depth+.006)]),rayMat));
  }
  return fin;
 }
+function polygonRing(radius,thickness,segments=8,arc=Math.PI*2){
+ const shape=new T.Shape(),outer=[],inner=[];
+ for(let j=0;j<=segments;j++){
+  const a=j/segments*arc;
+  outer.push([Math.cos(a)*(radius+thickness),Math.sin(a)*(radius+thickness)]);
+  inner.push([Math.cos(a)*(radius-thickness),Math.sin(a)*(radius-thickness)]);
+ }
+ shape.moveTo(...outer[0]);
+ for(let j=1;j<outer.length;j++)shape.lineTo(...outer[j]);
+ for(let j=inner.length-1;j>=0;j--)shape.lineTo(...inner[j]);
+ shape.closePath();return new T.ShapeGeometry(shape);
+}
 const fishBodies=fishProfiles.map((p,k)=>fishShape(p,k));
-const eyeGeo=new T.SphereGeometry(.075,12,9);
+const eyeGeo=new T.OctahedronGeometry(.075,0);
 function createFish(k,i){
  const g=new T.Group();scene.add(g);
  const p=fishProfiles[k],size=[.36,.49,.43,.41,.31,.32,.5][k]*(.88+(i%4)*.045);
@@ -1281,55 +1290,55 @@ function createFish(k,i){
   socket.scale.set(1.25,1.25,.5);
   const pupil=mesh(eyeGeo,eye,g,p.l*.7,p.h*.15,z+side*.035);
   pupil.scale.set(.76,.85,.45);
-  const glint=mesh(new T.SphereGeometry(.018,6,5),white,g,p.l*.71,p.h*.19,z+side*.066);
-  const mouth=mesh(new T.SphereGeometry(1,10,6),dark,g,p.l*.985,-.12,side*.035);
+  const glint=mesh(new T.OctahedronGeometry(.018,0),white,g,p.l*.71,p.h*.19,z+side*.066);
+  const mouth=mesh(new T.OctahedronGeometry(1,0),dark,g,p.l*.985,-.12,side*.035);
   mouth.scale.set(.025,.023,.11);
-  const gill=mesh(new T.TorusGeometry(.2,.012,4,18,Math.PI*.82),dark,g,p.l*.38,-.08,side*p.w*.93);
+  const gill=mesh(polygonRing(.2,.012,8,Math.PI*.82),dark,g,p.l*.38,-.08,side*p.w*.93);
   gill.rotation.z=-.28;
  }
  // Species-specific facial anatomy and fin silhouettes.
  if(k===0){
   // Clownfish: short rounded snout and broad paddle-like pectorals.
-  const snout=mesh(new T.SphereGeometry(1,14,10),main,g,p.l*.91,-.1,0);
+  const snout=mesh(new T.OctahedronGeometry(1,0),main,g,p.l*.91,-.1,0);
   snout.scale.set(.16,.16,.2);
   for(const side of [-1,1]){
-   const pFin=mesh(new T.SphereGeometry(1,12,8),finMat,g,.03,-.2,side*.33);
+   const pFin=mesh(new T.OctahedronGeometry(1,0),finMat,g,.03,-.2,side*.33);
    pFin.scale.set(.26,.13,.055);pFin.rotation.z=-.35;
   }
  }
  if(k===1||k===2){
   // Surgeonfish: pointed beak and a flattened, sharp-edged tail root.
-  const beak=mesh(new T.ConeGeometry(.15,.32,12),main,g,p.l*.97,-.11,0);
+  const beak=mesh(new T.ConeGeometry(.15,.32,5),main,g,p.l*.97,-.11,0);
   beak.rotation.z=-Math.PI/2;
-  const blade=mesh(new T.SphereGeometry(1,12,8),k===1?mat(0xf2d963):white,g,-p.l*.89,-.05,0);
+  const blade=mesh(new T.OctahedronGeometry(1,0),k===1?mat(0xf2d963):white,g,-p.l*.89,-.05,0);
   blade.scale.set(.09,.035,.23);
  }
  if(k===3){
   // Butterflyfish: narrow protruding feeding snout and a trailing dorsal crest.
-  const snout=mesh(new T.CylinderGeometry(.065,.11,.32,10),main,g,p.l*1.02,-.18,0);
+  const snout=mesh(new T.CylinderGeometry(.065,.11,.32,6),main,g,p.l*1.02,-.18,0);
   snout.rotation.z=-Math.PI/2;
-  const crest=mesh(new T.SphereGeometry(1,14,8),finMat,g,-.18,p.h*.94,0);
+  const crest=mesh(new T.OctahedronGeometry(1,0),finMat,g,-.18,p.h*.94,0);
   crest.scale.set(.65,.16,.045);
   for(const side of [-1,1]){
-   const eyespot=mesh(new T.SphereGeometry(.12,12,9),dark,g,-p.l*.65,.21,side*p.w*.89);
+   const eyespot=mesh(new T.OctahedronGeometry(.12,0),dark,g,-p.l*.65,.21,side*p.w*.89);
    eyespot.scale.z=.3;
   }
  }
  if(k===4){
   // Royal gramma: small pointed muzzle and elongated rear fin.
-  const muzzle=mesh(new T.SphereGeometry(1,12,8),main,g,p.l*.91,-.09,0);
+  const muzzle=mesh(new T.OctahedronGeometry(1,0),main,g,p.l*.91,-.09,0);
   muzzle.scale.set(.18,.1,.14);
  }
  if(k===5){
   // Cardinalfish: exceptionally large eyes and extended ventral fin streamers.
   for(const side of [-1,1]){
-   const eyeRim=mesh(new T.TorusGeometry(.112,.017,6,18),dark,g,p.l*.69,p.h*.15,side*p.w*.93);
+   const eyeRim=mesh(polygonRing(.112,.017,8),dark,g,p.l*.69,p.h*.15,side*p.w*.93);
    cylinderBetween(g,new T.Vector3(-.28,-.34,side*.12),new T.Vector3(-.55,-1.02,side*.23),.015,.003,white,5);
   }
  }
  if(k===6){
   // Lionfish: fan-shaped pectorals, long separated spines and a broad head.
-  const head=mesh(new T.SphereGeometry(1,14,10),main,g,.62,-.04,0);
+  const head=mesh(new T.OctahedronGeometry(1,0),main,g,.62,-.04,0);
   head.scale.set(.44,.37,.42);
   for(const side of [-1,1]){
    const fan=new T.Group();fan.position.set(.1,-.07,side*.33);g.add(fan);
@@ -1350,16 +1359,16 @@ function createFish(k,i){
   pelvic.rotation.y=side*.22;
  }
  // Anatomical tail base and curved gill covers for a continuous silhouette.
- const peduncle=mesh(new T.SphereGeometry(1,14,10),main,g,-p.l*.91,0,0);
+ const peduncle=mesh(new T.OctahedronGeometry(1,0),main,g,-p.l*.91,0,0);
  peduncle.scale.set(.24,.13,.12);
  for(const side of [-1,1]){
-  const cheek=mesh(new T.SphereGeometry(1,14,10),main,g,p.l*.42,-.12,side*p.w*.54);
+  const cheek=mesh(new T.OctahedronGeometry(1,0),main,g,p.l*.42,-.12,side*p.w*.54);
   cheek.scale.set(.31,p.h*.42,p.w*.5);
-  const cover=mesh(new T.TorusGeometry(.23,.009,5,22,Math.PI*.85),mat(0x46546c,.8),g,p.l*.43,-.09,side*p.w*.96);
+  const cover=mesh(polygonRing(.23,.009,8,Math.PI*.85),mat(0x46546c,.8),g,p.l*.43,-.09,side*p.w*.96);
   cover.rotation.z=-.38;
  }
  // Additional sculpted anatomy: raised lips and delicate fin rays.
- const lip=mesh(new T.SphereGeometry(1,10,8),main,g,p.l*.97,-.12,0);
+ const lip=mesh(new T.OctahedronGeometry(1,0),main,g,p.l*.97,-.12,0);
  lip.scale.set(.075,.065,.13);
  for(let n=0;n<6;n++){
   const x=-.65+n*.23;
