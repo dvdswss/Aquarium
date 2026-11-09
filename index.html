@@ -251,6 +251,19 @@ function aquariaFoodBonus(group){
  }
  return matching?Math.min(12,Math.round(matching/Math.max(1,count)*12)):0;
 }
+const aquariaFishScientific=['Amphiprion ocellaris','Paracanthurus hepatus','Zebrasoma flavescens','Chaetodon auriga','Gramma loreto','Pterapogon kauderni','Pterois volitans'];
+const aquariaFishPhotos=Array(7).fill(null);
+async function loadAquariaFishPhoto(i,img){
+ if(aquariaFishPhotos[i]){img.src=aquariaFishPhotos[i];return;}
+ try{
+  const url='https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages&piprop=thumbnail&pithumbsize=180&titles='+encodeURIComponent(aquariaFishScientific[i]);
+  const response=await fetch(url);if(!response.ok)throw Error('photo');
+  const data=await response.json();
+  const page=Object.values(data.query?.pages||{})[0];
+  const src=page?.thumbnail?.source;
+  if(src){aquariaFishPhotos[i]=src;img.src=src;}
+ }catch(e){img.style.display='none';}
+}
 let aquariaShopMode='fish';
 function openAquariaShop(mode){
  aquariaShopMode=mode;
@@ -260,6 +273,15 @@ function openAquariaShop(mode){
  (mode==='fish'?aquariaFishCatalog:aquariaFoodCatalog).forEach((item,i)=>{
   const b=document.createElement('button');b.className='aquaria-shop-item';
   const name=document.createElement('span');name.textContent=item[0];
+  if(mode==='fish'){
+   const photo=document.createElement('img');
+   photo.alt=item[0]+' 실제 사진';photo.loading='lazy';
+   photo.style.cssText='width:64px;height:52px;object-fit:cover;border-radius:10px;background:#19344b;flex-shrink:0';
+   b.style.justifyContent='flex-start';
+   const info=document.createElement('span');info.style.cssText='display:flex;align-items:center;gap:12px;min-width:0;flex:1';
+   info.append(photo,name);b.append(info);
+   loadAquariaFishPhoto(i,photo);
+  }
   if(mode==='food'){
    const detail=document.createElement('small');
    const bonus=aquariaFoodBonus(item[3]);
@@ -268,7 +290,7 @@ function openAquariaShop(mode){
    name.append(detail);
   }
   const price=document.createElement('strong');price.textContent=item[1]===0?'무료':item[1]+' 🪙';
-  b.append(name,price);b.onclick=()=>purchaseAquariaItem(i);list.append(b);
+  if(mode==='food')b.append(name,price);else b.append(price);b.onclick=()=>purchaseAquariaItem(i);list.append(b);
  });
  panel.hidden=false;document.getElementById('aquariaMissions').hidden=true;document.getElementById('aquariaDrawer').removeAttribute('open');
 }
