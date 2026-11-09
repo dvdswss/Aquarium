@@ -1032,7 +1032,7 @@ function createFish(k,i){
  const body=mesh(fishBody,main,g);body.scale.set(k===5?.78:1.12,k===3?.78:.58,k===5?.23:.35);
  // Fins are thin curved-looking membranes with visible rays, not cones.
  const tailPivot=new T.Group();tailPivot.position.x=-1.06;g.add(tailPivot);
- const tail=mesh(finGeo,k===2?main:k===1?0xf2d45b:main,tailPivot,-.03,0,0);tail.scale.set(.8,.82,1);
+ const tail=mesh(finGeo,k===1?mat(0xf2d45b):main,tailPivot,-.03,0,0);tail.scale.set(.8,.82,1);
  const tailLower=mesh(finGeo,dark,tailPivot,-.04,-.04,-.008);tailLower.scale.set(.58,.54,1);
  const dorsal=mesh(finGeo,k===6?dark:main,g,-.12,.51,0);dorsal.rotation.z=-1.35;dorsal.scale.set(.55,.55,1);
  const finPivot=new T.Group();finPivot.position.set(.0,-.08,.34);g.add(finPivot);
@@ -1055,6 +1055,57 @@ function createFish(k,i){
    cylinderBetween(g,new T.Vector3(x,.38,0),new T.Vector3(x+(j-4)*.06,1.15+(j%3)*.17,0),.023,.008,j%2?white:dark,5);
   }
   for(let j=0;j<5;j++){const bar=mesh(new T.SphereGeometry(1,10,8),dark,g,-.8+j*.37,0,0);bar.scale.set(.07,.56,.36)}
+ }
+ // Gill plates, nostrils, translucent fin rays and individual scale glints.
+ const gill=mat(k===2?0xb18c2b:0x6b6675,.8),shine=mat(0xd5f3ec,.28,true,.44);
+ for(const side of [-1,1]){
+  const z=side*.346;
+  const cheek=mesh(new T.SphereGeometry(1,12,9),main,g,.49,-.12,side*.2);
+  cheek.scale.set(.38,.32,.18);
+  const nostril=mesh(new T.SphereGeometry(.018,6,5),eye,g,.98,.035,side*.19);
+  for(let n=0;n<4;n++){
+   const x=-.74+n*.34;
+   const spot=mesh(new T.SphereGeometry(.022+(n%2)*.008,6,5),shine,g,x,.25-(n%2)*.15,z);
+   spot.scale.set(1,.65,.3);
+  }
+  const gillLine=mesh(new T.TorusGeometry(.24,.013,4,18,Math.PI*.75),gill,g,.47,-.08,side*.325);
+  gillLine.rotation.y=side*.17;gillLine.rotation.z=-.35;
+  // Small pectoral fin with separate rays on both sides.
+  const pectoral=mesh(finGeo,main,g,-.04,-.13,side*.39);
+  pectoral.scale.set(.46,.35,1);pectoral.rotation.z=-.22;
+ }
+ // Fine segmented dorsal and anal fin edges.
+ for(let n=0;n<7;n++){
+  const x=-.78+n*.25;
+  cylinderBetween(g,new T.Vector3(x,.47,0),new T.Vector3(x-.09,.72+Math.sin(n*.7)*.16,0),.012,.004,k===6?dark:main,4);
+ }
+ for(let n=0;n<5;n++){
+  const x=-.7+n*.27;
+  cylinderBetween(g,new T.Vector3(x,-.45,0),new T.Vector3(x-.13,-.69-(n%2)*.07,0),.012,.004,main,4);
+ }
+ // Species-specific markings remain readable from both sides.
+ if(k===0){
+  for(const side of [-1,1])for(const x of [-.58,.04,.64]){
+   const rim=mesh(new T.TorusGeometry(.29,.028,4,18),dark,g,x,0,side*.35);
+   rim.scale.set(.25,1.9,1);rim.rotation.y=Math.PI/2;
+  }
+ }
+ if(k===1){
+  for(const side of [-1,1]){
+   const line=mesh(new T.SphereGeometry(1,14,8),mat(0x4c9bda),g,-.23,-.11,side*.33);
+   line.scale.set(.65,.09,.045);
+  }
+ }
+ if(k===5){
+  for(const side of [-1,1])for(let n=0;n<4;n++){
+   cylinderBetween(g,new T.Vector3(-.55+n*.3,.35,side*.1),new T.Vector3(-.85+n*.36,1.12+(n%2)*.22,side*.08),.014,.004,dark,5);
+  }
+ }
+ if(k===6){
+  for(const side of [-1,1])for(let n=0;n<7;n++){
+   const x=-.65+n*.23;
+   cylinderBetween(g,new T.Vector3(x,-.13,side*.25),new T.Vector3(x-.55,-.7-(n%3)*.15,side*(.5+n*.045)),.018,.005,n%2?white:dark,5);
+  }
  }
  g.scale.setScalar(size);
  const angle=i*2.399;
@@ -1088,6 +1139,8 @@ function frame(t){
  f.g.rotation.y=-a-Math.PI/2+Math.sin(t*.001+f.phase)*.05;
  f.tail.rotation.y=Math.sin(t*[.018,.029,.015,.022,.025,.011,.009][f.k]+f.phase)*.4;
  f.fin.rotation.x=Math.sin(t*.025+f.phase)*.45;
+ f.g.rotation.z=Math.sin(t*.0012+f.phase)*.035;
+ f.g.rotation.x=Math.sin(t*.0015+f.phase)*.045;
  }
  renderer.render(scene,camera);
 }
