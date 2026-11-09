@@ -271,8 +271,9 @@ let aquariaShopMode='fish';
 function openAquariaShop(mode){
  aquariaShopMode=mode;
  const panel=document.getElementById('aquariaShop'),list=document.getElementById('aquariaShopList');
- document.getElementById('aquariaShopTitle').textContent=mode==='fish'?'🐠 물고기 종류':'🍤 먹이 종류';
+ document.getElementById('aquariaShopTitle').textContent=mode==='fish'?'🐠 물고기 종류 · '+aquariaFishCatalog.length+'종':'🍤 먹이 종류';
  list.replaceChildren();
+ list.style.maxHeight='min(62vh,520px)';list.style.overflowY='auto';list.style.webkitOverflowScrolling='touch';
  (mode==='fish'?aquariaFishCatalog:aquariaFoodCatalog).forEach((item,i)=>{
   const b=document.createElement('button');b.className='aquaria-shop-item';
   const name=document.createElement('span');name.textContent=item[0];
@@ -295,6 +296,7 @@ function openAquariaShop(mode){
   const price=document.createElement('strong');price.textContent=item[1]===0?'무료':item[1]+' 🪙';
   if(mode==='food')b.append(name,price);else b.append(price);b.onclick=()=>purchaseAquariaItem(i);list.append(b);
  });
+ list.scrollTop=0;
  panel.hidden=false;document.getElementById('aquariaMissions').hidden=true;document.getElementById('aquariaDrawer').removeAttribute('open');
 }
 function closeAquariaShop(){document.getElementById('aquariaShop').hidden=true}
@@ -1403,7 +1405,7 @@ function spawnFishHearts(f){
  floatingHearts.push({el,fish:f,born:performance.now(),offset:0,base:f.g.position.clone().add(new window.THREE.Vector3(0,.42,0)),heart:true});
 }
 let initialized=false,active=false,renderer,scene,camera,start3DFrame=null,fish=[],orbit={theta:0,phi:1.32,radius:14,targetY:2.8},pointer=new Map(),lastDistance=0;
-const colors=[0xf17d35,0x256dce,0xf3d347,0xf2e5b0,0x9255bc,0xe8e5d8,0xb87565];
+const colors=[0xf17d35,0x256dce,0xf3d347,0xf2e5b0,0x9255bc,0xe8e5d8,0xb87565,0x1967b7,0xf7eddd,0x7443ac,0xeac34f,0xe5d8bd,0x30343e,0x1b3655];
 // Modern Three.js is an ES module; the old three.min.js URL no longer exists.
 async function load(){
  if(window.THREE)return window.THREE;
