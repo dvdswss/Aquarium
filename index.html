@@ -1176,6 +1176,9 @@ header h1{font-size:18px!important;letter-spacing:.11em!important;opacity:.83}
 #game .aquaria-shop-list{overflow-y:auto;overscroll-behavior:contain;padding:9px 12px 13px}
 #game .aquaria-shop-item{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:57px;margin:5px 0;padding:12px 14px;border:1px solid #ffffff20;border-radius:13px;background:#ffffff0c;box-shadow:none;text-align:left;color:#f3faff;font-size:13px}
 #game .aquaria-shop-item strong{color:#ffe2b6;font-size:12px;white-space:nowrap}
+</style><style id="aquaria-3d-touch-fix">
+#scene .three-world canvas{touch-action:none}
+#scene .aquaria-heart-layer{z-index:35!important;pointer-events:none!important}
 </style><style id="aquaria-3d-heart-style">
 #scene .aquaria-heart-layer{position:absolute;inset:0;z-index:30;overflow:hidden;pointer-events:none}
 #scene .aquaria-floating-heart{position:absolute;font-size:23px;font-family:Arial,sans-serif;color:#ffb8df;text-shadow:0 0 12px #ff7dc6,0 1px 4px #122a55;pointer-events:none;will-change:transform,opacity;white-space:nowrap}
@@ -1904,8 +1907,18 @@ layer.addEventListener('pointerup',e=>{
  const r=renderer.domElement.getBoundingClientRect();
  const ray=new T.Raycaster();ray.setFromCamera(new T.Vector2((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height*2-1)),camera);
  const hit=ray.intersectObjects(fish.map(f=>f.g),true)[0];
- if(!hit)return;
- const touched=fish.find(f=>{let obj=hit.object;while(obj){if(obj===f.g)return true;obj=obj.parent;}return false;});
+ let touched=hit?fish.find(f=>{let obj=hit.object;while(obj){if(obj===f.g)return true;obj=obj.parent;}return false;}):null;
+ // Mobile-friendly touch area: fish are tiny, so use a 36px screen-space hit radius.
+ if(!touched){
+  let nearest=36;
+  for(const f of fish){
+   const projected=f.g.position.clone().project(camera);
+   if(projected.z< -1||projected.z>1)continue;
+   const sx=r.left+(projected.x+1)*r.width/2,sy=r.top+(1-projected.y)*r.height/2;
+   const distance=Math.hypot(e.clientX-sx,e.clientY-sy);
+   if(distance<nearest){nearest=distance;touched=f;}
+  }
+ }
  if(touched){touched.behavior='burst';touched.behaviorUntil=performance.now()+900;touched.nextTurn=0;spawnFishHearts(touched);const reward=window.aquariaFishTouched?.()||0;if(reward){const p=touched.g.position.clone();p.y+=.7;const el=document.createElement('span');el.className='aquaria-floating-heart';el.textContent='+'+reward+' 🪙';el.style.color='#ffe7a0';heartLayer.append(el);floatingHearts.push({el,fish:touched,born:performance.now(),offset:0,base:p});}}
 });
 layer.addEventListener('pointerdown',e=>{layer.setPointerCapture(e.pointerId);pointer.set(e.pointerId,{x:e.clientX,y:e.clientY});lastDistance=0});
