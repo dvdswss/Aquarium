@@ -1193,6 +1193,17 @@ function fishSkin(k){
   x.fillStyle='#784a45';for(let n=0;n<11;n++){const u=15+n*23;x.beginPath();x.ellipse(u,64,7,65,.12,0,Math.PI*2);x.fill();}
   x.fillStyle='#fff0d5';for(let n=0;n<17;n++){x.beginPath();x.arc((n*37)%256,(n*59)%128,3,0,Math.PI*2);x.fill();}
  }
+ // Subtle overlapping scales and lateral-line pores, drawn into the skin texture.
+ x.save();
+ x.strokeStyle='rgba(255,255,255,.11)';x.lineWidth=.7;
+ for(let row=0;row<8;row++)for(let col=0;col<23;col++){
+  const px=8+col*11+(row%2)*5.5,py=12+row*14;
+  x.beginPath();x.arc(px,py,5,.12,Math.PI-.12);x.stroke();
+ }
+ x.strokeStyle='rgba(25,40,68,.22)';x.lineWidth=1.2;
+ x.beginPath();x.moveTo(20,64);
+ for(let n=0;n<=24;n++){const px=20+n*9,py=64+Math.sin(n*.48)*2;x.lineTo(px,py);}
+ x.stroke();x.restore();
  const shine=x.createLinearGradient(0,0,0,128);
  shine.addColorStop(0,'rgba(255,255,255,.23)');shine.addColorStop(.4,'rgba(255,255,255,.04)');shine.addColorStop(1,'rgba(12,22,49,.23)');
  x.fillStyle=shine;x.fillRect(0,0,256,128);
@@ -1200,6 +1211,25 @@ function fishSkin(k){
  return new T.MeshStandardMaterial({map:texture,roughness:.52,metalness:.03,side:T.DoubleSide});
 }
 const fishSkins=fishProfiles.map((_,k)=>fishSkin(k));
+// Curved fin membranes with individual rays and delicate dark edging.
+function sculptFin(parent,points,material,edgeColor,depth=0){
+ const shape=new T.Shape();shape.moveTo(points[0][0],points[0][1]);
+ for(let n=1;n<points.length;n++){
+  const prev=points[n-1],cur=points[n];
+  shape.quadraticCurveTo((prev[0]+cur[0])/2,(prev[1]+cur[1])/2+.025,cur[0],cur[1]);
+ }
+ shape.closePath();
+ const fin=mesh(new T.ShapeGeometry(shape,8),material,parent,0,0,depth);
+ const rim=new T.LineLoop(new T.BufferGeometry().setFromPoints(points.map(p=>new T.Vector3(p[0],p[1],depth+.003))),new T.LineBasicMaterial({color:edgeColor,transparent:true,opacity:.38}));
+ parent.add(rim);
+ const root=new T.Vector3(points[0][0],points[0][1],depth+.005);
+ const rayMat=new T.LineBasicMaterial({color:0xffe8d7,transparent:true,opacity:.32});
+ for(let n=2;n<points.length-1;n++){
+  const tip=points[n],curve=new T.QuadraticBezierCurve3(root,new T.Vector3((root.x+tip[0])/2,(root.y+tip[1])/2+.06,depth+.02),new T.Vector3(tip[0],tip[1],depth+.006));
+  parent.add(new T.Line(new T.BufferGeometry().setFromPoints(curve.getPoints(7)),rayMat));
+ }
+ return fin;
+}
 const fishBodies=fishProfiles.map(fishShape);
 const eyeGeo=new T.SphereGeometry(.075,12,9);
 function createFish(k,i){
@@ -1213,14 +1243,14 @@ function createFish(k,i){
  const fork=k===1||k===2||k===3;
  const tailPoints=fork?[[0,0],[-.45,.12],[-p.tail,.67],[-p.tail*.53,.13],[-p.tail*.53,-.13],[-p.tail,-.67],[-.45,-.12]]:
  [[0,0],[-.33,.25],[-p.tail,.58],[-p.tail*.84,0],[-p.tail,-.58],[-.33,-.25]];
- mesh(finShape(tailPoints),k===1?mat(0xe8cf64):finMat,tailPivot);
+ sculptFin(tailPivot,tailPoints,k===1?mat(0xe8cf64):finMat,k===1?0xbfa747:0x65445b);
  const dorsalPoints=k===6?[[-.92,.34],[-.85,1.05],[-.62,.8],[-.43,1.18],[-.2,.83],[.08,1.06],[.37,.6],[.72,.4]]:
  [[-.9,.25],[-.62,.62],[-.38,p.h+.33],[.02,p.h+.27],[.45,p.h+.12],[.76,.28]];
- mesh(finShape(dorsalPoints),finMat,g,0,0,.005);
- mesh(finShape([[-.85,-.28],[-.55,-.58],[-.23,-p.h-.2],[.35,-p.h-.15],[.65,-.25]]),finMat,g,0,0,.005);
+ sculptFin(g,dorsalPoints,finMat,0x5a526d,.005);
+ sculptFin(g,[[-.85,-.28],[-.55,-.58],[-.23,-p.h-.2],[.35,-p.h-.15],[.65,-.25]],finMat,0x5a526d,.005);
  const finPivot=new T.Group();finPivot.position.set(.15,-.12,p.w*.92);g.add(finPivot);
- mesh(finShape([[0,0],[-.28,.14],[-.64,-.3],[-.3,-.42]]),finMat,finPivot);
- const opposite=mesh(finShape([[0,0],[-.28,.14],[-.64,-.3],[-.3,-.42]]),finMat,g,.15,-.12,-p.w*.92);
+ sculptFin(finPivot,[[0,0],[-.28,.14],[-.64,-.3],[-.3,-.42]],finMat,0x5a526d);
+ const oppositePivot=new T.Group();oppositePivot.position.set(.15,-.12,-p.w*.92);g.add(oppositePivot);sculptFin(oppositePivot,[[0,0],[-.28,.14],[-.64,-.3],[-.3,-.42]],finMat,0x5a526d);
  for(const side of [-1,1]){
   const z=side*p.w*.88;
   const socket=mesh(eyeGeo,iris,g,p.l*.69,p.h*.15,z);
@@ -1232,6 +1262,15 @@ function createFish(k,i){
   mouth.scale.set(.025,.023,.11);
   const gill=mesh(new T.TorusGeometry(.2,.012,4,18,Math.PI*.82),dark,g,p.l*.38,-.08,side*p.w*.93);
   gill.rotation.z=-.28;
+ }
+ // Anatomical tail base and curved gill covers for a continuous silhouette.
+ const peduncle=mesh(new T.SphereGeometry(1,14,10),main,g,-p.l*.91,0,0);
+ peduncle.scale.set(.24,.13,.12);
+ for(const side of [-1,1]){
+  const cheek=mesh(new T.SphereGeometry(1,14,10),main,g,p.l*.42,-.12,side*p.w*.54);
+  cheek.scale.set(.31,p.h*.42,p.w*.5);
+  const cover=mesh(new T.TorusGeometry(.23,.009,5,22,Math.PI*.85),mat(0x46546c,.8),g,p.l*.43,-.09,side*p.w*.96);
+  cover.rotation.z=-.38;
  }
  // Additional sculpted anatomy: raised lips and delicate fin rays.
  const lip=mesh(new T.SphereGeometry(1,10,8),main,g,p.l*.97,-.12,0);
