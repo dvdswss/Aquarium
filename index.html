@@ -164,7 +164,7 @@ function purchaseAquariaItem(i){
   state.coins-=item[1];if(item[1]===0)state.coins+=5;
   const bonus=aquariaFoodBonus(item[3]);gainXP(item[2]+bonus);state.cleanliness=Math.max(0,(state.cleanliness??100)-3);
  }
- save();closeAquariaShop();
+ save();if(aquariaShopMode==='food')window.dispatchEvent(new CustomEvent('aquaria-feed',{detail:{food:i,group:item[3]}}));closeAquariaShop();
 }
 function feed(){state.coins+=5;gainXP(2);state.cleanliness=Math.max(0,(state.cleanliness??100)-3);document.getElementById('notice').textContent='냠냠! 물고기들이 맛있게 먹었어 🫧';save()}function buyFish(){if(state.coins<20)return alert('코인이 부족해');state.coins-=20;state.virtual++;gainXP(10);save()}function buyPlant(){if(state.coins<10)return alert('코인이 부족해');state.coins-=10;state.plants++;gainXP(5);save()}function render(){document.getElementById('tankInfo').textContent=state.name+' · '+(state.temp?state.temp+'°C':'수온 미기록');document.getElementById('tankName').value=state.name;let w=state.water||{};for(let id of ['ph','ammonia','nitrite'])document.getElementById(id).value=w[id]??'';document.getElementById('waterInfo').textContent=w.date?'최근 수질 ('+w.date+'): pH '+(w.ph||'—')+' · 암모니아 '+(w.ammonia||'—')+' mg/L · 아질산염 '+(w.nitrite||'—')+' mg/L':'수질 미기록';document.getElementById('waterHistory').textContent='수질 측정 횟수: '+(state.waterHistory||[]).length;document.getElementById('temp').value=state.temp;document.getElementById('fishList').replaceChildren(...state.fish.map((f,i)=>{let li=document.createElement('li');li.textContent=f.n+' × '+f.c+' ';let b=document.createElement('button');b.textContent='삭제';b.onclick=()=>{state.fish.splice(i,1);save()};li.append(b);return li}));let change=state.logs.find(x=>x.type==='환수');document.getElementById('waterChange').textContent=change?'마지막 환수: '+change.date+' ('+Math.max(0,Math.floor((Date.now()-new Date(change.timestamp||change.date).getTime())/86400000)||0)+'일 전)':'아직 환수 기록이 없어';document.getElementById('logs').replaceChildren(...state.logs.map(x=>{let li=document.createElement('li');li.textContent=x.date+' · '+x.type+' '+x.memo;return li}));document.getElementById('coins').textContent=state.coins;document.getElementById('population').textContent=state.virtual;let xp=state.xp||0,lv=Math.floor(xp/50)+1;document.getElementById('level').textContent=lv;document.getElementById('xpText').textContent=(xp%50)+'/50';document.getElementById('xpBar').style.width=(xp%50)*2+'%';document.getElementById('cleanliness').textContent=state.cleanliness??100;document.getElementById('plantCount').textContent=state.plants;if(window.syncAquarium3D){window.syncAquarium3D()}else{const scene=document.getElementById('scene');scene.querySelectorAll('.fish,.extraPlant,.bubble,.pixel-fish,.pixel-plant,.pixel-rock').forEach(x=>x.remove());for(let i=0;i<Math.min(state.virtual,35);i++){let f=document.createElement('span');f.className='pixel-fish';f.innerHTML=pixelFish(i);f.style.top=(12+(i*23)%63)+'%';f.style.setProperty('--duration',(7+i%6*1.3)+'s');f.style.setProperty('--delay',(-i*1.7)+'s');scene.append(f)}for(let i=0;i<Math.min(state.plants+2,24);i++){let p=document.createElement('span');p.className='pixel-plant';p.innerHTML=pixelPlant(i);p.style.left=(4+(i*17)%89)+'%';scene.append(p)}for(let i=0;i<3;i++){let r=document.createElement('span');r.className='pixel-rock';r.style.left=(10+i*33)+'%';r.innerHTML='<svg viewBox="0 0 60 40"><path fill="#496f79" d="M6 34V22h8V12h12V6h18v8h10v20z"/><path fill="#77999a" d="M14 24V16h12V10h12v6H26v8z"/><path fill="#284d5c" d="M42 18h8v16H26v-6h16z"/></svg>';scene.append(r)}for(let i=0;i<9;i++){let b=document.createElement('span');b.className='bubble';b.textContent='◦';b.style.left=(5+i*11)+'%';b.style.animationDelay=(-i*.65)+'s';scene.append(b)}}}render();
 const extraKey='aquaria-real-v2';
@@ -1593,6 +1593,20 @@ function syncFish(){
  while(fish.length>count){const f=fish.pop();scene.remove(f.g)}
 }
 syncFish();
+// Real 3D food particles. Fish steer toward nearby pellets and peck when they reach them.
+const foodParticles=[];
+const foodMaterials=[0xe8c38b,0x6b9d60,0xe7a98a,0xc49d8a,0xf0c1a6].map(c=>new T.MeshStandardMaterial({color:c,roughness:.9}));
+window.addEventListener('aquaria-feed',event=>{
+ if(!active||!scene)return;
+ const food=event.detail?.food??0;
+ const count=food===0?10:food===1?13:food===2?16:food===3?18:21;
+ for(let i=0;i<count;i++){
+  const x=(Math.random()-.5)*4.6,z=(Math.random()-.5)*3.5;
+  const pellet=new T.Mesh(new T.IcosahedronGeometry(.024+(i%3)*.008,0),foodMaterials[food]||foodMaterials[0]);
+  pellet.position.set(x,6.3+Math.random()*.3,z);scene.add(pellet);
+  foodParticles.push({mesh:pellet,life:performance.now()+14000,food,phase:Math.random()*6.28,eaten:false});
+ }
+});
 function updateCamera(){
  orbit.phi=Math.max(.18,Math.min(Math.PI-.18,orbit.phi));
  orbit.radius=Math.max(5.5,Math.min(27,orbit.radius));
@@ -1626,6 +1640,12 @@ function frame(t){
 // tangs cruise open water, butterflyfish inspect reef, cardinalfish hover in groups,
 // gramma stay by crevices, and lionfish stalk slowly near rockwork.
 // Ethology-inspired finite-state behavior, rather than synchronized circular paths.
+for(let i=foodParticles.length-1;i>=0;i--){
+ const pellet=foodParticles[i];
+ if(t>pellet.life||pellet.eaten||pellet.mesh.position.y<.8){scene.remove(pellet.mesh);pellet.mesh.geometry.dispose();foodParticles.splice(i,1);continue;}
+ pellet.mesh.position.y-=.0025;
+ pellet.mesh.position.x+=Math.sin(t*.001+pellet.phase)*.0008;
+}
 for(const f of fish){
  const dt=Math.min(45,Math.max(0,t-(f.lastSwim||t-16)));f.lastSwim=t;
  const pos=f.g.position,k=f.k,phase=f.phase;
@@ -1697,9 +1717,21 @@ for(const f of fish){
   f.target.set(tx,Math.max(1.15,Math.min(6.35,ty)),tz);
   f.nextTurn=t+(mode==='hover'?420:mode==='peck'?480:mode==='lunge'?800:mode==='cruise'?1800:950);
  }
+ // Override wandering with pursuit of a visible, reachable food particle.
+ let nearest=null,nearestD=Infinity;
+ for(const pellet of foodParticles){
+  const d=pos.distanceToSquared(pellet.mesh.position);
+  if(d<nearestD){nearestD=d;nearest=pellet;}
+ }
+ if(nearest&&nearestD<18){
+  f.target.copy(nearest.mesh.position);
+  f.behavior='feeding';f.behaviorUntil=t+350;
+  f.nextTurn=t+200;
+  if(nearestD<.075){nearest.eaten=true;f.tail.rotation.y=.3;}
+ }
  const desired=f.target.clone().sub(pos);
  const distance=desired.length();
- let factor=mode==='hover'?.12:mode==='hide'?.55:mode==='stalk'?.28:mode==='school'?.4:mode==='graze'?.62:mode==='peck'?.55:mode==='lunge'?2.2:mode==='burst'?1.65:mode==='guard'?1.35:1;
+ let factor=mode==='feeding'?1.35:mode==='hover'?.12:mode==='hide'?.55:mode==='stalk'?.28:mode==='school'?.4:mode==='graze'?.62:mode==='peck'?.55:mode==='lunge'?2.2:mode==='burst'?1.65:mode==='guard'?1.35:1;
  if(distance<.35&&mode!=='lunge'&&mode!=='burst')factor*=.4+distance;
  if(distance>.0001)desired.normalize().multiplyScalar(f.swimSpeed*factor);
  // Local separation and alignment for fish of the same species.
