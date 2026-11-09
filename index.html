@@ -457,6 +457,16 @@ canvas.addEventListener('wheel',e=>{
 const rand=(n)=>{let x=Math.sin(n*127.1+78.23)*43758.5453;return x-Math.floor(x)};
 const palette=['#ffbd82','#9ee9e0','#f9a4be','#ffe6a0','#b8a7f3','#9ad1ff'];
 const fish=[];
+const visibleFood=[];
+window.addEventListener('aquaria-feed',event=>{
+ const kind=event.detail?.food??0;
+ const colors=['#f5dfab','#a9d58b','#f3a68c','#e8bd99','#ffe3bd'];
+ const count=kind===0?14:kind===1?18:kind===2?21:kind===3?25:29;
+ for(let i=0;i<count;i++){
+  visibleFood.push({x:35+Math.random()*170,y:68+Math.random()*26,vy:.018+Math.random()*.017,
+   vx:(Math.random()-.5)*.006,r:kind>2?1.5:1.1,color:colors[kind]||colors[0],born:performance.now(),eaten:false});
+ }
+});
 function sync(){
 const count=Math.min(38,Math.max(0,Number(state.virtual)||0));
 while(fish.length<count){const i=fish.length;fish.push({x:30+rand(i+12)*180,y:95+rand(i+44)*155,z:.55+rand(i+7)*.65,dir:i%2?1:-1,speed:.16+rand(i+23)*.24,phase:i*2.4,color:palette[i%palette.length],kind:i%7})}
@@ -869,6 +879,15 @@ for(let i=0;i<125;i++){
 const x=rand(i+500)*W,y=rand(i+650)*H,yy=(y-t*(.002+rand(i+20)*.004)+H)%H;
 rect(x+Math.sin(t*.001+i)*2,yy,i%13===0?2:1,i%17===0?2:1,'rgba(206,242,255,.42)');
 }
+// Food is rendered in the default 2D aquarium as well as the optional 3D view.
+for(let i=visibleFood.length-1;i>=0;i--){
+ const p=visibleFood[i];
+ if(p.eaten||t-p.born>16000||p.y>308){visibleFood.splice(i,1);continue;}
+ p.y+=p.vy*32;p.x+=p.vx*32;
+ ctx.fillStyle='rgba(255,246,218,.18)';ctx.beginPath();ctx.arc(p.x,p.y,p.r*3,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+ rect(p.x-.3,p.y-.4,.6,.6,'#fff9e6');
+}
 // Reef fish AI: independent waypoints, persistent habitat, pauses and group behavior.
 const dt=Math.min(2,Math.max(.2,(t-(draw.prevTime||t-32))/32));
 draw.prevTime=t;
@@ -932,6 +951,12 @@ f.aiReady=true;f.trip=0;f.hostIndex=i%(habitat[k]?.length||1);
 f.tx=f.x;f.ty=f.y;f.waitUntil=0;f.waitDuration=0;
 f.turnEase=f.dir;f.lastMove=0;
 nextPoint(f,i,k,t);
+}
+let nearestFood=null,foodDist=Infinity;
+for(const p of visibleFood){const d=Math.hypot(p.x-f.x,p.y-f.y);if(d<foodDist){nearestFood=p;foodDist=d;}}
+if(nearestFood&&foodDist<85){
+ f.tx=nearestFood.x;f.ty=nearestFood.y;f.swimRate=2.1;f.waitUntil=0;
+ if(foodDist<4){nearestFood.eaten=true;nextPoint(f,i,k,t);}
 }
 const dx=f.tx-f.x,dy=f.ty-f.y;
 const distance=Math.hypot(dx,dy);
