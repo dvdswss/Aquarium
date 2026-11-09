@@ -645,6 +645,7 @@ const count=Math.min(38,Math.max(0,Number(state.virtual)||0));
 while(fish.length<count){const i=fish.length;fish.push({x:30+rand(i+12)*180,y:95+rand(i+44)*155,z:.55+rand(i+7)*.65,dir:i%2?1:-1,speed:.48+rand(i+23)*.30,phase:i*2.4,color:palette[i%palette.length],kind:(state.fishLives?.[i]?.kind??i%14)})}
 fish.length=count;
 }
+window.addEventListener('aquaria-dev-sync',()=>{fish.length=0;sync()});
 window.syncAquarium3D=sync;sync();
 function rect(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(Math.round(x*4)/4,Math.round(y*4)/4,Math.max(.25,Math.round(w*4)/4),Math.max(.25,Math.round(h*4)/4))}
 function polygon(points,color){ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);for(let i=1;i<points.length;i++)ctx.lineTo(points[i][0],points[i][1]);ctx.closePath();ctx.fill()}
@@ -1772,8 +1773,9 @@ function createFish(k,i){
   swimSpeed:([.00078,.00115,.00102,.00076,.00094,.00048,.00043,.00085,.0011,.00095,.0009,.0007,.0008,.0012][k]||.0008),
   lastSwim:0,behavior:'explore',behaviorUntil:0,burstUntil:0,seed:i*17.13});
 }
+window.addEventListener('aquaria-dev-sync',()=>{for(const f of fish)scene.remove(f.g);fish.length=0;syncFish()});
 function syncFish(){
- const count=Math.min(38,Math.max(0,Number((window.state||{}).virtual)||Number(document.getElementById('population')?.textContent)||5));
+ const count=Math.min(38,Math.max(0,Number(state.virtual)));
  while(fish.length<count){const roster=JSON.parse(localStorage.getItem('aquaria-v1')||'{}').aquariaSpecies||[];const i=fish.length;const start=Math.max(0,count-roster.length);const k=JSON.parse(localStorage.getItem('aquaria-v1')||'{}').fishLives?.[i]?.kind??(i>=start?roster[i-start]:i%14);createFish(Number.isInteger(k)&&k>=0&&k<14?k:i%14,i);}
  while(fish.length>count){const f=fish.pop();scene.remove(f.g)}
 }
@@ -2044,4 +2046,48 @@ if(localStorage.getItem(viewPreferenceKey)==='3d'){
 }
 })();
 </script>
+<style>
+#aquariaDev{position:fixed;inset: auto 10px calc(env(safe-area-inset-bottom,0px) + 12px) auto;width:min(420px,calc(100vw - 20px));max-height:80dvh;overflow:auto;z-index:300;background:#092432f5;border:1px solid #70c9bd;border-radius:16px;padding:18px;box-shadow:0 15px 65px #0009;backdrop-filter:blur(18px);font:13px/1.5 system-ui;color:#eafbf8}#aquariaDev[hidden]{display:none}#aquariaDev .dev-head{display:flex;justify-content:space-between;align-items:center;gap:12px}#aquariaDev h3{margin:0;color:#8af2d9}#aquariaDev label{display:block;margin:12px 0 5px}#aquariaDev .dev-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}#aquariaDev button,#aquariaDev input,#aquariaDev select{width:100%;min-height:44px;font:inherit;border-radius:8px;padding:9px}#aquariaDev .dev-head button{width:44px}#aquariaDev p{font-size:12px;color:#a8c8d0}#aquariaDevStatus{min-height:20px;color:#ffd79c!important}#aquariaDev .dev-values{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+</style>
+<div id="aquariaDev" role="dialog" aria-modal="false" aria-labelledby="aquariaDevTitle" hidden>
+<div class="dev-head"><h3 id="aquariaDevTitle">⌘ 개발자 모드</h3><button type="button" id="aquariaDevClose" aria-label="개발자 모드 닫기">✕</button></div>
+<p>이 기기의 수족관 저장 데이터에 바로 적용돼. 모드를 열 때 복원 지점을 만들어.</p>
+<div class="dev-values"><label>코인<input id="devCoins" type="number" min="0" max="9999999" step="1"></label><label>경험치 XP<input id="devXP" type="number" min="0" max="499999" step="1"></label></div>
+<button type="button" data-dev="values">코인 · XP 적용</button>
+<label for="devSpecies">추가할 물고기</label><select id="devSpecies"></select>
+<div class="dev-grid"><button type="button" data-dev="fish">선택한 물고기 +1</button><button type="button" data-dev="all">모든 종류 +1</button><button type="button" data-dev="stress">전체 스트레스 0</button><button type="button" data-dev="clean">청결도 100%</button><button type="button" data-dev="plant">산호 +1</button><button type="button" data-dev="restore">열기 전 상태 복원</button></div>
+<p id="aquariaDevSummary"></p><p id="aquariaDevStatus" role="status" aria-live="polite"></p>
+</div>
+<script>
+(()=>{
+ const panel=document.getElementById('aquariaDev'),status=document.getElementById('aquariaDevStatus');
+ let snapshot=null,opener=null;
+ const menu=document.querySelector('#aquariaDrawer .drawer-actions');
+ const button=document.createElement('button');button.type='button';button.innerHTML='⌘ <span>개발자 모드 <small>테스트 · 상태 조정</small></span>';menu.append(button);
+ const select=document.getElementById('devSpecies');
+ aquariaFishCatalog.forEach((entry,i)=>{const option=document.createElement('option');option.value=i;option.textContent=entry[0];select.append(option)});
+ function refresh(){document.getElementById('devCoins').value=state.coins||0;document.getElementById('devXP').value=state.xp||0;document.getElementById('aquariaDevSummary').textContent='물고기 '+state.virtual+'/38 · 청결도 '+(state.cleanliness??100)+'% · 산호 '+(state.plants||0);}
+ button.onclick=()=>{aquariaInitLives();snapshot=JSON.stringify(state);opener=button;panel.hidden=false;document.getElementById('aquariaDrawer').open=false;status.textContent='복원 지점 저장 완료';refresh();document.getElementById('aquariaDevClose').focus()};
+ function close(){panel.hidden=true;document.getElementById('aquariaDrawer').open=true;opener?.focus()}
+ document.getElementById('aquariaDevClose').onclick=close;
+ document.addEventListener('keydown',e=>{if(!panel.hidden&&e.key==='Escape')close()});
+ function add(kind){if(state.fishLives.length>=38)return false;state.fishLives.push({kind,born:Date.now(),lifeDays:28,stress:0,stressAt:Date.now()});return true}
+ panel.addEventListener('click',e=>{
+  const action=e.target.closest('[data-dev]')?.dataset.dev;if(!action)return;
+  let message='적용 완료';
+  if(action==='values'){
+   const coins=Number(document.getElementById('devCoins').value),xp=Number(document.getElementById('devXP').value);
+   if(!document.getElementById('devCoins').value||!document.getElementById('devXP').value||!Number.isInteger(coins)||coins<0||coins>9999999||!Number.isInteger(xp)||xp<0||xp>499999){status.textContent='코인은 0~9,999,999, XP는 0~499,999 정수로 입력해.';return}
+   state.coins=coins;state.xp=xp;
+  }else if(action==='fish'){message=add(Number(select.value))?'물고기 1마리 추가 완료':'최대 38마리까지 추가할 수 있어.';
+  }else if(action==='all'){let added=0;aquariaFishCatalog.forEach((_,i)=>{if(add(i))added++});message=added+'마리 추가 완료 · 최대 38마리';
+  }else if(action==='stress'){state.fishLives.forEach(f=>{f.stress=0;f.stressAt=Date.now();f.touchHistory=[]});message='전체 물고기 스트레스 해제 완료';
+  }else if(action==='clean'){state.cleanliness=100;
+  }else if(action==='plant'){state.plants=Math.min(24,(Number(state.plants)||0)+1);
+  }else if(action==='restore'){if(!snapshot)return;state=JSON.parse(snapshot);message='개발자 모드를 열기 전 상태로 복원했어.';}
+  state.virtual=state.fishLives.length;state.aquariaSpecies=state.fishLives.map(f=>f.kind);save();window.dispatchEvent(new Event('aquaria-dev-sync'));refresh();status.textContent=message;
+ });
+})();
+</script>
+
 </html>
