@@ -1270,7 +1270,7 @@ function createFish(k,i){
  const p=fishProfiles[k],size=[.36,.47,.42,.4,.31,.32,.48][k]*(.88+(i%4)*.045);
  const main=mat(colors[k],.44),dark=mat(k===1?0x10275a:0x45364b),white=mat(0xfff0dc);
  const finMat=new T.MeshStandardMaterial({color:colors[k],roughness:.48,transparent:true,opacity:.88,side:T.DoubleSide,depthWrite:false});
- const eye=mat(0x101923,.14),iris=mat(0xe3d6ad,.2);
+ const eye=mat(0x101923,.14),iris=mat(k===5?0xe9ba83:k===1?0xb3d5ed:0xe3d6ad,.2);
  mesh(fishBodies[k],fishSkins[k],g);
  const tailPivot=new T.Group();tailPivot.position.x=-p.l+.035;g.add(tailPivot);
  const fork=k===1||k===2||k===3;
@@ -1284,6 +1284,19 @@ function createFish(k,i){
  const finPivot=new T.Group();finPivot.position.set(.15,-.12,p.w*.92);g.add(finPivot);
  sculptFin(finPivot,[[0,0],[-.28,.14],[-.64,-.3],[-.3,-.42]],finMat,0x5a526d);
  const oppositePivot=new T.Group();oppositePivot.position.set(.15,-.12,-p.w*.92);g.add(oppositePivot);sculptFin(oppositePivot,[[0,0],[-.28,.14],[-.64,-.3],[-.3,-.42]],finMat,0x5a526d);
+ // Layered angular fin panels: rigid triangular membranes, no spline geometry.
+ const finAccent=new T.MeshStandardMaterial({color:k===1?0xf3d66b:k===4?0xf4a7da:k===6?0xffd5b5:colors[k],roughness:.63,metalness:0,transparent:true,opacity:.58,side:T.DoubleSide,depthWrite:false,flatShading:true});
+ for(const side of [-1,1]){
+  const parent=side===1?finPivot:oppositePivot;
+  const panel=new T.Shape();panel.moveTo(-.08,-.06);panel.lineTo(-.3,.035);panel.lineTo(-.49,-.25);panel.lineTo(-.27,-.3);panel.closePath();
+  const detail=mesh(new T.ShapeGeometry(panel),finAccent,parent,0,0,side*.013);
+  detail.rotation.y=side*.16;
+ }
+ // Tiny paired triangular tail-lobe markings keep species recognizable at a distance.
+ const tailAccent=new T.Shape();tailAccent.moveTo(-.27,.11);tailAccent.lineTo(-p.tail*.74,.39);tailAccent.lineTo(-p.tail*.49,.11);tailAccent.closePath();
+ mesh(new T.ShapeGeometry(tailAccent),finAccent,tailPivot,0,0,.012);
+ const tailAccentLow=new T.Shape();tailAccentLow.moveTo(-.27,-.11);tailAccentLow.lineTo(-p.tail*.74,-.39);tailAccentLow.lineTo(-p.tail*.49,-.11);tailAccentLow.closePath();
+ mesh(new T.ShapeGeometry(tailAccentLow),finAccent,tailPivot,0,0,.012);
  for(const side of [-1,1]){
   const z=side*p.w*.88;
   // Cute but anatomical: faceted iris, dark pupil and two tiny polygon highlights.
