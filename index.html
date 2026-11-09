@@ -166,7 +166,7 @@ window.aquariaFishTouched=function(){
  const reward=roll<.02?25:roll<.10?10:roll<.35?3:0;
  if(reward){
   state.coins=(Number(state.coins)||0)+reward;
-  save();aquariaShowRewardToast(reward);
+  save();
  }
  return reward;
 };
@@ -542,7 +542,7 @@ function touchFishAt(clientX,clientY){
  target.ty=Math.max(80,Math.min(306,target.y-12-Math.random()*22));
  target.swimRate=2.2;target.waitUntil=0;
  const reward=window.aquariaFishTouched?.()||0;
- if(reward){target.rewardText='';target.rewardUntil=0;}
+ if(reward){target.rewardText='+'+reward+'coin';target.rewardUntil=performance.now()+1150;}
 }
 canvas.addEventListener('click',e=>touchFishAt(e.clientX,e.clientY));
 const visibleFood=[];
@@ -1066,7 +1066,7 @@ f.dir=newDir;
 f.x=clamp(f.x,17,W-17);f.y=clamp(f.y,75,311);
 fishDraw(f,t);
 if(f.rewardUntil>t){
- ctx.fillStyle='#ffe9a5';ctx.font='bold 8px sans-serif';ctx.fillText(f.rewardText,f.x+9,f.y-13-(1-(f.rewardUntil-t)/1250)*8);
+ ctx.fillStyle='#ffe3a2';ctx.font='bold 9px sans-serif';ctx.fillText(f.rewardText,f.x+8,f.y-12-(1-(f.rewardUntil-t)/1150)*7);
 }
 if(f.touchUntil>t){
  const pulse=(f.touchUntil-t)/1100;
@@ -1225,6 +1225,9 @@ header h1{font-size:18px!important;letter-spacing:.11em!important;opacity:.83}
 </style><style id="aquaria-reward-toast-minimal">
 #scene #aquariaRewardToast{top:19%!important;padding:0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;gap:0!important}
 #scene #aquariaRewardToast strong{font:700 17px/1.3 system-ui,sans-serif!important;color:#ffe19a!important;letter-spacing:.3px;text-shadow:0 2px 7px #081a33,0 0 10px rgba(255,208,106,.35)}
+</style><style id="aquaria-inline-coin-final">
+#scene #aquariaRewardToast{display:none!important}
+#scene .aquaria-coin-inline{font:700 12px/1 system-ui,sans-serif!important;color:#ffe3a2!important;background:transparent!important;border:0!important;padding:0!important;box-shadow:none!important;text-shadow:0 1px 4px #0b213b!important;white-space:nowrap!important}
 </style><style id="aquaria-3d-style">
 #scene .view-switch{position:absolute;top:12px;right:12px;z-index:30;min-height:34px;padding:5px 11px;border:1px solid #9be9df;border-radius:18px;background:#0a3449df;color:#e8fffb;font-size:12px;box-shadow:0 2px 9px #041b30}
 #scene .three-world{position:absolute;inset:0;z-index:12;display:none;overflow:hidden;touch-action:none}
@@ -1962,7 +1965,7 @@ layer.addEventListener('pointerup',e=>{
    if(distance<nearest){nearest=distance;touched=f;}
   }
  }
- if(touched){touched.behavior='burst';touched.behaviorUntil=performance.now()+900;touched.nextTurn=0;spawnFishHearts(touched);const reward=window.aquariaFishTouched?.()||0;}
+ if(touched){touched.behavior='burst';touched.behaviorUntil=performance.now()+900;touched.nextTurn=0;spawnFishHearts(touched);const reward=window.aquariaFishTouched?.()||0;if(reward){const el=document.createElement('span');el.className='aquaria-floating-heart aquaria-coin-inline';el.textContent='+'+reward+'coin';heartLayer.append(el);floatingHearts.push({el,fish:touched,born:performance.now(),offset:0,base:touched.g.position.clone(),coin:true});}}
 });
 layer.addEventListener('pointerdown',e=>{layer.setPointerCapture(e.pointerId);pointer.set(e.pointerId,{x:e.clientX,y:e.clientY});lastDistance=0});
 layer.addEventListener('pointermove',e=>{
