@@ -718,26 +718,80 @@ const foraging=(k===2||k===3)&&near;
 return (foraging?.11*Math.sin(t*.006+f.phase):0)+sway*posture;
 }
 function drawNewSpecies(f,t,k){
- const palettes=[['#1869ad','#ed923d','#6ce5cf'],['#f7f0df','#ed6559','#efc777'],['#7144a7','#4d2d85','#e8d269'],['#edcd63','#35404b','#fff0c9'],['#d8d1bc','#a35c83','#4b5163'],['#30343e','#faf0df','#606a77'],['#1c334e','#29c1f3','#9fefff']];
- const [base,accent,light]=palettes[k-7],thin=k===8||k===13;
- const z=(f.z||1)*.95,sw=Math.sin(t*.017+(f.phase||0))*2.5;
- ctx.save();ctx.translate(f.x,f.y+Math.sin(t*.0028+(f.phase||0))*.7);ctx.scale((f.dir||1)*z,z);
- function poly(pts,c){ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(...pts[0]);for(let i=1;i<pts.length;i++)ctx.lineTo(...pts[i]);ctx.closePath();ctx.fill();}
- function line(x,y,xx,yy,c,w=.6){ctx.strokeStyle=c;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(xx,yy);ctx.stroke();}
- function dot(x,y,r,c){ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}
- poly([[-10,0],[-19+sw,-(k===9?9:6)],[-16+sw,0],[-19+sw,k===9?9:6]],accent);
- poly([[-8,-4],[-4,k===8?-19:-11],[3,-8],[8,-4]],k===8?accent:base);
- poly([[-8,4],[-2,10],[5,8],[8,3]],accent);
- ctx.fillStyle=base;ctx.beginPath();ctx.moveTo(-11,0);ctx.bezierCurveTo(-8,thin?-4:-8,6,thin?-4:-7,12,-1);ctx.quadraticCurveTo(14,0,12,2);ctx.bezierCurveTo(5,thin?4:7,-8,thin?4:8,-11,0);ctx.fill();
- if(k===7){for(let j=0;j<15;j++){const x=-8+(j*7)%19,y=-5+(j*11)%11;dot(x,y,1.7,j%2?accent:light);dot(x+.3,y,.6,base);}}
- if(k===8){poly([[2,-4],[12,-2],[12,2],[2,4]],accent);poly([[-8,-4],[-5,-4],[-4,4],[-7,4]],light);}
- if(k===9){for(let j=0;j<7;j++)line(-8+j*2.5,-5,-8+j*2.5,-8,light);poly([[-19+sw,-8],[-16+sw,0],[-19+sw,8]],light);}
- if(k===10){poly([[5,-6],[11,-3],[13,1],[10,5],[5,5],[3,-1]],accent);poly([[0,-6],[3,-6],[6,5],[3,6]],light);for(let j=0;j<7;j++)line(-8+j*2.7,-5,-8+j*2.7,-11,light);}
- if(k===11){poly([[-1,-7],[2,-7],[3,7],[0,7]],'#41485b');poly([[3,-6],[12,-2],[12,3],[3,7]],'#c7b2c9');for(let j=0;j<10;j++)dot(4+(j*7)%8,-4+(j*5)%9,.8,accent);poly([[-11,0],[-8,-6],[-2,-6],[-2,6],[-8,6]],'#ded28b');}
- if(k===12){for(const x of [-6,1,8])poly([[x-1.5,-6],[x+1,-6],[x+2,6],[x-1,6]],accent);}
- if(k===13){poly([[-10,-1.8],[12,-1.8],[12,1],[-10,1]],accent);line(-9,-2,11,-2,light,.6);}
- poly([[-1,1],[-4,5],[-1,7],[2,3]],'rgba(255,246,223,.45)');
- dot(9,-2,1.2,'#17283c');dot(8.7,-2.5,.4,'#fff6e6');line(12,1,13,1,'#354255');
+ // Seven hand-drawn species silhouettes, shared by the aquarium and shop thumbnails.
+ const z=(f.z||1)*.95,phase=f.phase||0,sw=Math.sin(t*.014+phase)*2;
+ ctx.save();ctx.translate(f.x,f.y+Math.sin(t*.0026+phase)*.65);ctx.scale((f.dir||1)*z,z);
+ const C=ctx;
+ function shape(pts,fill,stroke){C.beginPath();C.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)C.lineTo(pts[i][0],pts[i][1]);C.closePath();C.fillStyle=fill;C.fill();if(stroke){C.strokeStyle=stroke;C.lineWidth=.55;C.stroke();}}
+ function ellipse(x,y,rx,ry,color){C.beginPath();C.ellipse(x,y,rx,ry,0,0,Math.PI*2);C.fillStyle=color;C.fill();}
+ function line(x,y,X,Y,color,w=.55){C.strokeStyle=color;C.lineWidth=w;C.beginPath();C.moveTo(x,y);C.lineTo(X,Y);C.stroke();}
+ function curved(points,color,w=1){C.strokeStyle=color;C.lineWidth=w;C.lineCap='round';C.beginPath();C.moveTo(points[0],points[1]);for(let i=2;i<points.length;i+=2)C.lineTo(points[i],points[i+1]);C.stroke();}
+ function body(color,half=6,head=12){C.beginPath();C.moveTo(-11,0);C.bezierCurveTo(-8,-half,3,-half-1,head,-2);C.quadraticCurveTo(head+2,0,head,2);C.bezierCurveTo(3,half+1,-8,half,-11,0);C.fillStyle=color;C.fill();C.strokeStyle='rgba(29,41,61,.27)';C.lineWidth=.55;C.stroke();}
+ function tail(color,spread=6){shape([[-10,0],[-19+sw,-spread],[-16+sw,0],[-19+sw,spread]],color);}
+ function eye(x=9,y=-1.7){ellipse(x,y,1.12,1.22,'#17283a');ellipse(x-.35,y-.43,.37,.4,'#fff9ea');line(12,.7,13,1,'rgba(35,49,64,.6)');}
+ if(k===7){ // Mandarin dragonet: squat body, ornate dorsal sail, flowing paired fins
+  tail('#276baf',8);
+  shape([[-8,-3],[-6,-11],[-3,-17],[0,-11],[3,-14],[6,-5]],'#267dba','#77dfd2');
+  shape([[-4,3],[-13,11],[-9,13],[2,5]],'#239ab2');
+  body('#126ca8',5.7,11);
+  C.save();C.beginPath();C.moveTo(-10,0);C.bezierCurveTo(-7,-6,3,-7,11,-2);C.quadraticCurveTo(13,0,11,2);C.bezierCurveTo(3,7,-7,6,-10,0);C.clip();
+  for(let j=0;j<6;j++){const x=-8+j*3.5,y=Math.sin(j*1.8)*2;ellipse(x,y,2.2,1.45,'#f3a045');ellipse(x+.15,y,1.25,.65,'#70e1cb');}
+  curved([-9,3,-4,4,1,3,6,4,10,2],'#ffb24b',1.1);C.restore();
+  for(let j=0;j<5;j++)line(-5+j*2,-6,-3+j*2,-11-(j%2)*2,'#b8f3dc');
+  eye(9,-1.4);
+ }else if(k===8){ // Firefish goby: narrow elongated body, tall first dorsal ray
+  tail('#d95b6b',6);
+  shape([[-5,-2],[-2,-9],[0,-20],[1,-21],[2,-6],[7,-3]],'#f4d28d');
+  shape([[-7,2],[-3,7],[4,5]],'#eea38c');
+  body('#f7f0e4',3.6,14);
+  C.save();C.beginPath();C.moveTo(-11,0);C.bezierCurveTo(-8,-4,4,-4,14,-2);C.lineTo(14,2);C.bezierCurveTo(4,4,-8,4,-11,0);C.clip();
+  const grad=C.createLinearGradient(-11,0,14,0);grad.addColorStop(0,'#db5967');grad.addColorStop(.42,'#f0b7a0');grad.addColorStop(.73,'#fff4e5');grad.addColorStop(1,'#fff9ed');C.fillStyle=grad;C.fillRect(-12,-5,28,10);C.restore();
+  eye(11,-1);
+ }else if(k===9){ // Purple tang: tall oval surgeonfish with forked yellow caudal fin
+  tail('#f2cd60',10);
+  shape([[-9,-3],[-6,-9],[1,-11],[8,-6]],'#604097');
+  shape([[-9,3],[-4,10],[3,11],[9,4]],'#64419c');
+  body('#7043a5',8.2,11);
+  for(let j=0;j<10;j++){const x=-8+j*1.8;line(x,-5.8-Math.sin(j/9*Math.PI)*1.3,x+1,-6.8-Math.sin(j/9*Math.PI)*1.4,'#aa83d0');}
+  curved([-8,1,-4,3,1,3,6,2],'#9b70c9',.7);
+  eye(8.8,-2);
+ }else if(k===10){ // Foxface rabbitfish: sharp elongated snout, dark face mask, tall spiny dorsal
+  tail('#e9c45a',8);
+  shape([[-9,-4],[-8,-11],[-5,-13],[-2,-11],[0,-14],[3,-10],[7,-7]],'#e3c45c');
+  shape([[-7,4],[-4,10],[3,10],[8,3]],'#d4b452');
+  body('#efd05c',7.1,13);
+  shape([[1,-6],[4,-6],[8,4],[5,6]],'#fff3ce');
+  shape([[6,-5],[11,-4],[14,-1],[13,2],[10,4],[7,2]],'#343d43');
+  for(let j=0;j<6;j++)line(-7+j*2.3,-7,-6+j*2.3,-12-(j%2),'#f9e6a2');
+  eye(10,-1.9);
+ }else if(k===11){ // Pajama cardinal: golden head, bold vertical girdle, lavender dotted tail
+  tail('#c7a4bd',7);
+  shape([[-6,-4],[-4,-11],[0,-8],[3,-4]],'#b5a1b8');
+  shape([[-6,4],[-4,11],[2,8],[5,3]],'#b7a3c0');
+  body('#d4c4d2',6.4,12);
+  C.save();C.beginPath();C.moveTo(-11,0);C.bezierCurveTo(-8,-7,3,-7,12,-2);C.lineTo(12,2);C.bezierCurveTo(3,7,-8,7,-11,0);C.clip();
+  C.fillStyle='#dfcf82';C.fillRect(2,-9,13,18);
+  C.fillStyle='#343d4e';C.fillRect(-1,-9,2.7,18);
+  for(let j=0;j<15;j++)ellipse(-9+(j*11)%8,-5+(j*7)%11,.58,.7,'#a65c81');
+  C.restore();eye(9,-1.8);
+ }else if(k===12){ // Black ocellaris clownfish: rounded body, organic ivory saddles
+  tail('#32353d',7);
+  shape([[-7,-4],[-5,-10],[3,-9],[8,-5]],'#30343c');
+  shape([[-7,4],[-3,10],[5,8],[9,3]],'#30343c');
+  body('#2c3038',6.9,12);
+  C.save();C.beginPath();C.moveTo(-11,0);C.bezierCurveTo(-8,-7,3,-8,12,-2);C.lineTo(12,2);C.bezierCurveTo(3,8,-8,7,-11,0);C.clip();
+  for(const [x,w] of [[-7,2.8],[0,2.5],[8,2.2]]){
+   C.fillStyle='#faf3e5';C.beginPath();C.moveTo(x-w/2,-9);C.quadraticCurveTo(x+w,-4,x+w/2,0);C.quadraticCurveTo(x+w,4,x+w/2,9);C.lineTo(x-w/2,9);C.quadraticCurveTo(x-w,2,x-w/2,0);C.quadraticCurveTo(x-w,-4,x-w/2,-9);C.fill();
+  }C.restore();eye(10,-1.8);
+ }else{ // Neon goby: long pencil-thin body and a continuous electric-blue lateral line
+  tail('#253c61',4);
+  shape([[-6,-2],[-3,-6],[2,-4],[6,-2]],'#294363');
+  shape([[-5,2],[-2,5],[4,3]],'#294363');
+  body('#1a2e48',3.1,15);
+  C.save();C.beginPath();C.moveTo(-11,0);C.bezierCurveTo(-8,-3,4,-3,15,-1);C.lineTo(15,1);C.bezierCurveTo(4,3,-8,3,-11,0);C.clip();
+  C.fillStyle='#1fbbec';C.fillRect(-12,-.8,29,1.6);
+  C.fillStyle='#9aeaff';C.fillRect(-12,-1,29,.4);C.restore();eye(12,-.9);
+ }
  ctx.restore();
 }
 function fishDraw(f,t){
