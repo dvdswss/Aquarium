@@ -1945,13 +1945,36 @@ layer.addEventListener('wheel',e=>{e.preventDefault();orbit.radius*=e.deltaY>0?1
 layer.addEventListener('dblclick',()=>{orbit.theta=0;orbit.phi=1.32;orbit.radius=14;orbit.targetY=2.8});
 initialized=true;resize();updateCamera();
 }
-button.addEventListener('click',async()=>{
- if(active){active=false;host.classList.remove('is-3d');button.textContent='◈ 3D 보기';return}
+const viewPreferenceKey='aquaria-preferred-view';
+async function setAquaria3D(){
+ if(active)return true;
  button.textContent='3D 불러오는 중…';button.disabled=true;
- try{await load();if(!initialized)build();active=true;host.classList.add('is-3d');button.textContent='▤ 2D 보기';start3DFrame()}
- catch(err){button.textContent='3D 재시도';console.error('AQUARIA 3D error:',err);hint.textContent='3D 오류: '+String(err?.message||err).slice(0,85);hint.style.whiteSpace='normal';hint.style.maxWidth='85%';hint.style.textAlign='center';layer.style.display='block';setTimeout(()=>{if(!active)layer.style.display='none'},8000)}
- finally{button.disabled=false}
+ try{
+  await load();if(!initialized)build();
+  active=true;host.classList.add('is-3d');button.textContent='▤ 2D 보기';
+  localStorage.setItem(viewPreferenceKey,'3d');
+  start3DFrame();return true;
+ }catch(err){
+  button.textContent='3D 재시도';console.error('AQUARIA 3D error:',err);
+  hint.textContent='3D 오류: '+String(err?.message||err).slice(0,85);
+  hint.style.whiteSpace='normal';hint.style.maxWidth='85%';hint.style.textAlign='center';
+  layer.style.display='block';setTimeout(()=>{if(!active)layer.style.display='none'},8000);
+  return false;
+ }finally{button.disabled=false}
+}
+button.addEventListener('click',async()=>{
+ if(active){
+  active=false;host.classList.remove('is-3d');
+  button.textContent='◈ 3D 보기';
+  localStorage.setItem(viewPreferenceKey,'2d');
+  return;
+ }
+ await setAquaria3D();
 });
+if(localStorage.getItem(viewPreferenceKey)==='3d'){
+ // Restore the last selected view on every visit, including page refreshes.
+ setAquaria3D();
+}
 })();
 </script>
 </html>
