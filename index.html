@@ -305,12 +305,28 @@ html,body{max-width:100%;overflow-x:hidden}
 (function(){
 const host=document.getElementById('scene');if(!host)return;
 const canvas=document.createElement('canvas');canvas.setAttribute('aria-label','움직이는 도트 바닷속 풍경');host.querySelectorAll('canvas').forEach(el=>el.remove());host.prepend(canvas);
-const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)return;
-// Render at 2x internal resolution for finer pixel edges and small details.
+// Render to a private fixed-size buffer. iOS Safari sometimes composites a
+// stretched high-resolution canvas as duplicate GPU tiles; present one frame
+// to a correctly sized on-screen canvas instead.
 const W=240,H=360,PIXEL_SCALE=2;
-canvas.width=W*PIXEL_SCALE;canvas.height=H*PIXEL_SCALE;
+const buffer=document.createElement('canvas');
+buffer.width=W*PIXEL_SCALE;buffer.height=H*PIXEL_SCALE;
+const ctx=buffer.getContext('2d',{alpha:false});
+const screen=canvas.getContext('2d',{alpha:false});
+if(!ctx||!screen)return;
 ctx.setTransform(PIXEL_SCALE,0,0,PIXEL_SCALE,0,0);
 ctx.imageSmoothingEnabled=false;
+function present(){
+const box=host.getBoundingClientRect();
+const dpr=Math.min(window.devicePixelRatio||1,2);
+const width=Math.max(1,Math.round(box.width*dpr));
+const height=Math.max(1,Math.round(box.height*dpr));
+if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
+screen.setTransform(1,0,0,1,0,0);
+screen.imageSmoothingEnabled=false;
+screen.clearRect(0,0,width,height);
+screen.drawImage(buffer,0,0,width,height);
+}
 const rand=(n)=>{let x=Math.sin(n*127.1+78.23)*43758.5453;return x-Math.floor(x)};
 const palette=['#ffbd82','#9ee9e0','#f9a4be','#ffe6a0','#b8a7f3','#9ad1ff'];
 const fish=[];
@@ -784,7 +800,7 @@ f.x=clamp(f.x,17,W-17);f.y=clamp(f.y,75,311);
 fishDraw(f,t);
 });
 }
-let last=0;function frame(t){requestAnimationFrame(frame);if(document.hidden||t-last<32)return;last=t;draw(t)}
+let last=0;function frame(t){requestAnimationFrame(frame);if(document.hidden||t-last<32)return;last=t;draw(t);present()}
 requestAnimationFrame(frame);
 })();
 </script><style id="aquaria-no-zoom-drag">
