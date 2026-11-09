@@ -1196,6 +1196,8 @@ header h1{font-size:18px!important;letter-spacing:.11em!important;opacity:.83}
 </style><style id="aquaria-heart-minimal-v3">
 #scene .aquaria-heart-shape{width:13px!important;height:13px!important;filter:none!important;background:none!important;border:0!important;padding:0!important;box-shadow:none!important}
 #scene .aquaria-heart-shape svg{width:100%;height:100%;display:block}
+</style><style id="aquaria-coin-popup-fix">
+#scene .aquaria-coin-popup{font:700 15px/1.2 system-ui,sans-serif!important;color:#ffdf85!important;padding:5px 9px!important;border:1px solid rgba(255,226,144,.7)!important;border-radius:18px!important;background:rgba(16,32,53,.9)!important;box-shadow:0 3px 14px rgba(0,0,0,.35)!important;white-space:nowrap!important;z-index:40}
 </style><style id="aquaria-3d-style">
 #scene .view-switch{position:absolute;top:12px;right:12px;z-index:30;min-height:34px;padding:5px 11px;border:1px solid #9be9df;border-radius:18px;background:#0a3449df;color:#e8fffb;font-size:12px;box-shadow:0 2px 9px #041b30}
 #scene .three-world{position:absolute;inset:0;z-index:12;display:none;overflow:hidden;touch-action:none}
@@ -1919,7 +1921,7 @@ layer.addEventListener('pointerup',e=>{
  if(!fishPointerStart||Math.hypot(e.clientX-fishPointerStart.x,e.clientY-fishPointerStart.y)>12||performance.now()-fishPointerStart.time>500){fishPointerStart=null;return;}
  fishPointerStart=null;if(!active||!camera||!renderer)return;
  const r=renderer.domElement.getBoundingClientRect();
- const ray=new T.Raycaster();ray.setFromCamera(new T.Vector2((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height*2-1)),camera);
+ const T=window.THREE;const ray=new T.Raycaster();ray.setFromCamera(new T.Vector2((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height*2-1)),camera);
  const hit=ray.intersectObjects(fish.map(f=>f.g),true)[0];
  let touched=hit?fish.find(f=>{let obj=hit.object;while(obj){if(obj===f.g)return true;obj=obj.parent;}return false;}):null;
  // Mobile-friendly touch area: fish are tiny, so use a 36px screen-space hit radius.
@@ -1933,7 +1935,7 @@ layer.addEventListener('pointerup',e=>{
    if(distance<nearest){nearest=distance;touched=f;}
   }
  }
- if(touched){touched.behavior='burst';touched.behaviorUntil=performance.now()+900;touched.nextTurn=0;spawnFishHearts(touched);const reward=window.aquariaFishTouched?.()||0;if(reward){const p=touched.g.position.clone();p.y+=.7;const el=document.createElement('span');el.className='aquaria-floating-heart';el.textContent='+'+reward+' 🪙';el.style.color='#ffe7a0';heartLayer.append(el);floatingHearts.push({el,fish:touched,born:performance.now(),offset:0,base:p});}}
+ if(touched){touched.behavior='burst';touched.behaviorUntil=performance.now()+900;touched.nextTurn=0;spawnFishHearts(touched);const reward=window.aquariaFishTouched?.()||0;if(reward){const p=touched.g.position.clone();p.y+=.7;const el=document.createElement('span');el.className='aquaria-floating-heart aquaria-coin-popup';el.textContent='+'+reward+' 🪙';heartLayer.append(el);floatingHearts.push({el,fish:touched,born:performance.now(),offset:0,base:p});}}
 });
 layer.addEventListener('pointerdown',e=>{layer.setPointerCapture(e.pointerId);pointer.set(e.pointerId,{x:e.clientX,y:e.clientY});lastDistance=0});
 layer.addEventListener('pointermove',e=>{
