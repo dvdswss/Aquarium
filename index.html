@@ -1109,7 +1109,7 @@ const dx=f.tx-f.x,dy=f.ty-f.y;
 const distance=Math.hypot(dx,dy);
 if(distance<2.3){
 if(f.playUntil>t){f.waitUntil=0;}else if(!f.waitUntil)f.waitUntil=t+f.waitDuration;
-if(f.playUntil<=t&&t>=f.waitUntil)nextPoint(f,i,k,t);
+if(!(f.playUntil>t)&&t>=f.waitUntil)nextPoint(f,i,k,t);
 }else{
 const moveSpeed=f.speed*f.swimRate*dt*1.65;
 // Decelerate before a feeding or hiding spot; fast pelagic tangs retain momentum.
