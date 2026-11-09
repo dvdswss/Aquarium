@@ -363,14 +363,19 @@ polygon([[0,0],[tip-2,-hh+4],[tip-3,-hh],[tip+4,-hh],[tip+2,-hh+5],[2,0]],j%2?'#
 ctx.restore();
 }
 function coral(x,y,size,i){
-const colors=['#f3a7a8','#f7c2a0','#c6b1ef','#a4e3d4','#e99cc9'];
-const color=colors[i%colors.length];
+const palette=[['#a45e89','#f4a7c5','#ffd3dc'],['#b8796d','#ffc0a0','#ffe1b9'],['#826bb1','#c6b1ef','#eee0ff'],['#4d9d9e','#a4e3d4','#d9fff1']];
+const [shade,main,tip]=palette[i%4];
+ctx.save();ctx.lineCap='round';
 function branch(px,py,len,angle,depth){
 const nx=px+Math.sin(angle)*len,ny=py-Math.cos(angle)*len;
-ctx.strokeStyle=color;ctx.lineWidth=Math.max(1,depth);ctx.beginPath();ctx.moveTo(Math.round(px),Math.round(py));ctx.lineTo(Math.round(nx),Math.round(ny));ctx.stroke();
-if(depth>0){branch(nx,ny,len*.72,angle-.52,depth-1);branch(nx,ny,len*.69,angle+.55,depth-1)}
+ctx.strokeStyle=shade;ctx.lineWidth=Math.max(1,depth+1.1);
+ctx.beginPath();ctx.moveTo(px+.6,py+.5);ctx.lineTo(nx+.6,ny+.5);ctx.stroke();
+ctx.strokeStyle=main;ctx.lineWidth=Math.max(.5,depth*.65);
+ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(nx,ny);ctx.stroke();
+if(depth>0){branch(nx,ny,len*.72,angle-.48,depth-1);branch(nx,ny,len*.68,angle+.54,depth-1)}
+else{rect(nx-.7,ny-.7,1.5,1.5,tip);rect(nx+.5,ny-.5,.5,.5,'rgba(255,255,255,.65)')}
 }
-branch(x,y,size,0,3);
+branch(x,y,size,0,3);ctx.restore();
 }
 function fishDraw(f,t){
 const bob=Math.sin(t*.0028+f.phase)*2,x=Math.round(f.x),y=Math.round(f.y+bob),z=f.z;
@@ -400,6 +405,16 @@ tail('#e9a17d',10);rect(-10,-5,21,11,'#d99b83');
 for(let i=0;i<5;i++){rect(-8+i*4,-5,2,11,'#fff0d3');
 polygon([[-9+i*4,-5],[-13+i*5,-13-(i%2)*3],[-6+i*4,-5]],'#f4d3b8')}
 for(let i=0;i<4;i++)polygon([[-7+i*4,5],[-9+i*4,14],[-3+i*4,5]],'#d6a58f');eye();
+}
+// Species-specific micro-patterns and translucent gill outlines.
+ctx.strokeStyle='rgba(16,40,68,.45)';ctx.lineWidth=.5;
+ctx.beginPath();ctx.arc(4,0,3,-1.15,1.1);ctx.stroke();
+if(kind===1||kind===2){
+for(let k=0;k<5;k++)rect(-7+k*3,-4+(k%2)*2,.5,.5,'rgba(255,248,194,.7)');
+}else if(kind===3||kind===5){
+for(let k=0;k<4;k++)rect(-6+k*3,2+(k%2),.5,.75,'rgba(55,65,99,.42)');
+}else if(kind===6){
+for(let k=0;k<6;k++)rect(-9+k*3,-3,.6,5,'rgba(114,60,70,.28)');
 }
 // Small-scale shimmer and fin rays, resolved at quarter-pixel precision.
 for(let k=0;k<7;k++){
@@ -487,11 +502,30 @@ const x=rand(i+201)*W,y=250+rand(i+305)*104,r=5+rand(i+411)*17;
 polygon([[x-r,y],[x-r*.7,y-r*.7],[x+r*.35,y-r],[x+r,y-r*.25],[x+r*.7,y+5],[x-r*.7,y+5]],i%3?'#4d6389':'#60769a');
 polygon([[x-r*.7,y-r*.7],[x+r*.35,y-r],[x+r*.2,y-r*.5]],'#7b9eb2');
 }
+// Layered rock seams, sea-glass shards and encrusting algae.
+for(let i=0;i<34;i++){
+const x=rand(i+2230)*W,y=278+rand(i+2290)*73;
+const width=2+rand(i+2310)*7;
+polygon([[x,y],[x+width,y-1],[x+width-2,y+1],[x+1,y+2]],i%3?'rgba(26,49,91,.47)':'rgba(170,195,210,.42)');
+rect(x+1,y-.5,width*.35,.5,'rgba(195,222,224,.38)');
+}
+for(let i=0;i<13;i++){
+const x=rand(i+2410)*W,y=309+rand(i+2440)*39;
+polygon([[x,y],[x+2,y-4],[x+4,y],[x+2,y+1]],i%2?'rgba(105,214,208,.65)':'rgba(191,160,238,.7)');
+rect(x+2,y-3,.5,1,'rgba(246,255,255,.85)');
+}
 // Tiny stone facets, sand grains and pearly mineral specks.
 for(let i=0;i<190;i++){
 const x=rand(i+1510)*W,y=271+rand(i+1650)*87;
 const c=i%5===0?'rgba(197,210,222,.53)':i%3===0?'rgba(112,156,188,.6)':'rgba(30,57,99,.55)';
 rect(x,y,i%7===0?1:.5,i%9===0?1:.5,c);
+}
+// Tiny shells and star-shaped sea life hidden along the seabed.
+for(let i=0;i<11;i++){
+const x=rand(i+2510)*W,y=324+rand(i+2560)*29;
+ctx.fillStyle=i%2?'#d3b6cd':'#d9c6a7';
+ctx.beginPath();ctx.ellipse(x,y,2.5,1.3,-.3,0,Math.PI*2);ctx.fill();
+for(let k=0;k<3;k++)rect(x-1.5+k,y-1,.25,1,'rgba(255,247,231,.7)');
 }
 // Five intentional plant clusters tucked beside rocks; open middle channel.
 const seaPlantSites=[
@@ -511,6 +545,15 @@ const [x,y,size]=coralSites[i];coral(x,y,size,i*3);
 for(let i=0;i<55;i++){
 const x=rand(i+1930)*W,y=313+rand(i+2040)*42;
 rect(x,y,.5,.5,i%3===0?'rgba(255,203,225,.7)':'rgba(180,240,235,.5)');
+}
+// A few translucent jellyfish silhouettes in the middle distance.
+for(let i=0;i<3;i++){
+const x=42+i*78+Math.sin(t*.00037+i)*7;
+const y=91+i*45+Math.sin(t*.00061+i*2)*5;
+ctx.fillStyle='rgba(193,191,249,.16)';
+ctx.beginPath();ctx.ellipse(x,y,5+i%2*2,3.5,0,Math.PI,Math.PI*2);ctx.lineTo(x+5,y);ctx.lineTo(x-5,y);ctx.fill();
+rect(x-2,y-2,3,.5,'rgba(222,242,255,.35)');
+for(let j=-2;j<=2;j++)rect(x+j*2,y+1,.5,6+(j%2)*3,'rgba(201,203,255,.19)');
 }
 // Anemones, tube corals and glowing pearls in foreground.
 for(let i=0;i<21;i++){
