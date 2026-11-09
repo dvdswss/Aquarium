@@ -92,15 +92,50 @@ main,#game,#game section:first-child{position:fixed!important;inset:0!important;
 <div class="oceanLevel"><span>EXP <span id="xpText"></span></span><span class="oceanClean">✨ <strong id="cleanliness"></strong>% · 🪸 <strong id="plantCount"></strong></span></div>
 <div class="gameBar"><span id="xpBar"></span></div>
 </div></div>
-<div id="aquariaShop" class="aquaria-shop" hidden><div class="aquaria-shop-head"><strong id="aquariaShopTitle">상점</strong><button onclick="closeAquariaShop()">✕</button></div><div id="aquariaShopList" class="aquaria-shop-list"></div></div><div class="aquaria-quick"><button onclick="openAquariaShop('food')" aria-label="먹이 종류 선택">🍤 <span>먹이 주기</span></button></div>
+<div id="aquariaMissions" class="aquaria-shop" hidden><div class="aquaria-shop-head"><strong>📜 오늘의 미션</strong><button onclick="document.getElementById('aquariaMissions').hidden=true">✕</button></div><div id="aquariaMissionList" class="aquaria-shop-list"></div></div><div id="aquariaShop" class="aquaria-shop" hidden><div class="aquaria-shop-head"><strong id="aquariaShopTitle">상점</strong><button onclick="closeAquariaShop()">✕</button></div><div id="aquariaShopList" class="aquaria-shop-list"></div></div><div class="aquaria-quick"><button onclick="openAquariaShop('food')" aria-label="먹이 종류 선택">🍤 <span>먹이 주기</span></button></div>
 <details class="aquaria-drawer" id="aquariaDrawer"><summary aria-label="수족관 관리 메뉴 열기"><span class="drawer-icon">☰</span><span>관리 메뉴</span><span class="drawer-chevron">⌃</span></summary>
 <div class="aquaria-drawer-content"><div class="drawer-title">AQUARIA <small>OCEAN CARE</small></div>
-<div class="drawer-actions"><button onclick="openAquariaShop('fish')">🐠 <span>물고기 종류 <small>선택해서 구매</small></span></button><button onclick="buyPlant()">🪸 <span>산호 구매 <small>10 코인</small></span></button><button onclick="cleanGame()">🫧 <span>수족관 청소 <small>+3 XP</small></span></button><button onclick="collectBonus()">🎁 <span>일일 보상 <small>+15 코인</small></span></button></div>
+<div class="drawer-actions"><button onclick="openAquariaMissions()">📜 <span>오늘의 미션 <small>코인 보상</small></span></button><button onclick="openAquariaShop('fish')">🐠 <span>물고기 종류 <small>선택해서 구매</small></span></button><button onclick="buyPlant()">🪸 <span>산호 구매 <small>10 코인</small></span></button><button onclick="cleanGame()">🫧 <span>수족관 청소 <small>+3 XP</small></span></button><button onclick="collectBonus()">🎁 <span>일일 보상 <small>+15 코인</small></span></button></div>
 </div></details>
 <p id="notice" class="muted">바닷속 친구들과 함께 푸른 세계를 탐험해 봐!</p>
 </div></section></div></main><script>const key='aquaria-v1';let state;try{state=JSON.parse(localStorage.getItem(key))||{name:'25큐브',temp:'',fish:[],logs:[],coins:20,virtual:2,plants:0}}catch(e){state={name:'25큐브',temp:'',fish:[],logs:[],coins:20,virtual:2,plants:0}}function save(){localStorage.setItem(key,JSON.stringify(state));render()}function tab(t){document.getElementById('real').classList.toggle('hidden',t!=='real');document.getElementById('game').classList.toggle('hidden',t!=='game')}function saveTank(){state.name=document.getElementById('tankName').value.trim()||'나의 어항';state.temp=document.getElementById('temp').value;save()}function toggleWater(){let p=document.getElementById("waterPanel"),b=document.getElementById("waterToggle");p.classList.toggle("hidden");let open=!p.classList.contains("hidden");b.textContent=open?"－ 수질 기록 닫기":"＋ 수질 기록 (선택)";b.setAttribute("aria-expanded",String(open))}function saveWater(){let ph=document.getElementById("ph").value,ammonia=document.getElementById("ammonia").value,nitrite=document.getElementById("nitrite").value;if([ph,ammonia,nitrite].every(v=>v===""))return alert("수질 수치를 입력해줘");if(ph!==""&&(Number(ph)<0||Number(ph)>14))return alert("pH는 0~14 사이로 입력해줘");if([ammonia,nitrite].some(v=>v!==""&&Number(v)<0))return alert("농도는 음수가 될 수 없어");state.water={ph,ammonia,nitrite,date:new Date().toLocaleString("ko-KR")};state.waterHistory=state.waterHistory||[];state.waterHistory.unshift({...state.water});state.waterHistory=state.waterHistory.slice(0,30);save()}function addFish(){const n=document.getElementById('species').value.trim(),c=Number(document.getElementById('count').value);if(!n||!Number.isInteger(c)||c<1)return alert('종류와 마릿수를 입력해줘');state.fish.push({n,c});document.getElementById('species').value='';save()}function addLog(){state.logs.unshift({date:new Date().toLocaleString('ko-KR'),timestamp:Date.now(),type:document.getElementById('event').value,memo:document.getElementById('memo').value.trim()});document.getElementById('memo').value='';save()}function pixelFish(i){let colors=[['#ffce82','#ee815f','#fff1c4'],['#92eadc','#3ca8b0','#e7fff6'],['#ffc2d2','#d66b9e','#ffe7f0'],['#e9d77d','#b59b45','#fff2ae']][i%4];return '<svg viewBox="0 0 48 32" aria-hidden="true"><path fill="'+colors[1]+'" d="M3 8h6v5h5v6H9v5H3v-6H0v-5h3z"/><path fill="'+colors[0]+'" d="M13 10h5V6h17v4h6v5h4v7h-5v4H19v-4h-6z"/><path fill="'+colors[2]+'" d="M20 10h16v4H20zM22 22h14v3H22z"/><path fill="#153446" d="M36 14h4v4h-4z"/><path fill="'+colors[1]+'" d="M24 6V2h8v4zM25 26v4h8v-4z"/></svg>'}
 function pixelPlant(i){let c=i%2?'#6cc5a0':'#4fae88';return '<svg viewBox="0 0 38 85" aria-hidden="true"><path stroke="#276c69" stroke-width="5" d="M19 85V12"/><path fill="'+c+'" d="M18 66H6V48h8v10h4zM21 54h12V36h-8v10h-4zM18 36H7V18h8v11h3zM21 25h11V8h-8v11h-3zM16 16V3h8v13z"/></svg>'}
-function gainXP(n){state.xp=(state.xp||0)+n}function cleanGame(){state.cleanliness=100;gainXP(3);document.getElementById('notice').textContent='어항 청소 완료!';save()}function collectBonus(){let today=new Date().toLocaleDateString('en-CA');if(state.bonusDate===today)return alert('오늘 보상은 이미 받았어!');state.bonusDate=today;state.coins+=15;gainXP(5);document.getElementById('notice').textContent='오늘의 보상 +15 코인!';save()}const aquariaFishCatalog=[['흰동가리',20],['블루탱',40],['옐로탱',65],['나비고기',100],['로열 그라마',150],['카디널피시',230],['라이언피시',350]];
+function gainXP(n){state.xp=(state.xp||0)+n}function cleanGame(){state.cleanliness=100;gainXP(3);aquariaMissionProgress('clean');document.getElementById('notice').textContent='어항 청소 완료!';save()}function collectBonus(){let today=new Date().toLocaleDateString('en-CA');if(state.bonusDate===today)return alert('오늘 보상은 이미 받았어!');state.bonusDate=today;state.coins+=15;gainXP(5);document.getElementById('notice').textContent='오늘의 보상 +15 코인!';save()}const aquariaMissionDefs=[
+ ['feed','먹이 3번 주기',3,25],['touch','물고기 5번 쓰다듬기',5,30],
+ ['clean','수족관 청소 1번',1,20],['buy','새 물고기 1마리 입양',1,40]
+];
+function aquariaMissionState(){
+ const day=new Date().toLocaleDateString('en-CA');
+ if(!state.missions||state.missions.day!==day)state.missions={day,counts:{},claimed:{}};
+ return state.missions;
+}
+function aquariaMissionProgress(type){
+ const m=aquariaMissionState();m.counts[type]=(m.counts[type]||0)+1;
+ save();
+ if(!document.getElementById('aquariaMissions')?.hidden)openAquariaMissions();
+}
+function openAquariaMissions(){
+ document.getElementById('aquariaShop').hidden=true;
+ document.getElementById('aquariaDrawer')?.removeAttribute('open');
+ const panel=document.getElementById('aquariaMissions'),list=document.getElementById('aquariaMissionList'),m=aquariaMissionState();
+ list.replaceChildren();
+ aquariaMissionDefs.forEach(([type,name,goal,reward])=>{
+  const progress=Math.min(goal,m.counts[type]||0),claimed=!!m.claimed[type];
+  const b=document.createElement('button');b.className='aquaria-shop-item';
+  const label=document.createElement('span');label.textContent=name+' ('+progress+'/'+goal+')';
+  const price=document.createElement('strong');price.textContent=claimed?'수령 완료':progress>=goal?'받기 +'+reward+' 🪙':'+'+reward+' 🪙';
+  b.disabled=claimed||progress<goal;
+  b.style.opacity=b.disabled?'.65':'1';
+  b.append(label,price);
+  b.onclick=()=>{const latest=aquariaMissionState();if(latest.claimed[type]||(latest.counts[type]||0)<goal)return;latest.claimed[type]=true;state.coins+=reward;save();openAquariaMissions();};
+  list.append(b);
+ });
+ panel.hidden=false;
+}
+window.aquariaFishTouched=function(){
+ aquariaMissionProgress('touch');
+};
+const aquariaFishCatalog=[['흰동가리',20],['블루탱',40],['옐로탱',65],['나비고기',100],['로열 그라마',150],['카디널피시',230],['라이언피시',350]];
 // Food groups: omnivore, algae grazer, plankton picker and carnivore.
 // Preferred food grants bonus XP based on the species actually owned.
 const aquariaFoodCatalog=[
@@ -149,7 +184,7 @@ function openAquariaShop(mode){
   const price=document.createElement('strong');price.textContent=item[1]===0?'무료':item[1]+' 🪙';
   b.append(name,price);b.onclick=()=>purchaseAquariaItem(i);list.append(b);
  });
- panel.hidden=false;document.getElementById('aquariaDrawer').removeAttribute('open');
+ panel.hidden=false;document.getElementById('aquariaMissions').hidden=true;document.getElementById('aquariaDrawer').removeAttribute('open');
 }
 function closeAquariaShop(){document.getElementById('aquariaShop').hidden=true}
 function purchaseAquariaItem(i){
@@ -158,11 +193,11 @@ function purchaseAquariaItem(i){
  if(state.coins<item[1])return alert('코인이 부족해! '+item[1]+' 코인이 필요해.');
  if(aquariaShopMode==='fish'){
   if(state.virtual>=38)return alert('최대 38마리까지 키울 수 있어.');
-  state.coins-=item[1];state.virtual++;gainXP(10);
+  state.coins-=item[1];state.virtual++;gainXP(10);aquariaMissionProgress('buy');
   state.aquariaSpecies=state.aquariaSpecies||[];state.aquariaSpecies.push(i);
  }else{
   state.coins-=item[1];if(item[1]===0)state.coins+=5;
-  const bonus=aquariaFoodBonus(item[3]);gainXP(item[2]+bonus);state.cleanliness=Math.max(0,(state.cleanliness??100)-3);
+  const bonus=aquariaFoodBonus(item[3]);gainXP(item[2]+bonus);aquariaMissionProgress('feed');state.cleanliness=Math.max(0,(state.cleanliness??100)-3);
  }
  save();if(aquariaShopMode==='food')window.dispatchEvent(new CustomEvent('aquaria-feed',{detail:{food:i,group:item[3]}}));closeAquariaShop();
 }
@@ -457,6 +492,23 @@ canvas.addEventListener('wheel',e=>{
 const rand=(n)=>{let x=Math.sin(n*127.1+78.23)*43758.5453;return x-Math.floor(x)};
 const palette=['#ffbd82','#9ee9e0','#f9a4be','#ffe6a0','#b8a7f3','#9ad1ff'];
 const fish=[];
+let fishTapLast=0;
+function touchFishAt(clientX,clientY){
+ const r=canvas.getBoundingClientRect();
+ const px=(clientX-r.left)*W/r.width,py=(clientY-r.top)*H/r.height;
+ const x=camera.x+(px-W/2)/camera.zoom,y=camera.y+(py-H/2)/camera.zoom;
+ let target=null,dist=Infinity;
+ for(const f of fish){const d=Math.hypot(f.x-x,f.y-y);if(d<dist){target=f;dist=d;}}
+ if(!target||dist>17)return;
+ if(performance.now()-fishTapLast<450)return;
+ fishTapLast=performance.now();
+ target.touchUntil=performance.now()+1100;
+ target.tx=Math.max(20,Math.min(W-20,target.x+(Math.random()-.5)*48));
+ target.ty=Math.max(80,Math.min(306,target.y-12-Math.random()*22));
+ target.swimRate=2.2;target.waitUntil=0;
+ window.aquariaFishTouched?.();
+}
+canvas.addEventListener('click',e=>touchFishAt(e.clientX,e.clientY));
 const visibleFood=[];
 window.addEventListener('aquaria-feed',event=>{
  const kind=event.detail?.food??0;
@@ -977,6 +1029,11 @@ f.dir=newDir;
 }
 f.x=clamp(f.x,17,W-17);f.y=clamp(f.y,75,311);
 fishDraw(f,t);
+if(f.touchUntil>t){
+ const pulse=(f.touchUntil-t)/1100;
+ ctx.fillStyle='rgba(255,207,232,'+(pulse*.85)+')';
+ ctx.font='8px sans-serif';ctx.fillText('♥',f.x-3,f.y-11-(1-pulse)*9);
+}
 });
 }
 let last=0;function frame(t){requestAnimationFrame(frame);if(document.hidden||t-last<32)return;last=t;resizeScene();ctx.save();
@@ -1795,6 +1852,18 @@ for(const f of fish){
  renderer.render(scene,camera);
 }
 start3DFrame=()=>requestAnimationFrame(frame);
+let fishPointerStart=null;
+layer.addEventListener('pointerdown',e=>{if(pointer.size===0)fishPointerStart={x:e.clientX,y:e.clientY,time:performance.now()};});
+layer.addEventListener('pointerup',e=>{
+ if(!fishPointerStart||Math.hypot(e.clientX-fishPointerStart.x,e.clientY-fishPointerStart.y)>12||performance.now()-fishPointerStart.time>500){fishPointerStart=null;return;}
+ fishPointerStart=null;if(!active||!camera||!renderer)return;
+ const r=renderer.domElement.getBoundingClientRect();
+ const ray=new T.Raycaster();ray.setFromCamera(new T.Vector2((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height*2-1)),camera);
+ const hit=ray.intersectObjects(fish.map(f=>f.g),true)[0];
+ if(!hit)return;
+ const touched=fish.find(f=>{let obj=hit.object;while(obj){if(obj===f.g)return true;obj=obj.parent;}return false;});
+ if(touched){touched.behavior='burst';touched.behaviorUntil=performance.now()+900;touched.nextTurn=0;window.aquariaFishTouched?.();}
+});
 layer.addEventListener('pointerdown',e=>{layer.setPointerCapture(e.pointerId);pointer.set(e.pointerId,{x:e.clientX,y:e.clientY});lastDistance=0});
 layer.addEventListener('pointermove',e=>{
  if(!pointer.has(e.pointerId))return;
