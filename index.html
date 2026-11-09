@@ -797,19 +797,27 @@ poly([[-6,-7],[-3,-7],[-2,7],[-5,7]],'#2e3d54');
 poly([[2,-7],[5,-7],[6,7],[3,7]],'#334159');
 for(let k=0;k<10;k++)rect(-9+(k%5)*4,-5+Math.floor(k/5)*9,.8,.8,'#fdfaf0');
 eye(9,-2);face();
-}else{ // lionfish: spiny dorsal rays, cream stripes, translucent fan fins
-tail('#d89c85','#f8ddc5',9);
+}else{ // lionfish: broad striped body and dramatic radiating feather fins
+tail('#b87561','#f8e0ca',9);
+for(let k=0;k<10;k++){
+ const xx=-10+k*2.35,tipX=xx-4+(k-5)*.45,tipY=-18-(k%3)*2.2;
+ poly([[xx-1,-4],[tipX-.8,tipY],[tipX+1.2,tipY+1.5],[xx+1,-5]],k%2?'#e9c5ac':'#c78676');
+ ctx.strokeStyle='#fff0d8';ctx.lineWidth=.55;ctx.beginPath();ctx.moveTo(xx,-5);ctx.lineTo(tipX,tipY);ctx.stroke();
+}
+for(let k=0;k<9;k++){
+ const a=-1.2+k*.31,ex=-4+Math.cos(a)*22,ey=2+Math.sin(a)*20;
+ poly([[-5,0],[ex,ey],[ex+2,ey+2]],k%2?'rgba(255,228,200,.72)':'rgba(174,100,91,.7)');
+ ctx.strokeStyle='rgba(255,243,222,.8)';ctx.lineWidth=.65;ctx.beginPath();ctx.moveTo(-5,0);ctx.lineTo(ex,ey);ctx.stroke();
+}
+body([[-11,-3],[-8,-7],[3,-7],[10,-4],[13,-1],[11,3],[5,7],[-7,6],[-12,2]],'#b97862','#e7ad90','#854c50');
 for(let k=0;k<7;k++){
-const xx=-9+k*3;
-poly([[xx,-3],[xx-3,-13-(k%3)*2],[xx+1,-7]],'#e9b9a1');
-rect(xx-1,-12-(k%3)*2,.5,3,'#fff0d7');
+ const xx=-9+k*3.2;
+ poly([[xx-1,-6],[xx+1,-6],[xx+2,6],[xx-.5,6]],k%2?'#f8e8cd':'#7c454b');
 }
-body([[-11,-3],[-8,-6],[5,-6],[12,-3],[13,1],[9,5],[-6,6],[-12,2]],'#c98770','#e5aa91','#955d60');
 for(let k=0;k<6;k++){
-const xx=-9+k*3.5;
-poly([[xx,-5],[xx+1,-5],[xx+2,5],[xx,5]],k%2?'#fff1d8':'#a65f5e');
+ const xx=-9+k*3.3;
+ poly([[xx,5],[xx-4,15+(k%2)*3],[xx+2,7]],k%2?'rgba(246,218,195,.8)':'rgba(181,112,101,.8)');
 }
-for(let k=0;k<5;k++)poly([[-7+k*3,4],[-11+k*4,13+(k%2)*3],[-4+k*3,5]],'rgba(244,205,184,.8)');
 eye(9,-2);face();
 }
 // Distinctive anatomical detailing for each reef species.
