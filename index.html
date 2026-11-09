@@ -391,6 +391,16 @@ else{rect(nx-.7,ny-.7,1.5,1.5,tip);rect(nx+.5,ny-.5,.5,.5,'rgba(255,255,255,.65)
 }
 branch(x,y,size,0,3);ctx.restore();
 }
+// Behavioral micro-actions: fish pitch while inspecting surfaces and gently
+// rock their bodies when braking. The movement is bounded for pixel readability.
+function fishPosture(f,t){
+const k=f.kind||0;
+const near=Math.hypot((f.tx??f.x)-f.x,(f.ty??f.y)-f.y)<5;
+const sway=Math.sin(t*[.003,.002,.0027,.004,.0035,.0015,.001][k]+f.phase);
+const posture=[.025,.045,.075,.11,.08,.025,.04][k];
+const foraging=(k===2||k===3)&&near;
+return (foraging?.11*Math.sin(t*.006+f.phase):0)+sway*posture;
+}
 function fishDraw(f,t){
 const kind=f.kind||0;
 // Relative adult lengths: clownfish ~10cm, blue tang ~30cm, yellow tang ~20cm,
@@ -702,16 +712,6 @@ rect(x-8,y,17,3,'#6b7fa3');
 for(let i=0;i<125;i++){
 const x=rand(i+500)*W,y=rand(i+650)*H,yy=(y-t*(.002+rand(i+20)*.004)+H)%H;
 rect(x+Math.sin(t*.001+i)*2,yy,i%13===0?2:1,i%17===0?2:1,'rgba(206,242,255,.42)');
-}
-// Behavioral micro-actions: fish pitch while inspecting surfaces and gently
-// rock their bodies when braking. The movement is bounded for pixel readability.
-function fishPosture(f,t){
-const k=f.kind||0;
-const near=Math.hypot((f.tx??f.x)-f.x,(f.ty??f.y)-f.y)<5;
-const sway=Math.sin(t*[.003,.002,.0027,.004,.0035,.0015,.001][k]+f.phase);
-const posture=[.025,.045,.075,.11,.08,.025,.04][k];
-const foraging=(k===2||k===3)&&near;
-return (foraging?.11*Math.sin(t*.006+f.phase):0)+sway*posture;
 }
 // Reef fish AI: independent waypoints, persistent habitat, pauses and group behavior.
 const dt=Math.min(2,Math.max(.2,(t-(draw.prevTime||t-32))/32));
