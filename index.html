@@ -615,7 +615,7 @@ window.addEventListener('aquaria-feed',event=>{
 });
 function sync(){
 const count=Math.min(38,Math.max(0,Number(state.virtual)||0));
-while(fish.length<count){const i=fish.length;fish.push({x:30+rand(i+12)*180,y:95+rand(i+44)*155,z:.55+rand(i+7)*.65,dir:i%2?1:-1,speed:.16+rand(i+23)*.24,phase:i*2.4,color:palette[i%palette.length],kind:(state.fishLives?.[i]?.kind??i%7)})}
+while(fish.length<count){const i=fish.length;fish.push({x:30+rand(i+12)*180,y:95+rand(i+44)*155,z:.55+rand(i+7)*.65,dir:i%2?1:-1,speed:.48+rand(i+23)*.30,phase:i*2.4,color:palette[i%palette.length],kind:(state.fishLives?.[i]?.kind??i%7)})}
 fish.length=count;
 }
 window.syncAquarium3D=sync;sync();
@@ -1055,19 +1055,19 @@ const sites=habitat[k];
 let tx=120,ty=165,wait=0,rate=1;
 if(k===0){ // Clownfish: defend one host, retreat and dart out.
 const host=sites[f.hostIndex];
-tx=host[0]+(r-.5)*24;ty=host[1]-16+(r2-.5)*13;
+tx=(f.trip%4===0?25+r*190:host[0]+(r-.5)*65);ty=(f.trip%4===0?95+r2*175:host[1]-25+(r2-.5)*65);
 wait=r3>.4?900+1800*r:0;rate=r3>.75?1.8:.75;
 }else if(k===1){ // Blue tang: broad continuous excursions, occasional burst.
 tx=23+r*194;ty=85+r2*155;rate=r3>.77?2.9:1.3;wait=0;
 }else if(k===2){ // Yellow tang: pause to pick at algae, then change patches.
 if(f.trip%3===0)f.hostIndex=(f.hostIndex+1)%sites.length;
 const patch=sites[f.hostIndex];
-tx=patch[0]+(r-.5)*24;ty=patch[1]-14+(r2-.5)*12;
+tx=f.trip%3===0?25+r*190:patch[0]+(r-.5)*75;ty=f.trip%3===0?90+r2*180:patch[1]-25+(r2-.5)*65;
 rate=.8;wait=1400+r3*2600;
 }else if(k===3){ // Butterflyfish: approach coral, hover to probe, move on.
 if(f.trip%2===0)f.hostIndex=(f.hostIndex+1)%sites.length;
 const coral=sites[f.hostIndex];
-tx=coral[0]+(r-.5)*13;ty=coral[1]-23+(r2-.5)*14;
+tx=f.trip%3===0?25+r*190:coral[0]+(r-.5)*80;ty=f.trip%3===0?95+r2*170:coral[1]-30+(r2-.5)*80;
 rate=.72;wait=1900+r3*1900;
 }else if(k===4){ // Gramma: shelter in one crevice, sudden short patrol.
 const cave=sites[f.hostIndex];
@@ -1078,14 +1078,14 @@ rate=out?2.5:.8;wait=out?200:1700+r3*2400;
 }else if(k===5){ // Banggai: coordinated small-group hovering.
 const members=fishGroups[5],idx=members.indexOf(f);
 const centerX=120+Math.sin(t*.00017)*24;
-tx=centerX+(idx-(members.length-1)/2)*12+(r-.5)*4;
-ty=173+(idx%3-1)*11+(r2-.5)*6;
-rate=.34;wait=1000+r3*1800;
+tx=centerX+(idx-(members.length-1)/2)*12+(r-.5)*55;
+ty=173+(idx%3-1)*11+(r2-.5)*55;
+rate=.65;wait=350+r3*1100;
 }else{ // Lionfish: long motionless ambush, slow short relocation.
 const ledge=sites[f.hostIndex];
 if(f.trip%5===0)f.hostIndex=(f.hostIndex+1)%sites.length;
 tx=ledge[0]+(r-.5)*27;ty=ledge[1]-28+(r2-.5)*18;
-rate=.37;wait=3900+r3*4800;
+rate=.55;wait=1400+r3*2500;
 }
 f.tx=clamp(tx,20,W-20);f.ty=clamp(ty,76,309);
 f.swimRate=rate;f.waitDuration=wait;f.waitUntil=0;
@@ -1113,7 +1113,7 @@ if(f.playUntil<=t&&t>=f.waitUntil)nextPoint(f,i,k,t);
 }else{
 const moveSpeed=f.speed*f.swimRate*dt*1.65;
 // Decelerate before a feeding or hiding spot; fast pelagic tangs retain momentum.
-const braking=f.playUntil>t?1:(k===1?1:Math.max(.22,Math.min(1,distance/15)));
+const braking=f.playUntil>t?1:(k===1?1:Math.max(.55,Math.min(1,distance/10)));
 const step=Math.min(distance,moveSpeed*braking*(f.playUntil>t?1.8:1));
 f.x+=dx/distance*step;f.y+=dy/distance*step;
 if(Math.abs(dx)>2.7){
