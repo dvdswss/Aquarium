@@ -930,9 +930,19 @@ const colors=[0xf17d35,0x256dce,0xf3d347,0xf2e5b0,0x9255bc,0xe8e5d8,0xb87565];
 // Modern Three.js is an ES module; the old three.min.js URL no longer exists.
 async function load(){
  if(window.THREE)return window.THREE;
- const T=await import('https://esm.sh/three@0.160.1?bundle');
- window.THREE=T;
- return T;
+ const urls=[
+ 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js',
+ 'https://unpkg.com/three@0.160.1/build/three.module.js',
+ 'https://esm.sh/three@0.160.1?bundle'
+ ];
+ let error;
+ for(const url of urls){
+  try{
+   const T=await import(url);
+   if(T.Scene&&T.WebGLRenderer){window.THREE=T;return T;}
+  }catch(e){error=e;console.warn('3D module CDN unavailable:',url,e)}
+ }
+ throw error||new Error('3D module unavailable');
 }
 function build(){
 const T=window.THREE;
@@ -1048,7 +1058,7 @@ button.addEventListener('click',async()=>{
  if(active){active=false;host.classList.remove('is-3d');button.textContent='◈ 3D 보기';return}
  button.textContent='3D 불러오는 중…';button.disabled=true;
  try{await load();if(!initialized)build();active=true;host.classList.add('is-3d');button.textContent='▤ 2D 보기';requestAnimationFrame(frame)}
- catch(err){button.textContent='3D 재시도';console.error('AQUARIA 3D error:',err);hint.textContent='3D를 불러오지 못했어. 버튼을 다시 눌러줘.'}
+ catch(err){button.textContent='3D 재시도';console.error('AQUARIA 3D error:',err);hint.textContent='3D 오류: '+String(err?.message||err).slice(0,85);hint.style.whiteSpace='normal';hint.style.maxWidth='85%';hint.style.textAlign='center';layer.style.display='block';setTimeout(()=>{if(!active)layer.style.display='none'},8000)}
  finally{button.disabled=false}
 });
 })();
