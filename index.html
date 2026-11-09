@@ -1014,6 +1014,40 @@ for(let i=0;i<12;i++){
  }
  kelps.push({g,phase:i*1.9});
 }
+// Sculpted seabed details: shell spirals, tiny anemones, pebble clusters and coral polyps.
+const shellMat=mat(0xe7c6a7),pearlMat=mat(0xf2d7c4),anemoneMat=[mat(0xf3a2b7),mat(0x9ecde0),mat(0xc6a2e9)];
+for(let i=0;i<55;i++){
+ const a=i*2.399,r=1.1+seeded(i+400)*6.5,x=Math.cos(a)*r,z=Math.sin(a)*r;
+ if(i%3===0){
+  const shell=mesh(new T.SphereGeometry(.13,12,8),shellMat,scene,x,.045,z);
+  shell.scale.set(1.5,.48,.95);shell.rotation.y=a;
+  for(let j=0;j<3;j++){
+   const ridge=mesh(new T.TorusGeometry(.08-j*.02,.008,4,12,Math.PI),pearlMat,scene,x,.07+j*.012,z);
+   ridge.rotation.x=Math.PI/2;ridge.rotation.z=a;
+  }
+ }else if(i%3===1){
+  const g=new T.Group();g.position.set(x,0,z);scene.add(g);
+  const c=anemoneMat[i%anemoneMat.length];
+  mesh(new T.SphereGeometry(.17,9,7),c,g,0,.13,0);
+  for(let j=0;j<8;j++){
+   const p=j*Math.PI/4;
+   cylinderBetween(g,new T.Vector3(Math.cos(p)*.08,.2,Math.sin(p)*.08),new T.Vector3(Math.cos(p)*.28,.42+seeded(i+j)*.12,Math.sin(p)*.28),.024,.01,c,5);
+  }
+ }else{
+  for(let j=0;j<4;j++){
+   const p=j*2.4,stoneObj=mesh(new T.IcosahedronGeometry(.05+seeded(i+j)*.06,0),j%2?stone:rock,scene,x+Math.cos(p)*.18,.035,z+Math.sin(p)*.18);
+   stoneObj.scale.y=.5;
+  }
+ }
+}
+// Coral polyp tips catch highlights without adding costly dynamic lights.
+const polypMat=mat(0xffd8c5,.6);
+for(let i=0;i<23;i++){
+ const a=i*2.4,r=2.3+(i%6)*.85,x=Math.cos(a)*r,z=Math.sin(a)*r;
+ for(let j=0;j<4;j++){
+  const p=j*1.57,tip=mesh(new T.SphereGeometry(.035,6,5),polypMat,scene,x+Math.cos(p)*.21,.65+(j%2)*.16,z+Math.sin(p)*.21);
+ }
+}
 // Particles and bubbles give the water depth and movement.
 const bubbles=[];
 const bubbleMat=new T.MeshBasicMaterial({color:0xa7e5ef,transparent:true,opacity:.26,depthWrite:false});
@@ -1055,6 +1089,25 @@ function createFish(k,i){
    cylinderBetween(g,new T.Vector3(x,.38,0),new T.Vector3(x+(j-4)*.06,1.15+(j%3)*.17,0),.023,.008,j%2?white:dark,5);
   }
   for(let j=0;j<5;j++){const bar=mesh(new T.SphereGeometry(1,10,8),dark,g,-.8+j*.37,0,0);bar.scale.set(.07,.56,.36)}
+ }
+ // Subtle lateral-line pores, segmented scale highlights and a narrow mouth.
+ const poreMat=mat(k===2?0xc8a54c:0x8a9db1,.75,true,.62);
+ for(const side of [-1,1]){
+  const mouth=mesh(new T.SphereGeometry(1,10,6),dark,g,1.08,-.12,side*.035);
+  mouth.scale.set(.035,.025,.12);
+  for(let row=0;row<3;row++)for(let col=0;col<8;col++){
+   const x=-.82+col*.2+(row%2)*.1;
+   const y=-.26+row*.21;
+   const radial=Math.max(.08,1-(x*x/1.4+y*y/.4));
+   const z=side*(.34*Math.sqrt(radial)+.008);
+   const dot=mesh(new T.SphereGeometry(.012,5,4),poreMat,g,x,y,z);
+   dot.scale.set(1.35,.5,.45);
+  }
+  for(let j=0;j<5;j++){
+   const x=-.55+j*.3;
+   const dot=mesh(new T.SphereGeometry(.012,5,4),dark,g,x,.02,side*.354);
+   dot.scale.set(1,.6,.4);
+  }
  }
  // Gill plates, nostrils, translucent fin rays and individual scale glints.
  const gill=mat(k===2?0xb18c2b:0x6b6675,.8),shine=mat(0xd5f3ec,.28,true,.44);
@@ -1141,6 +1194,8 @@ function frame(t){
  f.fin.rotation.x=Math.sin(t*.025+f.phase)*.45;
  f.g.rotation.z=Math.sin(t*.0012+f.phase)*.035;
  f.g.rotation.x=Math.sin(t*.0015+f.phase)*.045;
+ // Species-specific slow hovering and faster darting arcs.
+ f.g.position.y+=Math.sin(t*[.0018,.0012,.0016,.0023,.0025,.001,.0009][f.k]+f.phase)*.045;
  }
  renderer.render(scene,camera);
 }
