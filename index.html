@@ -460,11 +460,37 @@ poly([[xx,-5],[xx+1,-5],[xx+2,5],[xx,5]],k%2?'#fff1d8':'#a65f5e');
 for(let k=0;k<5;k++)poly([[-7+k*3,4],[-11+k*4,13+(k%2)*3],[-4+k*3,5]],'rgba(244,205,184,.8)');
 eye(9,-2);face();
 }
-// Micro-scale highlights follow the body rather than covering the eye or silhouette.
-for(let k=0;k<7;k++){
-const sx=-7+(k%4)*3,sy=-2+Math.floor(k/4)*3;
-rect(sx,sy,.5,.5,k%2?'rgba(255,255,255,.28)':'rgba(222,242,251,.18)');
+// Species-aware pixel texture: restrained scales and light, never a generic overlay.
+const shimmer=Math.max(0,Math.sin(t*.002+f.phase));
+const scaleTint=['rgba(255,225,172,.38)','rgba(136,199,255,.35)','rgba(255,247,178,.38)','rgba(255,250,224,.34)','rgba(225,184,250,.33)','rgba(248,249,244,.34)','rgba(255,214,191,.30)'][kind]||'rgba(255,255,255,.3)';
+for(let row=0;row<3;row++){
+for(let col=0;col<6;col++){
+const sx=-7+col*2.25+(row%2)*1.1,sy=-2.75+row*2.2;
+if(sx>4&&sy<0)continue; // preserve face and eye
+rect(sx,sy,.5,.5,scaleTint);
+if((col+row)%4===0)rect(sx+.5,sy+.5,.25,.25,'rgba(21,39,72,.22)');
 }
+}
+// Translucent pectoral fin flutters independently of the tail.
+const flap=Math.sin(t*.019+f.phase)*1.5;
+const finColors=['rgba(255,185,112,.72)','rgba(76,143,236,.67)','rgba(255,225,120,.72)','rgba(255,232,185,.65)','rgba(194,142,227,.7)','rgba(235,231,215,.7)','rgba(239,177,151,.67)'];
+poly([[-1,1],[1+flap,5],[0+flap,9],[-4,3]],finColors[kind]||finColors[0]);
+for(let k=0;k<3;k++){
+ctx.strokeStyle='rgba(255,250,235,.36)';ctx.lineWidth=.35;
+ctx.beginPath();ctx.moveTo(-1,2);ctx.lineTo(-.5+flap+k*.8,6+k*.8);ctx.stroke();
+}
+// Mouth, gill plate, lateral line and specular spots.
+rect(12,1,.8,.35,'rgba(35,42,64,.65)');
+ctx.strokeStyle='rgba(25,46,74,.35)';ctx.lineWidth=.5;
+ctx.beginPath();ctx.moveTo(4,-3);ctx.quadraticCurveTo(2,0,4,3);ctx.stroke();
+ctx.strokeStyle='rgba(255,255,240,.18)';
+ctx.beginPath();ctx.moveTo(-7,0);ctx.quadraticCurveTo(-1,1,3,0);ctx.stroke();
+for(let k=0;k<4;k++){
+const sx=-6+k*3,sy=-4+(k%2)*2;
+rect(sx,sy,.5,.5,'rgba(255,255,255,'+(.14+shimmer*.25)+')');
+}
+// Animated highlight across the dorsal fin.
+rect(-3+Math.sin(t*.001+f.phase)*2,-8,.5,1,'rgba(245,250,255,.42)');
 ctx.restore();
 }
 function draw(t){
