@@ -1134,28 +1134,50 @@ const fishProfiles=[
  {l:.83,h:.7,w:.32,tail:.57}, // cardinalfish
  {l:1.22,h:.58,w:.39,tail:.78} // lionfish
 ];
+// Vertex-sculpted closed mesh: grooves and creases are carved into the actual body.
 function fishShape(p,k){
- const positions=[],uvs=[],indices=[],rings=32,sides=20;
+ const positions=[],uvs=[],indices=[],rings=72,sides=36;
+ const smooth=(a,b,t)=>{const q=Math.max(0,Math.min(1,(t-a)/(b-a)));return q*q*(3-2*q)};
  for(let i=0;i<=rings;i++){
   const u=i/rings,x=-p.l+2*p.l*u;
-  // Real fish have a slim tail peduncle, broad shoulder and species-specific head profiles.
-  const shoulder=Math.exp(-Math.pow((u-.67)/.24,2));
-  const rear=Math.min(1,u/.24);
-  const front=Math.min(1,(1-u)/.14);
-  const fullness=(.12+.88*Math.pow(Math.sin(Math.PI*Math.pow(u,.82)),.67))*Math.min(1,.42+.58*rear)*Math.min(1,.4+.6*front);
-  const deep=k===3?1.15:k===5?1.07:k===1?.94:1;
-  const forehead=k===3?.14:k===5?.1:k===6?.09:.04;
+  const shoulder=Math.exp(-Math.pow((u-.66)/.23,2));
+  const tail=smooth(.015,.26,u),nose=1-smooth(.87,1,u);
+  const body=Math.pow(Math.max(.001,Math.sin(Math.PI*Math.pow(u,.86))),.59);
+  const fullness=(.15+.85*body)*(.43+.57*tail)*(.4+.6*nose);
+  const deep=k===3?1.17:k===5?1.08:k===1?.92:1;
+  const forehead=k===3?.15:k===5?.1:k===6?.09:.035;
   for(let j=0;j<=sides;j++){
-   const theta=j/sides*Math.PI*2,vertical=Math.cos(theta),lateral=Math.sin(theta);
-   const y=p.h*deep*fullness*(1+.12*shoulder)*vertical+
-    forehead*Math.exp(-Math.pow((u-.84)/.13,2))*Math.max(0,vertical)-
-    (k===6?.045:0)*shoulder;
-   const z=p.w*fullness*(1+.13*shoulder)*lateral;
+   const theta=j/sides*Math.PI*2,v=Math.cos(theta),side=Math.sin(theta);
+   const sideAbs=Math.abs(side);
+   const snout=Math.exp(-Math.pow((u-.94)/.07,2));
+   const cheek=Math.exp(-Math.pow((u-.73)/.12,2))*Math.exp(-Math.pow((v+.12)/.45,2));
+   // Actual recessed operculum crease, not a separate floating ring.
+   const gillCurve=.52+.035*Math.cos(theta*1.4);
+   const gillCut=Math.exp(-Math.pow((u-gillCurve)/.012,2))*Math.pow(sideAbs,5);
+   // Incised mouth seam along the sides of the muzzle.
+   const mouthCut=Math.exp(-Math.pow((u-.968)/.023,2))*Math.exp(-Math.pow((v+.27)/.085,2));
+   // Subtle muscle channel and longitudinal lateral-line groove.
+   const lateral=Math.exp(-Math.pow((v-.06)/.075,2))*Math.pow(sideAbs,5)*(1-smooth(.8,.95,u))*smooth(.16,.28,u);
+   const dorsalRidge=Math.pow(Math.max(0,v),12)*(k===5?.055:.025);
+   const bellyKeel=Math.pow(Math.max(0,-v),10)*(k===3?.035:.015);
+   const y=p.h*deep*fullness*(1+.1*shoulder)*v+
+     forehead*Math.exp(-Math.pow((u-.84)/.13,2))*Math.max(0,v)
+     +dorsalRidge-bellyKeel-(k===6?.045:0)*shoulder;
+   const carved=1-.14*gillCut-.12*mouthCut-.035*lateral;
+   const z=p.w*fullness*(1+.12*shoulder+.13*cheek)*side*carved
+     +side*.028*snout*Math.max(0,-v);
    positions.push(x,y,z);uvs.push(u,j/sides);
   }
  }
  for(let i=0;i<rings;i++)for(let j=0;j<sides;j++){
   const n=i*(sides+1)+j;indices.push(n,n+1,n+sides+1,n+1,n+sides+2,n+sides+1);
+ }
+ // Cap both ends so the model stays watertight when viewed from any direction.
+ const back=positions.length/3;positions.push(-p.l,0,0);uvs.push(0,.5);
+ const front=positions.length/3;positions.push(p.l,0,0);uvs.push(1,.5);
+ for(let j=0;j<sides;j++){
+  indices.push(back,j+1,j);
+  const n=rings*(sides+1)+j;indices.push(front,n,n+1);
  }
  const geo=new T.BufferGeometry();
  geo.setAttribute('position',new T.Float32BufferAttribute(positions,3));
