@@ -1525,20 +1525,19 @@ for(let i=0;i<20;i++){
 }
 // Sculpted species-specific silhouettes, smooth tapered bodies and curved membrane fins.
 const fishProfiles=[
- {l:1.02,h:.51,w:.30,tail:.52}, {l:1.08,h:.68,w:.21,tail:.62},
- {l:.96,h:.76,w:.20,tail:.52}, {l:.83,h:.80,w:.18,tail:.46},
- {l:1.12,h:.38,w:.24,tail:.46}, {l:.79,h:.55,w:.22,tail:.53},
- {l:1.08,h:.48,w:.32,tail:.60}, {l:.88,h:.39,w:.28,tail:.47},
- {l:1.21,h:.25,w:.17,tail:.42}, {l:1.02,h:.72,w:.21,tail:.55},
- {l:1.12,h:.63,w:.23,tail:.50}, {l:.86,h:.54,w:.24,tail:.48},
- {l:.99,h:.50,w:.30,tail:.50}, {l:1.15,h:.23,w:.15,tail:.38}
+ {l:1.02,h:.51,w:.46,tail:.52}, {l:1.08,h:.68,w:.57,tail:.62},
+ {l:.96,h:.76,w:.61,tail:.52}, {l:.83,h:.80,w:.64,tail:.46},
+ {l:1.12,h:.38,w:.36,tail:.46}, {l:.79,h:.55,w:.48,tail:.53},
+ {l:1.08,h:.48,w:.47,tail:.60}, {l:.88,h:.39,w:.38,tail:.47},
+ {l:1.21,h:.25,w:.25,tail:.42}, {l:1.02,h:.72,w:.59,tail:.55},
+ {l:1.12,h:.63,w:.53,tail:.50}, {l:.86,h:.54,w:.47,tail:.48},
+ {l:.99,h:.50,w:.45,tail:.50}, {l:1.15,h:.23,w:.23,tail:.38}
 ];
-// Nine anatomical cross-sections with twelve straight facets per section.
-// Separate height and width keep disc fish thin and gobies long.
+// Full-bodied polygon meshes; width is comparable to body height in every species.
 function fishShape(p,k){
  const u=[0,.12,.26,.42,.59,.73,.85,.94,1];
  const heights=[.13,.29,.61,.88,1,.93,.69,.36,.13];
- const widths=[.15,.32,.65,.91,1,.88,.66,.37,.13];
+ const widths=[.17,.40,.76,.97,1,.96,.76,.43,.15];
  const positions=[],uvs=[],indices=[],sides=12;
  for(let i=0;i<u.length;i++)for(let j=0;j<=sides;j++){
   const a=j/sides*Math.PI*2,upper=Math.cos(a);
@@ -1683,7 +1682,7 @@ function createFish(k,i){
  [[0,0],[-.19,.08],[-.43,-.09],[-.32,-.30],[-.10,-.19]];
  for(const [pivot,side] of [[finPivot,1],[oppositeFin,-1]]){sculptFin(pivot,wing,finMat,finColors[k]);pivot.rotation.y=side*(k===6?.70:.40);}
  // Small inset eyes sit on the actual narrowing forehead surface.
- const eyeX=.66*p.l,eyeY=.21*p.h,eyeZ=.67*p.w;
+ const eyeX=.66*p.l,eyeY=.21*p.h,eyeZ=.76*p.w;
  for(const side of [-1,1]){
   const eye=mesh(new T.SphereGeometry(.078,8,6),dark,g,eyeX,eyeY,side*eyeZ);eye.scale.set(1,.95,.38);
   const shine=mesh(new T.OctahedronGeometry(.018,0),ivory,g,eyeX+.012,eyeY+.022,side*(eyeZ+.028));
