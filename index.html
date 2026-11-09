@@ -378,54 +378,94 @@ else{rect(nx-.7,ny-.7,1.5,1.5,tip);rect(nx+.5,ny-.5,.5,.5,'rgba(255,255,255,.65)
 branch(x,y,size,0,3);ctx.restore();
 }
 function fishDraw(f,t){
-const bob=Math.sin(t*.0028+f.phase)*2,x=Math.round(f.x),y=Math.round(f.y+bob),z=f.z;
+const bob=Math.sin(t*.0028+f.phase)*1.7,x=Math.round(f.x*2)/2,y=Math.round((f.y+bob)*2)/2,z=f.z;
 ctx.save();ctx.translate(x,y);ctx.scale(f.dir*z,z);
-const kind=f.kind||0,beat=Math.sin(t*.02+f.phase)*2;
-function tail(color,wide=6){polygon([[-10,0],[-19,-wide-beat],[-19,wide+beat],[-10,2]],color)}
-function eye(x=8,y=-2){rect(x,y,3,3,'#fff8e7');rect(x+1,y,1,2,'#172c49')}
-function fin(color){polygon([[-6,-5],[-1,-10],[5,-5]],color);polygon([[-4,5],[2,9],[7,5]],color)}
-if(kind===0){ // Clownfish
-tail('#e96d3d',7);fin('#f8a04d');rect(-11,-5,22,11,'#f77f39');
-for(const x of [-7,0,7]){rect(x,-5,3,11,'#2c4553');rect(x+1,-5,2,11,'#fff5df')}eye();
-}else if(kind===1){ // Blue tang
-tail('#f8d34e',9);polygon([[-12,-2],[-6,-9],[6,-8],[13,0],[6,8],[-7,8]],'#286bdb');
-polygon([[-7,-5],[5,-5],[9,-1],[-3,3],[-10,1]],'#142e7d');rect(-7,6,13,2,'#e6c24e');eye(8,-3);
-}else if(kind===2){ // Yellow tang
-tail('#ffe27c',7);polygon([[-11,0],[-5,-10],[7,-8],[12,0],[7,8],[-5,10]],'#fbd64f');rect(-5,-8,9,2,'#ffe994');eye();
-}else if(kind===3){ // Butterflyfish
-tail('#f5e9cc',6);polygon([[-10,0],[-3,-10],[7,-8],[13,0],[7,8],[-3,10]],'#fff0b8');
-rect(-5,-9,3,18,'#344d6c');rect(4,-8,3,16,'#efad4e');rect(10,-1,4,2,'#f9e5bc');eye(8,-3);
-}else if(kind===4){ // Royal gramma
-tail('#f7ce67',6);fin('#ba7bcf');rect(-10,-5,11,11,'#9957c8');rect(1,-5,10,11,'#f6d36b');eye();
-}else if(kind===5){ // Banggai cardinalfish
-tail('#f5f0d8',8);polygon([[-10,0],[-3,-8],[7,-7],[12,0],[7,7],[-3,8]],'#f5f0df');
-polygon([[-4,-6],[0,-15],[3,-6]],'#dfe8ea');rect(-6,-7,3,14,'#34495d');rect(2,-7,3,14,'#34495d');eye();
-}else{ // Lionfish
-tail('#e9a17d',10);rect(-10,-5,21,11,'#d99b83');
-for(let i=0;i<5;i++){rect(-8+i*4,-5,2,11,'#fff0d3');
-polygon([[-9+i*4,-5],[-13+i*5,-13-(i%2)*3],[-6+i*4,-5]],'#f4d3b8')}
-for(let i=0;i<4;i++)polygon([[-7+i*4,5],[-9+i*4,14],[-3+i*4,5]],'#d6a58f');eye();
+const kind=f.kind||0,beat=Math.sin(t*.017+f.phase)*2.2;
+function poly(p,c){polygon(p,c)}
+function body(p,base,highlight,shadow){
+poly(p,base);
+poly([[-9,-2],[-5,-5],[2,-5],[7,-3],[5,-1],[-5,-1]],highlight);
+poly([[-9,3],[-3,5],[4,5],[9,2],[4,6],[-5,6]],shadow);
 }
-// Species-specific micro-patterns and translucent gill outlines.
-ctx.strokeStyle='rgba(16,40,68,.45)';ctx.lineWidth=.5;
-ctx.beginPath();ctx.arc(4,0,3,-1.15,1.1);ctx.stroke();
-if(kind===1||kind===2){
-for(let k=0;k<5;k++)rect(-7+k*3,-4+(k%2)*2,.5,.5,'rgba(255,248,194,.7)');
-}else if(kind===3||kind===5){
-for(let k=0;k<4;k++)rect(-6+k*3,2+(k%2),.5,.75,'rgba(55,65,99,.42)');
-}else if(kind===6){
-for(let k=0;k<6;k++)rect(-9+k*3,-3,.6,5,'rgba(114,60,70,.28)');
+function tail(base,shade,wide=6){
+const sw=Math.sin(t*.017+f.phase)*2.1;
+poly([[-9,-1],[-18+sw,-wide],[-16+sw,0],[-18+sw,wide],[-9,2]],base);
+for(let k=-2;k<=2;k++)poly([[-10,0],[-17+sw,wide*k/3],[-16+sw,wide*k/3+.5]],shade);
 }
-// Small-scale shimmer and fin rays, resolved at quarter-pixel precision.
+function dorsal(base,edge){
+poly([[-8,-5],[-5,-10],[-1,-12],[3,-10],[7,-5]],base);
+for(let k=0;k<5;k++)rect(-5+k*2,-8-(k%2),.5,3,edge);
+}
+function lower(base){poly([[-5,5],[-2,9],[4,11],[7,5]],base)}
+function eye(px=8,py=-2){
+rect(px-1,py-1,3.5,3.5,'#24334c');
+rect(px-.5,py-.5,2.5,2.5,'#f8edce');
+rect(px+.7,py-.5,1.4,2,'#13243b');
+rect(px+.9,py-.3,.5,.5,'#fff');
+}
+function face(px=11){rect(px,1,1,.5,'rgba(29,39,58,.65)');rect(px-5,-2,.5,5,'rgba(24,41,62,.4)')}
+if(kind===0){ // clownfish: three irregular ivory bands, dark fin rims
+tail('#e67b3d','#f6b169',6);dorsal('#e66e32','#fbd59a');lower('#e68d45');
+body([[-11,-3],[-8,-6],[5,-6],[11,-3],[13,0],[10,5],[3,7],[-8,5],[-12,1]],'#ee7936','#ffad5c','#b84f31');
+for(const [bx,top,bottom] of [[-6,-6,6],[1,-6,7],[8,-4,5]]){
+poly([[bx-2,top],[bx+1,top-.3],[bx+2,bottom],[bx-2,bottom]],'#3b3541');
+poly([[bx-1.3,top+.6],[bx+.5,top+.4],[bx+1,bottom-.8],[bx-1,bottom-.8]],'#fff0d7');
+}
+eye(9,-2);face();
+}else if(kind===1){ // blue tang: cobalt body, midnight sweeping pattern
+tail('#f6d552','#d4a72e',8);dorsal('#244dbe','#5e9dff');lower('#e4bb3e');
+body([[-12,-1],[-8,-7],[4,-8],[11,-4],[13,0],[9,6],[1,8],[-9,5]],'#2364d6','#3e8bf0','#1744a6');
+poly([[-9,-4],[-5,-7],[3,-7],[9,-3],[5,0],[-3,3],[-10,1]],'#14285d');
+poly([[-6,-5],[3,-5],[7,-3],[2,-2],[-5,-2]],'#233d83');
+rect(-6,6,12,1,'#f3d64e');eye(9,-2);face();
+}else if(kind===2){ // yellow tang: angular dorsal and continuous yellow silhouette
+tail('#f8d553','#f6ec8d',8);dorsal('#eab93b','#fff5a0');lower('#eac347');
+body([[-11,0],[-8,-6],[-3,-9],[7,-7],[12,-3],[13,1],[8,6],[-4,9],[-10,4]],'#f5cb3e','#ffe987','#dba932');
+for(let k=0;k<6;k++)rect(-6+k*2,-7-(k%2),.5,3,'rgba(255,246,170,.7)');
+eye(9,-2);face();
+}else if(kind===3){ // butterflyfish: tall disk, black eye-mask, gold accent
+tail('#f4e5c7','#c6af8d',5);
+poly([[-8,-5],[-3,-12],[3,-11],[9,-6],[12,0],[8,7],[2,11],[-5,8],[-11,1]],'#f9edcc');
+poly([[-7,-4],[-3,-9],[2,-8],[7,-5],[4,-2],[-5,-1]],'#fff9e6');
+poly([[-8,4],[-3,7],[4,7],[8,4],[3,9],[-3,7]],'#e6d1a6');
+poly([[-4,-10],[-1,-10],[1,9],[-3,9]],'#34425c');
+poly([[5,-7],[8,-5],[8,7],[5,8]],'#eeb65b');
+rect(9,-3,2,6,'#283850');eye(9,-2);face(12);
+}else if(kind===4){ // royal gramma: clean violet to golden-yellow split
+tail('#f6c954','#ffe3a0',6);dorsal('#8d55bb','#d6a4e7');lower('#e7ba59');
+body([[-11,-3],[-8,-6],[5,-6],[11,-3],[13,0],[9,5],[1,7],[-8,5]],'#9b55c3','#b878e1','#633b9e');
+poly([[0,-6],[6,-6],[11,-3],[13,0],[9,5],[1,7],[0,5]],'#f4cc63');
+poly([[2,-5],[7,-4],[10,-2],[6,-2]],'#ffe398');eye(9,-2);face();
+}else if(kind===5){ // Banggai cardinalfish: elongated fins, stripes and white spots
+tail('#f0e9d7','#8c929d',9);
+poly([[-6,-5],[-2,-15],[2,-12],[5,-5]],'#e7e8e0');
+poly([[-3,6],[2,16],[6,6]],'#e6e4d9');
+body([[-11,-2],[-6,-7],[5,-7],[12,-2],[13,1],[6,7],[-6,7]],'#eee9d9','#fff8e8','#aeb4b8');
+poly([[-6,-7],[-3,-7],[-2,7],[-5,7]],'#2e3d54');
+poly([[2,-7],[5,-7],[6,7],[3,7]],'#334159');
+for(let k=0;k<10;k++)rect(-9+(k%5)*4,-5+Math.floor(k/5)*9,.8,.8,'#fdfaf0');
+eye(9,-2);face();
+}else{ // lionfish: spiny dorsal rays, cream stripes, translucent fan fins
+tail('#d89c85','#f8ddc5',9);
 for(let k=0;k<7;k++){
-const sx=-7+(k%4)*3.5,sy=-2+Math.floor(k/4)*3;
-rect(sx,sy,.75,.5,k%2?'rgba(255,255,255,.34)':'rgba(185,230,246,.24)');
+const xx=-9+k*3;
+poly([[xx,-3],[xx-3,-13-(k%3)*2],[xx+1,-7]],'#e9b9a1');
+rect(xx-1,-12-(k%3)*2,.5,3,'#fff0d7');
 }
-for(let k=0;k<4;k++){
-rect(-6+k*3,6+k%2*.5,.5,2,'rgba(240,238,218,.32)');
+body([[-11,-3],[-8,-6],[5,-6],[12,-3],[13,1],[9,5],[-6,6],[-12,2]],'#c98770','#e5aa91','#955d60');
+for(let k=0;k<6;k++){
+const xx=-9+k*3.5;
+poly([[xx,-5],[xx+1,-5],[xx+2,5],[xx,5]],k%2?'#fff1d8':'#a65f5e');
 }
-rect(8,-2,.5,.5,'#ffffff');
-rect(-6,2,4,.5,'rgba(255,255,255,.35)');ctx.restore();
+for(let k=0;k<5;k++)poly([[-7+k*3,4],[-11+k*4,13+(k%2)*3],[-4+k*3,5]],'rgba(244,205,184,.8)');
+eye(9,-2);face();
+}
+// Micro-scale highlights follow the body rather than covering the eye or silhouette.
+for(let k=0;k<7;k++){
+const sx=-7+(k%4)*3,sy=-2+Math.floor(k/4)*3;
+rect(sx,sy,.5,.5,k%2?'rgba(255,255,255,.28)':'rgba(222,242,251,.18)');
+}
+ctx.restore();
 }
 function draw(t){
 const grad=ctx.createLinearGradient(0,0,0,H);
