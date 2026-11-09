@@ -306,12 +306,21 @@ html,body{max-width:100%;overflow-x:hidden}
 const host=document.getElementById('scene');if(!host)return;
 const canvas=document.createElement('canvas');canvas.setAttribute('aria-label','움직이는 도트 바닷속 풍경');host.querySelectorAll('canvas').forEach(el=>el.remove());host.prepend(canvas);
 // Direct low-resolution rendering avoids iOS GPU canvas tiling and blank blits.
-const W=240,H=360,PIXEL_SCALE=1;
+const W=240,H=360;
 const ctx=canvas.getContext('2d',{alpha:false});
 if(!ctx)return;
-canvas.width=W;canvas.height=H;
-ctx.setTransform(1,0,0,1,0,0);
-ctx.imageSmoothingEnabled=false;
+function resizeScene(){
+  const bounds=host.getBoundingClientRect();
+  const width=Math.max(240,Math.round(bounds.width));
+  const height=Math.max(360,Math.round(bounds.height));
+  if(canvas.width!==width||canvas.height!==height){
+    canvas.width=width;canvas.height=height;
+  }
+  ctx.setTransform(width/W,0,0,height/H,0,0);
+  ctx.imageSmoothingEnabled=false;
+}
+resizeScene();
+window.addEventListener('resize',resizeScene,{passive:true});
 const rand=(n)=>{let x=Math.sin(n*127.1+78.23)*43758.5453;return x-Math.floor(x)};
 const palette=['#ffbd82','#9ee9e0','#f9a4be','#ffe6a0','#b8a7f3','#9ad1ff'];
 const fish=[];
@@ -785,7 +794,7 @@ f.x=clamp(f.x,17,W-17);f.y=clamp(f.y,75,311);
 fishDraw(f,t);
 });
 }
-let last=0;function frame(t){requestAnimationFrame(frame);if(document.hidden||t-last<32)return;last=t;draw(t)}
+let last=0;function frame(t){requestAnimationFrame(frame);if(document.hidden||t-last<32)return;last=t;resizeScene();draw(t)}
 requestAnimationFrame(frame);
 })();
 </script><style id="aquaria-no-zoom-drag">
@@ -804,4 +813,7 @@ document.addEventListener('gestureend',function(e){e.preventDefault()},{passive:
 document.addEventListener('touchmove',function(e){if(e.touches.length>1)e.preventDefault()},{passive:false});
 document.addEventListener('dblclick',function(e){e.preventDefault()});
 })();
-</script></html>
+</script><style id="aquaria-ios-canvas-sizing-v2">
+#game #scene{position:relative!important;overflow:hidden!important;contain:layout paint!important}
+#game #scene canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;image-rendering:auto!important;object-fit:fill!important;transform:none!important}
+</style></html>
