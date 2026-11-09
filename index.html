@@ -1267,7 +1267,7 @@ const fishBodies=fishProfiles.map((p,k)=>fishShape(p,k));
 const eyeGeo=new T.OctahedronGeometry(.075,0);
 function createFish(k,i){
  const g=new T.Group();scene.add(g);
- const p=fishProfiles[k],size=[.36,.49,.43,.41,.31,.32,.5][k]*(.88+(i%4)*.045);
+ const p=fishProfiles[k],size=[.36,.47,.42,.4,.31,.32,.48][k]*(.88+(i%4)*.045);
  const main=mat(colors[k],.44),dark=mat(k===1?0x10275a:0x45364b),white=mat(0xfff0dc);
  const finMat=new T.MeshStandardMaterial({color:colors[k],roughness:.48,transparent:true,opacity:.88,side:T.DoubleSide,depthWrite:false});
  const eye=mat(0x101923,.14),iris=mat(0xe3d6ad,.2);
@@ -1286,15 +1286,29 @@ function createFish(k,i){
  const oppositePivot=new T.Group();oppositePivot.position.set(.15,-.12,-p.w*.92);g.add(oppositePivot);sculptFin(oppositePivot,[[0,0],[-.28,.14],[-.64,-.3],[-.3,-.42]],finMat,0x5a526d);
  for(const side of [-1,1]){
   const z=side*p.w*.88;
+  // Cute but anatomical: faceted iris, dark pupil and two tiny polygon highlights.
+  const eyeSize=k===5?1.34:k===6?.94:1.16;
   const socket=mesh(eyeGeo,iris,g,p.l*.69,p.h*.15,z);
-  socket.scale.set(1.25,1.25,.5);
-  const pupil=mesh(eyeGeo,eye,g,p.l*.7,p.h*.15,z+side*.035);
-  pupil.scale.set(.76,.85,.45);
-  const glint=mesh(new T.OctahedronGeometry(.018,0),white,g,p.l*.71,p.h*.19,z+side*.066);
+  socket.scale.set(eyeSize*1.28,eyeSize*1.23,.52);
+  const pupil=mesh(eyeGeo,eye,g,p.l*.71,p.h*.15,z+side*.045);
+  pupil.scale.set(eyeSize*.9,eyeSize*.96,.49);
+  const glint=mesh(new T.OctahedronGeometry(.025,0),white,g,p.l*.735,p.h*.205,z+side*.083);
+  glint.scale.set(1,.8,.5);
+  const smallGlint=mesh(new T.OctahedronGeometry(.011,0),white,g,p.l*.69,p.h*.12,z+side*.085);
+  smallGlint.scale.set(1,.8,.5);
   const mouth=mesh(new T.OctahedronGeometry(1,0),dark,g,p.l*.985,-.12,side*.035);
   mouth.scale.set(.025,.023,.11);
   const gill=mesh(polygonRing(.2,.012,8,Math.PI*.82),dark,g,p.l*.38,-.08,side*p.w*.93);
   gill.rotation.z=-.28;
+ }
+ // Subtle faceted cheek shading and angular eyebrows, avoiding cartoon stickers.
+ const cheekShade=mat(k===0?0xf7a35e:k===1?0x367cce:k===2?0xf6da69:k===3?0xf2d5ad:k===4?0xc69ad3:k===5?0xd8d2c5:0xc89584,.75,true,.7);
+ for(const side of [-1,1]){
+  const cheek=mesh(new T.OctahedronGeometry(1,0),cheekShade,g,p.l*.54,-p.h*.23,side*p.w*.8);
+  cheek.scale.set(.18,.095,.024);
+  // Small angular upper eye ridge makes the face expressive from a distance.
+  const brow=mesh(new T.BoxGeometry(.19,.018,.025),main,g,p.l*.68,p.h*.31,side*p.w*.93);
+  brow.rotation.z=k===5?-.12:.12;
  }
  // Species-specific facial anatomy and fin silhouettes.
  if(k===0){
