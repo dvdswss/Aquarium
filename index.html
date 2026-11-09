@@ -925,7 +925,7 @@ const host=document.getElementById('scene');if(!host)return;
 const button=document.createElement('button');button.className='view-switch';button.textContent='◈ 3D 보기';button.type='button';host.append(button);
 const layer=document.createElement('div');layer.className='three-world';host.append(layer);
 const hint=document.createElement('div');hint.className='three-hint';hint.textContent='드래그: 360° 회전 · 두 손가락: 확대/이동';layer.append(hint);
-let initialized=false,active=false,renderer,scene,camera,fish=[],orbit={theta:0,phi:1.32,radius:17,targetY:2.2},pointer=new Map(),lastDistance=0;
+let initialized=false,active=false,renderer,scene,camera,start3DFrame=null,fish=[],orbit={theta:0,phi:1.32,radius:17,targetY:2.2},pointer=new Map(),lastDistance=0;
 const colors=[0xf17d35,0x256dce,0xf3d347,0xf2e5b0,0x9255bc,0xe8e5d8,0xb87565];
 // Modern Three.js is an ES module; the old three.min.js URL no longer exists.
 async function load(){
@@ -1037,6 +1037,7 @@ function frame(t){
  }
  renderer.render(scene,camera);
 }
+start3DFrame=()=>requestAnimationFrame(frame);
 layer.addEventListener('pointerdown',e=>{layer.setPointerCapture(e.pointerId);pointer.set(e.pointerId,{x:e.clientX,y:e.clientY});lastDistance=0});
 layer.addEventListener('pointermove',e=>{
  if(!pointer.has(e.pointerId))return;
@@ -1057,7 +1058,7 @@ initialized=true;resize();updateCamera();
 button.addEventListener('click',async()=>{
  if(active){active=false;host.classList.remove('is-3d');button.textContent='◈ 3D 보기';return}
  button.textContent='3D 불러오는 중…';button.disabled=true;
- try{await load();if(!initialized)build();active=true;host.classList.add('is-3d');button.textContent='▤ 2D 보기';requestAnimationFrame(frame)}
+ try{await load();if(!initialized)build();active=true;host.classList.add('is-3d');button.textContent='▤ 2D 보기';start3DFrame()}
  catch(err){button.textContent='3D 재시도';console.error('AQUARIA 3D error:',err);hint.textContent='3D 오류: '+String(err?.message||err).slice(0,85);hint.style.whiteSpace='normal';hint.style.maxWidth='85%';hint.style.textAlign='center';layer.style.display='block';setTimeout(()=>{if(!active)layer.style.display='none'},8000)}
  finally{button.disabled=false}
 });
