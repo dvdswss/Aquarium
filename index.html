@@ -109,7 +109,7 @@ main,#game,#game section:first-child{position:fixed!important;inset:0!important;
  if(Array.isArray(state.fishLives))return;
  const n=Math.min(38,Math.max(0,Number(state.virtual)||0));
  const purchased=Array.isArray(state.aquariaSpecies)?state.aquariaSpecies:[];
- state.fishLives=Array.from({length:n},(_,i)=>({kind:i>=n-purchased.length?(purchased[i-(n-purchased.length)]??i%7):i%7,born:Date.now(),lifeDays:21+Math.floor(Math.random()*15)}));
+ state.fishLives=Array.from({length:n},(_,i)=>({kind:i>=n-purchased.length?(purchased[i-(n-purchased.length)]??i%14):i%14,born:Date.now(),lifeDays:21+Math.floor(Math.random()*15)}));
  state.lifeCheckedAt=Date.now();
 }
 function aquariaLifeStep(){
@@ -221,7 +221,7 @@ window.aquariaFishTouched=function(index){
  save();
  return {reward,stressed};
 };
-const aquariaFishCatalog=[['흰동가리',20],['블루탱',40],['옐로탱',65],['나비고기',100],['로열 그라마',150],['카디널피시',230],['라이언피시',350]];
+const aquariaFishCatalog=[['흰동가리',20],['블루탱',40],['옐로탱',65],['나비고기',100],['로열 그라마',150],['카디널피시',230],['라이언피시',350],['만다린피시',420],['파이어고비',460],['퍼플탱',500],['폭스페이스',540],['파자마 카디널',580],['블랙클라운',620],['네온고비',660]];
 // Food groups: omnivore, algae grazer, plankton picker and carnivore.
 // Preferred food grants bonus XP based on the species actually owned.
 const aquariaFoodCatalog=[
@@ -238,7 +238,14 @@ const aquariaFoodAffinity=[
  ['all','plankton','meaty'], // butterflyfish: species-dependent; simplified game diet
  ['all','plankton','meaty','carnivore'], // royal gramma
  ['all','plankton','meaty'], // cardinalfish
- ['all','meaty','carnivore'] // lionfish
+ ['all','meaty','carnivore'], // lionfish
+ ['all','plankton','meaty'],
+ ['all','plankton','meaty'],
+ ['all','plankton','meaty'],
+ ['all','plankton','meaty'],
+ ['all','plankton','meaty'],
+ ['all','plankton','meaty'],
+ ['all','plankton','meaty']
 ];
 function aquariaFoodBonus(group){
  if(group==='all')return 0;
@@ -246,7 +253,7 @@ function aquariaFoodBonus(group){
  const count=Math.max(0,Number(state.virtual)||0),base=Math.max(0,count-owned.length);
  let matching=0;
  for(let i=0;i<count;i++){
-  const k=i<base?i%7:owned[i-base];
+  const k=i<base?i%14:owned[i-base];
   if(aquariaFoodAffinity[k]?.includes(group))matching++;
  }
  return matching?Math.min(12,Math.round(matching/Math.max(1,count)*12)):0;
@@ -633,7 +640,7 @@ window.addEventListener('aquaria-feed',event=>{
 });
 function sync(){
 const count=Math.min(38,Math.max(0,Number(state.virtual)||0));
-while(fish.length<count){const i=fish.length;fish.push({x:30+rand(i+12)*180,y:95+rand(i+44)*155,z:.55+rand(i+7)*.65,dir:i%2?1:-1,speed:.48+rand(i+23)*.30,phase:i*2.4,color:palette[i%palette.length],kind:(state.fishLives?.[i]?.kind??i%7)})}
+while(fish.length<count){const i=fish.length;fish.push({x:30+rand(i+12)*180,y:95+rand(i+44)*155,z:.55+rand(i+7)*.65,dir:i%2?1:-1,speed:.48+rand(i+23)*.30,phase:i*2.4,color:palette[i%palette.length],kind:(state.fishLives?.[i]?.kind??i%14)})}
 fish.length=count;
 }
 window.syncAquarium3D=sync;sync();
@@ -708,12 +715,39 @@ const posture=[.025,.045,.075,.11,.08,.025,.04][k];
 const foraging=(k===2||k===3)&&near;
 return (foraging?.11*Math.sin(t*.006+f.phase):0)+sway*posture;
 }
+function drawNewSpecies(f,t,k){
+ const palettes=[
+ ['#145bb3','#ee8c35','#63e6df'],['#fff0d6','#ed634b','#f5c86a'],
+ ['#6941a5','#4c2c83','#f0d15c'],['#e6bd52','#2c4148','#f7e5ac'],
+ ['#e2d7bc','#536d8a','#a75c83'],['#262e3c','#f7f1df','#ff9e5b'],
+ ['#182d48','#1f96ed','#a1edff']
+ ];
+ const c=palettes[k-7]||palettes[0],z=(f.z||1)*.8;
+ ctx.save();ctx.translate(f.x,f.y+Math.sin(t*.003+(f.phase||0))*.8);
+ ctx.scale((f.dir||1)*z,z);
+ const swing=Math.sin(t*.015+(f.phase||0))*2;
+ ctx.fillStyle=c[1];ctx.beginPath();ctx.moveTo(-9,0);ctx.lineTo(-19+swing,-7);ctx.lineTo(-18+swing,7);ctx.closePath();ctx.fill();
+ ctx.fillStyle=c[0];ctx.beginPath();ctx.moveTo(-11,0);ctx.quadraticCurveTo(-8,-8,2,-7);ctx.quadraticCurveTo(14,-5,13,0);ctx.quadraticCurveTo(12,7,1,8);ctx.quadraticCurveTo(-9,7,-11,0);ctx.fill();
+ ctx.fillStyle=c[1];ctx.beginPath();ctx.moveTo(-8,-5);ctx.lineTo(-3,-12);ctx.lineTo(6,-6);ctx.fill();
+ ctx.beginPath();ctx.moveTo(-6,5);ctx.lineTo(-1,11);ctx.lineTo(6,6);ctx.fill();
+ if(k===7){for(let j=0;j<13;j++){ctx.fillStyle=j%2?'#ed8b3e':'#69e4cf';ctx.beginPath();ctx.arc(-7+(j*7)%19,-5+(j*11)%11,1.4,0,Math.PI*2);ctx.fill();}}
+ else if(k===8){ctx.fillStyle='#ed694b';ctx.fillRect(7,-4,5,7);ctx.fillStyle='#f8f1df';ctx.fillRect(-7,-5,3,11);}
+ else if(k===9){ctx.fillStyle='#e8d15e';ctx.fillRect(-17+swing,-6,3,12);}
+ else if(k===10){ctx.fillStyle='#303944';ctx.fillRect(5,-6,6,12);ctx.fillStyle='#fff3dc';ctx.fillRect(-6,-6,3,12);}
+ else if(k===11){ctx.fillStyle='#9b6382';for(let j=0;j<5;j++)ctx.fillRect(-8+j*4,-5+(j%2),2,10);}
+ else if(k===12){ctx.fillStyle='#f5eee2';for(const x of [-6,2,9])ctx.fillRect(x,-6,2.5,12);}
+ else if(k===13){ctx.fillStyle='#28b8f7';ctx.fillRect(-9,-2,20,2);}
+ ctx.fillStyle='#14233a';ctx.beginPath();ctx.arc(9,-2,1.2,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='rgba(255,255,255,.8)';ctx.fillRect(8.7,-2.7,.45,.45);
+ ctx.restore();
+}
 function fishDraw(f,t){
 const kind=f.kind||0;
+if(kind>=7){drawNewSpecies(f,t,kind);return;}
 // Relative adult lengths: clownfish ~10cm, blue tang ~30cm, yellow tang ~20cm,
 // butterflyfish ~18cm, royal gramma ~8cm, Banggai cardinal ~8cm, lionfish ~30cm.
 // Compress real-world ratios for a readable miniature aquarium while preserving rank.
-const speciesSize=[.86,1.32,1.10,1.02,.72,.75,1.34];
+const speciesSize=[.86,1.32,1.10,1.02,.72,.75,1.34,.78,.72,1.15,1.03,.77,.88,.68];
 const individual= .94+rand((f.phase||0)*11+13)*.12;
 const z=f.z*speciesSize[kind]*individual*.42;
 const bob=Math.sin(t*.0028+f.phase)*(kind===5?.55:kind===6?.8:1.3);
@@ -799,7 +833,7 @@ for(let k=0;k<10;k++)rect(-9+(k%5)*4,-5+Math.floor(k/5)*9,.8,.8,'#fdfaf0');
 eye(9,-2);face();
 }else{ // lionfish: spiny dorsal rays, cream stripes, translucent fan fins
 tail('#d89c85','#f8ddc5',9);
-for(let k=0;k<7;k++){
+for(let k=0;k<14;k++){
 const xx=-9+k*3;
 poly([[xx,-3],[xx-3,-13-(k%3)*2],[xx+1,-7]],'#e9b9a1');
 rect(xx-1,-12-(k%3)*2,.5,3,'#fff0d7');
@@ -1008,7 +1042,7 @@ rect(x+2,y-3,.5,1,'rgba(246,255,255,.85)');
 for(let i=0;i<190;i++){
 const x=rand(i+1510)*W,y=271+rand(i+1650)*87;
 const c=i%5===0?'rgba(197,210,222,.53)':i%3===0?'rgba(112,156,188,.6)':'rgba(30,57,99,.55)';
-rect(x,y,i%7===0?1:.5,i%9===0?1:.5,c);
+rect(x,y,i%14===0?1:.5,i%9===0?1:.5,c);
 }
 // Tiny shells and star-shaped sea life hidden along the seabed.
 for(let i=0;i<11;i++){
@@ -1614,7 +1648,14 @@ const fishProfiles=[
  {l:.98,h:.86,w:.31,tail:.58}, // butterflyfish: tall disc
  {l:1.03,h:.55,w:.37,tail:.55}, // royal gramma: slender
  {l:.83,h:.69,w:.38,tail:.57}, // cardinalfish: compact
- {l:1.22,h:.60,w:.43,tail:.78} // lionfish: broad with fin fans
+ {l:1.22,h:.60,w:.43,tail:.78}, // lionfish
+{l:.91,h:.49,w:.38,tail:.55},
+{l:1.08,h:.42,w:.30,tail:.65},
+{l:1.18,h:.72,w:.37,tail:.69},
+{l:1.13,h:.74,w:.36,tail:.63},
+{l:.90,h:.62,w:.33,tail:.55},
+{l:1.03,h:.59,w:.40,tail:.58},
+{l:.90,h:.38,w:.30,tail:.50}
 ];
 // Each species gets a true three-dimensional polygonal tropical-fish body.
 function fishShape(p,k){
@@ -1628,7 +1669,7 @@ function fishShape(p,k){
   [.17,.26,.42,.62,.81,.97,1.05,1.08,1.04,.94,.77,.55,.32,.12],
   [.17,.25,.39,.57,.76,.92,1.02,1.05,1.04,.97,.84,.65,.4,.16]
  ];
- const profile=silhouettes[k],positions=[],uvs=[],indices=[];
+ const profile=silhouettes[k%7],positions=[],uvs=[],indices=[];
  const section=[[1,0],[.92,.38],[.7,.71],[.38,.92],[0,1],[-.38,.92],[-.7,.71],[-.92,.38],[-1,0],[-.92,-.38],[-.7,-.71],[-.38,-.92],[0,-1],[.38,-.92],[.7,-.71],[.92,-.38]];
  const sides=section.length,last=profile.length-1;
  for(let i=0;i<=last;i++){
@@ -1676,7 +1717,7 @@ function finShape(points){
 function fishSkin(k){
  const c=document.createElement('canvas');c.width=256;c.height=128;
  const x=c.getContext('2d');
- const base=['#ed8a39','#1763bb','#eacb39','#f6df9d','#e9bc57','#e9e0d1','#d7a58b'][k];
+ const base=['#ed8a39','#1763bb','#eacb39','#f6df9d','#e9bc57','#e9e0d1','#d7a58b','#1967b7','#fff0d6','#7443ac','#eac34f','#e5d8bd','#30343e','#1b3655'][k];
  x.fillStyle=base;x.fillRect(0,0,256,128);
  if(k===0){
   for(const u of [65,137,210]){
@@ -1702,6 +1743,7 @@ function fishSkin(k){
   x.fillStyle='#784a45';for(let n=0;n<11;n++){const u=15+n*23;x.beginPath();x.ellipse(u,64,7,65,.12,0,Math.PI*2);x.fill();}
   x.fillStyle='#fff0d5';for(let n=0;n<17;n++){x.beginPath();x.arc((n*37)%256,(n*59)%128,3,0,Math.PI*2);x.fill();}
  }
+ if(k>=7){const accent=['#f18c39','#e96653','#e5d258','#303d49','#985a80','#f7f0e3','#27b7ef'][k-7];x.fillStyle=accent;if(k===7){for(let j=0;j<24;j++){x.beginPath();x.arc((j*47)%256,(j*37)%128,5,0,Math.PI*2);x.fill();}}else if(k===13){x.fillRect(0,55,256,15);}else{for(let j=0;j<4;j++)x.fillRect(25+j*62,0,k===12?22:9,128);}}
  // Subtle overlapping scales and lateral-line pores, drawn into the skin texture.
  x.save();
  x.strokeStyle='rgba(255,255,255,.11)';x.lineWidth=.7;
@@ -1753,9 +1795,9 @@ const eyeGeo=new T.OctahedronGeometry(.075,0);
 // Calm, storybook reef fish: Abyssrium-like proportions, original polygon-only meshes.
 function createFish(k,i){
  const g=new T.Group();scene.add(g);
- const p=fishProfiles[k],size=[.225,.248,.233,.225,.21,.203,.248][k]*(.9+(i%4)*.035);
- const main=mat(colors[k],.68),dark=mat(0x263044,.65),ivory=mat(0xfff4e2,.42);
- const finMat=new T.MeshStandardMaterial({color:colors[k],roughness:.7,transparent:true,opacity:.86,side:T.DoubleSide,depthWrite:false,flatShading:true});
+ const p=fishProfiles[k],size=[.225,.248,.233,.225,.21,.203,.248,.205,.203,.235,.23,.21,.22,.19][k]*(.9+(i%4)*.035);
+ const main=mat((colors[k]||[0x1967b7,0xf7eddd,0x7443ac,0xeac34f,0xe5d8bd,0x30343e,0x1b3655][k-7]),.68),dark=mat(0x263044,.65),ivory=mat(0xfff4e2,.42);
+ const finMat=new T.MeshStandardMaterial({color:(colors[k]||[0x1967b7,0xf7eddd,0x7443ac,0xeac34f,0xe5d8bd,0x30343e,0x1b3655][k-7]),roughness:.7,transparent:true,opacity:.86,side:T.DoubleSide,depthWrite:false,flatShading:true});
  // The silhouette is the character: plump forehead, tiny snout, tapering tail.
  mesh(fishBodies[k],fishSkins[k],g);
  const tailPivot=new T.Group();tailPivot.position.x=-p.l+.03;g.add(tailPivot);
@@ -1835,12 +1877,12 @@ function createFish(k,i){
  fish.push({g,tail:tailPivot,fin:finPivot,oppositeFin,k,phase:i*1.6,
   velocity:new T.Vector3(Math.cos(angle+1),.06,Math.sin(angle+1)).multiplyScalar(.0006),
   target:new T.Vector3(startX,2+(i%5)*.7,startZ),nextTurn:0,
-  swimSpeed:[.00078,.00115,.00102,.00076,.00094,.00048,.00043][k],
+  swimSpeed:([.00078,.00115,.00102,.00076,.00094,.00048,.00043,.00085,.0011,.00095,.0009,.0007,.0008,.0012][k]||.0008),
   lastSwim:0,behavior:'explore',behaviorUntil:0,burstUntil:0,seed:i*17.13});
 }
 function syncFish(){
  const count=Math.min(38,Math.max(0,Number((window.state||{}).virtual)||Number(document.getElementById('population')?.textContent)||5));
- while(fish.length<count){const roster=JSON.parse(localStorage.getItem('aquaria-v1')||'{}').aquariaSpecies||[];const i=fish.length;const start=Math.max(0,count-roster.length);const k=JSON.parse(localStorage.getItem('aquaria-v1')||'{}').fishLives?.[i]?.kind??(i>=start?roster[i-start]:i%7);createFish(Number.isInteger(k)&&k>=0&&k<7?k:i%7,i);}
+ while(fish.length<count){const roster=JSON.parse(localStorage.getItem('aquaria-v1')||'{}').aquariaSpecies||[];const i=fish.length;const start=Math.max(0,count-roster.length);const k=JSON.parse(localStorage.getItem('aquaria-v1')||'{}').fishLives?.[i]?.kind??(i>=start?roster[i-start]:i%14);createFish(Number.isInteger(k)&&k>=0&&k<14?k:i%14,i);}
  while(fish.length>count){const f=fish.pop();scene.remove(f.g)}
 }
 syncFish();
