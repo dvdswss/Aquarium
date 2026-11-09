@@ -1354,7 +1354,7 @@ function createFish(k,i){
   velocity:new T.Vector3(Math.cos(angle+1),.06,Math.sin(angle+1)).multiplyScalar(.0006),
   target:new T.Vector3(startX,2+(i%5)*.7,startZ),nextTurn:0,
   swimSpeed:[.00078,.00115,.00102,.00076,.00094,.00048,.00043][k],
-  lastSwim:0});
+  lastSwim:0,behavior:'explore',behaviorUntil:0,burstUntil:0,seed:i*17.13});
 }
 function syncFish(){
  const count=Math.min(38,Math.max(0,Number((window.state||{}).virtual)||Number(document.getElementById('population')?.textContent)||5));
@@ -1393,71 +1393,115 @@ function frame(t){
  // Species-inspired simplified behavior: clownfish defend an anemone-sized home,
 // tangs cruise open water, butterflyfish inspect reef, cardinalfish hover in groups,
 // gramma stay by crevices, and lionfish stalk slowly near rockwork.
+// Ethology-inspired finite-state behavior, rather than synchronized circular paths.
 for(const f of fish){
- const dt=Math.min(50,Math.max(0,t-(f.lastSwim||t-16)));f.lastSwim=t;
+ const dt=Math.min(45,Math.max(0,t-(f.lastSwim||t-16)));f.lastSwim=t;
  const pos=f.g.position,k=f.k,phase=f.phase;
- const homeX=[-2.6,0,0,2.5,-2.8,1.6,2.8][k];
- const homeZ=[1.8,0,0,-1.8,-2.1,1.3,1.9][k];
- const homeY=[2.0,4.0,3.7,2.7,2.0,3.0,1.8][k];
- const roam=[1.35,4.1,4.0,2.1,1.4,1.35,2.1][k];
- const cycle=t*.00145+phase*2.4;
- if(t>=f.nextTurn||pos.distanceToSquared(f.target)<(k===5?.08:.22)){
-  const theta=cycle*1.17+Math.sin(cycle*.73)*2.4;
-  let tx=homeX+Math.cos(theta)*roam*(.45+.5*Math.abs(Math.sin(cycle*.53)));
-  let tz=homeZ+Math.sin(theta)*roam*(.45+.5*Math.abs(Math.cos(cycle*.67)));
-  let ty=homeY+Math.sin(cycle*.81)*[.4,1.65,1.35,.65,.45,.25,.6][k];
-  if(k===0){ // Clownfish: short dashes and pauses around a fixed shelter.
-   tx=homeX+Math.sin(cycle*2.2)*.85;tz=homeZ+Math.cos(cycle*1.6)*.75;
-  }else if(k===3){ // Butterflyfish: move between reef feeding spots.
-   tx=homeX+Math.sin(cycle*1.8)*1.3;tz=homeZ+Math.cos(cycle*1.1)*1.2;
-  }else if(k===4){ // Royal gramma: retreat toward a rocky crevice.
-   tx=homeX+Math.sin(cycle*1.2)*.8;tz=homeZ+Math.cos(cycle*1.4)*.7;
-  }else if(k===5){ // Cardinalfish: station-keeping with close companions.
-   const group=fish.filter(o=>o.k===5);
-   const index=group.indexOf(f);
-   tx=homeX+Math.sin(t*.00035)*.65+(index%3-1)*.38;
-   tz=homeZ+Math.cos(t*.0003)*.5+Math.floor(index/3)*.32;
-   ty=homeY+Math.sin(t*.0007+index)*.14;
-  }else if(k===6){ // Lionfish: low-speed stalking by the reef.
-   tx=homeX+Math.sin(cycle*.65)*1.35;
-   tz=homeZ+Math.cos(cycle*.57)*1.1;
+ const hx=[-2.3,0,0,2.4,-2.7,1.4,2.4][k],hz=[1.6,0,0,-1.7,-2,1.4,1.7][k];
+ const hy=[2.1,4,3.8,2.5,2.1,3.2,1.8][k];
+ const v=f.velocity,cycle=t*.00071+f.seed;
+ const close=fish.filter(o=>o!==f&&o.k===k&&pos.distanceToSquared(o.g.position)<2.8);
+ let danger=false;
+ // Territorial species respond to intruders; all species avoid close contact.
+ for(const o of fish){
+  if(o===f)continue;
+  const d=pos.distanceToSquared(o.g.position);
+  if(d<.55&&((k===0||k===4)&&o.k!==k))danger=true;
+ }
+ if(t>=f.behaviorUntil){
+  const r=(Math.sin(t*.00091+f.seed*8.7)*43758.5453)%1;
+  const choice=Math.abs(r);
+  if(k===0)f.behavior=choice<.20?'guard':choice<.52?'hover':'forage';
+  else if(k===1||k===2)f.behavior=choice<.20?'graze':choice<.32?'burst':'cruise';
+  else if(k===3)f.behavior=choice<.63?'peck':choice<.82?'hover':'forage';
+  else if(k===4)f.behavior=choice<.38?'hide':choice<.63?'hover':'forage';
+  else if(k===5)f.behavior=choice<.72?'school':'hover';
+  else f.behavior=choice<.58?'stalk':choice<.86?'hover':'lunge';
+  f.behaviorUntil=t+[2200,3600,3300,2400,2700,4200,4500][k]*(.75+choice*.65);
+  f.nextTurn=0;
+ }
+ if(danger&&k===4){f.behavior='hide';f.behaviorUntil=t+1300;f.nextTurn=0;}
+ if(danger&&k===0){f.behavior='guard';f.behaviorUntil=t+950;f.nextTurn=0;}
+ const mode=f.behavior;
+ if(t>=f.nextTurn||pos.distanceToSquared(f.target)<.09){
+  const theta=cycle*2.2+Math.sin(cycle*1.7)*2.1;
+  let tx=hx,tz=hz,ty=hy;
+  if(mode==='cruise'||mode==='burst'){
+   // Tangs travel across open water in long, noncircular passes.
+   const direction=Math.sin(cycle*1.1)>0?1:-1;
+   tx=direction*3.8;tz=Math.sin(cycle*.49+phase)*2.3;
+   ty=hy+Math.sin(cycle*.73)*1.3;
+  }else if(mode==='graze'){
+   // Short repeated visits to algae-covered reef surfaces.
+   tx=1.8+Math.sin(theta)*1.7;tz=-2.0+Math.cos(theta)*1.4;ty=1.6+Math.abs(Math.sin(theta))*.6;
+  }else if(mode==='hide'){
+   tx=hx+Math.sin(phase)*.18;tz=hz+Math.cos(phase)*.18;ty=1.6;
+  }else if(mode==='school'){
+   // Cardinalfish share a slow-moving center but retain individual offsets.
+   tx=hx+Math.sin(t*.00024)*.85+Math.sin(phase*2)*.32;
+   tz=hz+Math.cos(t*.00022)*.7+Math.cos(phase*2)*.32;
+   ty=hy+Math.sin(t*.0004+phase)*.16;
+  }else if(mode==='hover'){
+   tx=pos.x+Math.sin(theta)*.26;tz=pos.z+Math.cos(theta)*.23;
+   ty=hy+Math.sin(cycle)*.17;
+  }else if(mode==='stalk'){
+   tx=hx+Math.sin(theta*.48)*1.4;tz=hz+Math.cos(theta*.42)*1.25;
+   ty=1.5+Math.abs(Math.sin(cycle))*.45;
+  }else if(mode==='lunge'){
+   tx=pos.x+Math.cos(f.g.rotation.y)*1.35;
+   tz=pos.z-Math.sin(f.g.rotation.y)*1.35;ty=pos.y;
+  }else if(mode==='peck'||mode==='forage'){
+   const range=k===0?.85:k===4?1.0:1.8;
+   tx=hx+Math.sin(theta*1.3)*range;
+   tz=hz+Math.cos(theta*.83)*range;
+   ty=hy+Math.sin(theta*.67)*(k===3?.65:.42);
+  }else if(mode==='guard'){
+   const intruder=fish.find(o=>o!==f&&o.k!==k&&pos.distanceToSquared(o.g.position)<3);
+   tx=intruder?hx+(intruder.g.position.x-hx)*.55:hx+Math.sin(theta)*.65;
+   tz=intruder?hz+(intruder.g.position.z-hz)*.55:hz+Math.cos(theta)*.65;
   }
   const planar=Math.hypot(tx,tz);
-  if(planar>4.5){tx*=4.5/planar;tz*=4.5/planar;}
-  f.target.set(tx,Math.max(1.2,Math.min(6.5,ty)),tz);
-  f.nextTurn=t+[1100,2400,2200,1550,1500,3200,3600][k]+300*Math.abs(Math.sin(cycle));
+  if(planar>4.25){tx*=4.25/planar;tz*=4.25/planar;}
+  f.target.set(tx,Math.max(1.15,Math.min(6.35,ty)),tz);
+  f.nextTurn=t+(mode==='hover'?420:mode==='peck'?480:mode==='lunge'?800:mode==='cruise'?1800:950);
  }
  const desired=f.target.clone().sub(pos);
  const distance=desired.length();
- if(distance>.001){
-  const pause=(k===0||k===3||k===4)&&distance<.3?.65:1;
-  desired.normalize().multiplyScalar(f.swimSpeed*pause*(k===6?.65:1));
-  // Nearby fish avoid overlapping while schooling species tolerate proximity.
-  for(const other of fish){
-   if(other===f)continue;
-   const away=pos.clone().sub(other.g.position);
-   const d2=away.lengthSq(),spacing=k===5&&other.k===5?.24:.44;
-   if(d2>0.0001&&d2<spacing*spacing){
-    away.normalize().multiplyScalar(f.swimSpeed*(spacing-Math.sqrt(d2))*1.4);
-    desired.add(away);
-   }
+ let factor=mode==='hover'?.12:mode==='hide'?.55:mode==='stalk'?.28:mode==='school'?.4:mode==='graze'?.62:mode==='peck'?.55:mode==='lunge'?2.2:mode==='burst'?1.65:mode==='guard'?1.35:1;
+ if(distance<.35&&mode!=='lunge'&&mode!=='burst')factor*=.4+distance;
+ if(distance>.0001)desired.normalize().multiplyScalar(f.swimSpeed*factor);
+ // Local separation and alignment for fish of the same species.
+ for(const o of fish){
+  if(o===f)continue;
+  const dx=pos.x-o.g.position.x,dy=pos.y-o.g.position.y,dz=pos.z-o.g.position.z;
+  const d2=dx*dx+dy*dy+dz*dz;
+  const limit=k===5&&o.k===5?.22:.5;
+  if(d2>.0001&&d2<limit*limit){
+   const push=f.swimSpeed*(limit-Math.sqrt(d2))*2/Math.sqrt(d2);
+   desired.x+=dx*push;desired.y+=dy*push;desired.z+=dz*push;
   }
-  f.velocity.lerp(desired,Math.min(.11,dt*.0042));
+  if(k===5&&o.k===5&&d2<2&&d2>.08){
+   desired.addScaledVector(o.velocity,.055);
+  }
  }
- pos.addScaledVector(f.velocity,dt);
- pos.y=Math.max(1.15,Math.min(6.6,pos.y));
- const horizontal=Math.hypot(f.velocity.x,f.velocity.z);
- if(horizontal>.000008){
-  const heading=Math.atan2(-f.velocity.z,f.velocity.x);
+ v.lerp(desired,Math.min(.13,dt*.004));
+ pos.addScaledVector(v,dt);
+ const radial=Math.hypot(pos.x,pos.z);
+ if(radial>4.5){pos.x*=4.5/radial;pos.z*=4.5/radial;v.x*=-.25;v.z*=-.25;f.nextTurn=0;}
+ pos.y=Math.max(1.1,Math.min(6.5,pos.y));
+ const horizontal=Math.hypot(v.x,v.z);
+ if(horizontal>.000012){
+  const heading=Math.atan2(-v.z,v.x);
   const delta=Math.atan2(Math.sin(heading-f.g.rotation.y),Math.cos(heading-f.g.rotation.y));
-  f.g.rotation.y+=delta*Math.min(.16,dt*.006);
+  f.g.rotation.y+=delta*Math.min(.14,dt*.006);
  }
- f.g.rotation.z=Math.sin(t*.0008+phase)*.025;
- f.g.rotation.x=Math.max(-.14,Math.min(.14,-f.velocity.y*85));
- const beat=t*[.023,.028,.025,.018,.026,.012,.009][k]+phase;
- f.tail.rotation.y=Math.sin(beat)*(k===5?.22:k===6?.24:.45);
- f.fin.rotation.x=Math.sin(beat*1.25)*.34;
- f.oppositeFin.rotation.x=-Math.sin(beat*1.25+1.1)*.34;
+ f.g.rotation.z=Math.sin(t*.0011+phase)*(mode==='hover'?.015:.035);
+ f.g.rotation.x=Math.max(-.15,Math.min(.15,-v.y*85));
+ const effort=Math.min(2.1,Math.max(.35,v.length()/(f.swimSpeed*.8)));
+ const beat=t*[.019,.025,.024,.017,.022,.011,.009][k]*effort+phase;
+ f.tail.rotation.y=Math.sin(beat)*(mode==='hover'?.13:k===6?.21:.36);
+ f.fin.rotation.x=Math.sin(beat*1.3)*.34;
+ f.oppositeFin.rotation.x=-Math.sin(beat*1.3+1.1)*.34;
 }
  renderer.render(scene,camera);
 }
