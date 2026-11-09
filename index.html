@@ -598,11 +598,11 @@ function touchFishAt(clientX,clientY){
 }
 let fishPlay=null;
 function fishPlayCoords(e){const r=canvas.getBoundingClientRect(),px=(e.clientX-r.left)*W/r.width,py=(e.clientY-r.top)*H/r.height;return {x:camera.x+(px-W/2)/camera.zoom,y:camera.y+(py-H/2)/camera.zoom};}
-canvas.addEventListener('pointerdown',e=>{const p=fishPlayCoords(e);let nearest=null,d=18;for(const f of fish){const n=Math.hypot(f.x-p.x,f.y-p.y);if(n<d){nearest=f;d=n;}}if(nearest){fishPlay={id:e.pointerId,fish:nearest,moved:false};canvas.setPointerCapture(e.pointerId);}});
-canvas.addEventListener('pointermove',e=>{if(!fishPlay||fishPlay.id!==e.pointerId)return;const p=fishPlayCoords(e),f=fishPlay.fish;fishPlay.moved=true;f.tx=Math.max(15,Math.min(W-15,p.x));f.ty=Math.max(45,Math.min(H-20,p.y));f.waitUntil=0;f.swimRate=1.9;f.playUntil=performance.now()+220;});
-canvas.addEventListener('pointerup',e=>{if(fishPlay?.id===e.pointerId){const moved=fishPlay.moved;fishPlay=null;if(moved)e.preventDefault();}});
+canvas.addEventListener('pointerdown',e=>{const p=fishPlayCoords(e);let nearest=null,d=22;for(const f of fish){const n=Math.hypot(f.x-p.x,f.y-p.y);if(n<d){nearest=f;d=n;}}if(nearest){fishPlay={id:e.pointerId,fish:nearest,startX:e.clientX,startY:e.clientY,down:performance.now(),active:false,moved:false};canvas.setPointerCapture(e.pointerId);}});
+canvas.addEventListener('pointermove',e=>{if(!fishPlay||fishPlay.id!==e.pointerId)return;const play=fishPlay;if(!play.active){if(performance.now()-play.down<350){if(Math.hypot(e.clientX-play.startX,e.clientY-play.startY)>14)fishPlay=null;return;}play.active=true;}const p=fishPlayCoords(e),f=play.fish;play.moved=true;f.tx=Math.max(20,Math.min(W-20,p.x));f.ty=Math.max(76,Math.min(309,p.y));f.waitUntil=0;f.swimRate=2.5;f.playUntil=performance.now()+300;});
+canvas.addEventListener('pointerup',e=>{if(fishPlay?.id===e.pointerId){const moved=fishPlay.moved;fishPlay=null;if(moved){window.aquariaSuppressTapUntil=performance.now()+500;e.preventDefault();}}});
 canvas.addEventListener('pointercancel',()=>{fishPlay=null;});
-canvas.addEventListener('click',e=>touchFishAt(e.clientX,e.clientY));
+canvas.addEventListener('click',e=>{if(performance.now()<(window.aquariaSuppressTapUntil||0))return;touchFishAt(e.clientX,e.clientY)});
 const visibleFood=[];
 window.addEventListener('aquaria-feed',event=>{
  const kind=event.detail?.food??0;
@@ -1104,11 +1104,12 @@ if(nearestFood&&foodDist<85){
  f.tx=nearestFood.x;f.ty=nearestFood.y;f.swimRate=2.1;f.waitUntil=0;
  if(foodDist<4){nearestFood.eaten=true;nextPoint(f,i,k,t);}
 }
+if(f.playUntil>t){f.waitUntil=0;f.swimRate=2.5;}
 const dx=f.tx-f.x,dy=f.ty-f.y;
 const distance=Math.hypot(dx,dy);
 if(distance<2.3){
-if(!f.waitUntil)f.waitUntil=t+f.waitDuration;
-if(t>=f.waitUntil)nextPoint(f,i,k,t);
+if(f.playUntil>t){f.waitUntil=0;}else if(!f.waitUntil)f.waitUntil=t+f.waitDuration;
+if(f.playUntil<=t&&t>=f.waitUntil)nextPoint(f,i,k,t);
 }else{
 const moveSpeed=f.speed*f.swimRate*dt*1.65;
 // Decelerate before a feeding or hiding spot; fast pelagic tangs retain momentum.
@@ -1981,7 +1982,7 @@ for(const f of fish){
    desired.addScaledVector(o.velocity,.055);
   }
  }
- if(f.playTarget&&t<f.playUntil){const to=f.playTarget.clone().sub(pos);if(to.length()>.3){to.normalize().multiplyScalar(.0025);desired.lerp(to,.85);}else desired.multiplyScalar(.15);}
+ if(f.playTarget&&t<f.playUntil){const to=f.playTarget.clone().sub(pos);if(to.length()>.3){to.normalize().multiplyScalar(.004);desired.lerp(to,.95);}else desired.multiplyScalar(.1);}
  v.lerp(desired,Math.min(.13,dt*.004));
  pos.addScaledVector(v,dt);
  const radial=Math.hypot(pos.x,pos.z);
@@ -2008,7 +2009,7 @@ let fishPlay3D=null;
 function nearestPlayFish(e){if(!camera||!renderer)return null;const r=renderer.domElement.getBoundingClientRect();let nearest=null,dist=38;for(const f of fish){const p=f.g.position.clone().project(camera);if(p.z< -1||p.z>1)continue;const d=Math.hypot(e.clientX-(r.left+(p.x+1)*r.width/2),e.clientY-(r.top+(1-p.y)*r.height/2));if(d<dist){dist=d;nearest=f;}}return nearest;}
 function movePlayFish(e){if(!fishPlay3D)return;const r=renderer.domElement.getBoundingClientRect(),T=window.THREE;const ndc=new T.Vector3((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height*2-1),.5);ndc.unproject(camera);const direction=ndc.sub(camera.position).normalize();const depth=fishPlay3D.fish.g.position.z;const travel=(depth-camera.position.z)/direction.z;if(!Number.isFinite(travel)||travel<0)return;const p=camera.position.clone().addScaledVector(direction,travel);fishPlay3D.fish.playTarget=new T.Vector3(Math.max(-4.2,Math.min(4.2,p.x)),Math.max(1.1,Math.min(6.4,p.y)),Math.max(-3,Math.min(3,p.z)));fishPlay3D.fish.playUntil=performance.now()+280;}
 let fishPointerStart=null;
-layer.addEventListener('pointerdown',e=>{if(pointer.size===0){fishPointerStart={x:e.clientX,y:e.clientY,time:performance.now()};const target=nearestPlayFish(e);if(target)fishPlay3D={id:e.pointerId,fish:target};}});
+layer.addEventListener('pointerdown',e=>{if(pointer.size===0){fishPointerStart={x:e.clientX,y:e.clientY,time:performance.now()};const target=nearestPlayFish(e);if(target)fishPlay3D={id:e.pointerId,fish:target,down:performance.now(),x:e.clientX,y:e.clientY,active:false};}});
 layer.addEventListener('pointerup',e=>{
  if(!fishPointerStart||Math.hypot(e.clientX-fishPointerStart.x,e.clientY-fishPointerStart.y)>12||performance.now()-fishPointerStart.time>500){fishPointerStart=null;return;}
  fishPointerStart=null;if(!active||!camera||!renderer)return;
@@ -2031,7 +2032,7 @@ layer.addEventListener('pointerup',e=>{
 });
 layer.addEventListener('pointerdown',e=>{layer.setPointerCapture(e.pointerId);pointer.set(e.pointerId,{x:e.clientX,y:e.clientY});lastDistance=0});
 layer.addEventListener('pointermove',e=>{
- if(fishPlay3D?.id===e.pointerId){movePlayFish(e);return;}
+ if(fishPlay3D?.id===e.pointerId){if(!fishPlay3D.active){if(performance.now()-fishPlay3D.down<350){if(Math.hypot(e.clientX-fishPlay3D.x,e.clientY-fishPlay3D.y)>14)fishPlay3D=null;return;}fishPlay3D.active=true;}fishPointerStart=null;movePlayFish(e);return;}
  if(!pointer.has(e.pointerId))return;
  const old=pointer.get(e.pointerId);pointer.set(e.pointerId,{x:e.clientX,y:e.clientY});
  if(pointer.size===1){orbit.theta-=(e.clientX-old.x)*.008;orbit.phi-=(e.clientY-old.y)*.008}
