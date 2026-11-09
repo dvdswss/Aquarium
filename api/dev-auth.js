@@ -5,7 +5,12 @@ const equal=(a,b)=>timingSafeEqual(digest(a),digest(b));
 module.exports=async(req,res)=>{
  res.setHeader('Cache-Control','no-store');
  const password=process.env.AQUARIA_DEV_PASSWORD,secret=process.env.AQUARIA_DEV_SESSION_SECRET;
- if(!password||password.length<16||!secret||secret.length<32)return res.status(503).json({error:'개발자 인증 설정 중이야.'});
+ const issues=[];
+ if(!password)issues.push('AQUARIA_DEV_PASSWORD가 배포에 없어');
+ else if(password.length<16)issues.push('개발자 비밀번호가 16자보다 짧아');
+ if(!secret)issues.push('AQUARIA_DEV_SESSION_SECRET이 배포에 없어');
+ else if(secret.length<32)issues.push('인증 비밀키가 32자보다 짧아');
+ if(issues.length)return res.status(503).json({error:issues.join(' · ')+'. Production 설정을 저장한 뒤 최신 버전을 재배포해.'});
  const sign=s=>createHmac('sha256',secret).update(s).digest('base64url');
  const token=(req.headers.cookie||'').split(';').map(s=>s.trim()).find(s=>s.startsWith(COOKIE+'='))?.slice(COOKIE.length+1)||'';
  const parts=token.split('.');
