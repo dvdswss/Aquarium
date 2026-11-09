@@ -1525,70 +1525,38 @@ for(let i=0;i<20;i++){
 }
 // Sculpted species-specific silhouettes, smooth tapered bodies and curved membrane fins.
 const fishProfiles=[
- {l:1.05,h:.59,w:.40,tail:.58}, // clownfish: stout oval
- {l:1.25,h:.71,w:.34,tail:.72}, // blue tang: tall laterally compressed
- {l:1.17,h:.73,w:.35,tail:.65}, // yellow tang: deep-bodied
- {l:.98,h:.86,w:.31,tail:.58}, // butterflyfish: tall disc
- {l:1.03,h:.55,w:.37,tail:.55}, // royal gramma: slender
- {l:.83,h:.69,w:.38,tail:.57}, // cardinalfish: compact
- {l:1.22,h:.60,w:.43,tail:.78}, // lionfish
-{l:.91,h:.49,w:.38,tail:.55},
-{l:1.08,h:.42,w:.30,tail:.65},
-{l:1.18,h:.72,w:.37,tail:.69},
-{l:1.13,h:.74,w:.36,tail:.63},
-{l:.90,h:.62,w:.33,tail:.55},
-{l:1.03,h:.59,w:.40,tail:.58},
-{l:.90,h:.38,w:.30,tail:.50}
+ {l:1.02,h:.51,w:.30,tail:.52}, {l:1.08,h:.68,w:.21,tail:.62},
+ {l:.96,h:.76,w:.20,tail:.52}, {l:.83,h:.80,w:.18,tail:.46},
+ {l:1.12,h:.38,w:.24,tail:.46}, {l:.79,h:.55,w:.22,tail:.53},
+ {l:1.08,h:.48,w:.32,tail:.60}, {l:.88,h:.39,w:.28,tail:.47},
+ {l:1.21,h:.25,w:.17,tail:.42}, {l:1.02,h:.72,w:.21,tail:.55},
+ {l:1.12,h:.63,w:.23,tail:.50}, {l:.86,h:.54,w:.24,tail:.48},
+ {l:.99,h:.50,w:.30,tail:.50}, {l:1.15,h:.23,w:.15,tail:.38}
 ];
-// Each species gets a true three-dimensional polygonal tropical-fish body.
+// Nine anatomical cross-sections with twelve straight facets per section.
+// Separate height and width keep disc fish thin and gobies long.
 function fishShape(p,k){
- // Tail peduncle -> shoulder -> forehead -> tapered snout, all straight-edged.
- const silhouettes=[
-  [.19,.24,.35,.51,.71,.88,.99,1.04,1.05,1.01,.91,.73,.49,.21],
-  [.13,.19,.31,.48,.68,.86,1,1.06,1.06,1.01,.91,.71,.42,.13],
-  [.15,.21,.34,.52,.73,.9,1.04,1.08,1.06,.99,.86,.64,.37,.13],
-  [.14,.21,.37,.57,.78,.96,1.07,1.12,1.1,1.02,.85,.6,.32,.1],
-  [.18,.24,.37,.55,.74,.9,1,1.03,1.02,.96,.83,.63,.39,.16],
-  [.17,.26,.42,.62,.81,.97,1.05,1.08,1.04,.94,.77,.55,.32,.12],
-  [.17,.25,.39,.57,.76,.92,1.02,1.05,1.04,.97,.84,.65,.4,.16]
- ];
- const profile=silhouettes[k%7],positions=[],uvs=[],indices=[];
- const section=[[1,0],[.92,.38],[.7,.71],[.38,.92],[0,1],[-.38,.92],[-.7,.71],[-.92,.38],[-1,0],[-.92,-.38],[-.7,-.71],[-.38,-.92],[0,-1],[.38,-.92],[.7,-.71],[.92,-.38]];
- const sides=section.length,last=profile.length-1;
- for(let i=0;i<=last;i++){
-  const u=i/last,x=-p.l+2*p.l*u;
-  const fullness=profile[i];
-  let h=p.h*fullness,w=p.w*fullness;
-  // Shoulder volume, narrow tail root and a distinct upper forehead.
-  if(i>=5&&i<=9)w*=1.08;
-  if(i>=10)w*=1-(i-9)*.045;
-  if(k===3)h*=1.08;
-  if(k===1||k===2)w*=.94;
-  for(let j=0;j<sides;j++){
-   const [vy,vz]=section[j];
-   const forehead=(i===10||i===11)&&vy>0?.035:0;
-   const jaw=(i>=11&&vy<0)?.025:0;
-   positions.push(x,h*vy+forehead-jaw,w*vz);
-   uvs.push(u,j/sides);
-  }
+ const u=[0,.12,.26,.42,.59,.73,.85,.94,1];
+ const heights=[.13,.29,.61,.88,1,.93,.69,.36,.13];
+ const widths=[.15,.32,.65,.91,1,.88,.66,.37,.13];
+ const positions=[],uvs=[],indices=[],sides=12;
+ for(let i=0;i<u.length;i++)for(let j=0;j<=sides;j++){
+  const a=j/sides*Math.PI*2,upper=Math.cos(a);
+  const center=(i>5?-.025*(i-5):0)*p.h;
+  positions.push((u[i]*2-1)*p.l,center+upper*p.h*heights[i]*(upper<0?.86:1),Math.sin(a)*p.w*widths[i]);
+  uvs.push(u[i],j/sides);
  }
- for(let i=0;i<last;i++)for(let j=0;j<sides;j++){
-  const a=i*sides+j,b=i*sides+(j+1)%sides,c=(i+1)*sides+j,d=(i+1)*sides+(j+1)%sides;
+ for(let i=0;i<u.length-1;i++)for(let j=0;j<sides;j++){
+  const a=i*(sides+1)+j,b=a+1,c=a+sides+1,d=c+1;
   indices.push(a,b,c,b,d,c);
  }
- const rear=positions.length/3;positions.push(-p.l,0,0);uvs.push(0,.5);
- const nose=positions.length/3;positions.push(p.l,0,0);uvs.push(1,.5);
- for(let j=0;j<sides;j++){
-  indices.push(rear,(j+1)%sides,j);
-  const n=last*sides+j;indices.push(nose,n,last*sides+(j+1)%sides);
+ for(const end of [0,8]){
+  const cap=positions.length/3;positions.push((u[end]*2-1)*p.l,0,0);uvs.push(u[end],.5);
+  for(let j=0;j<sides;j++){const a=end*(sides+1)+j;indices.push(...(end?[cap,a,a+1]:[cap,a+1,a]));}
  }
- let geometry=new T.BufferGeometry();
- geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));
- geometry.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));
- geometry.setIndex(indices);geometry=geometry.toNonIndexed();
- geometry.computeVertexNormals();
- return geometry;
+ const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(positions,3));geo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));geo.setIndex(indices);geo.computeVertexNormals();return geo;
 }
+
 function finShape(points){
  const shape=new T.Shape();
  shape.moveTo(points[0][0],points[0][1]);
@@ -1689,78 +1657,49 @@ const eyeGeo=new T.OctahedronGeometry(.075,0);
 function createFish(k,i){
  const g=new T.Group();scene.add(g);
  const p=fishProfiles[k],size=[.225,.248,.233,.225,.21,.203,.248,.205,.203,.235,.23,.21,.22,.19][k]*(.9+(i%4)*.035);
- const main=mat((colors[k]||[0x1967b7,0xf7eddd,0x7443ac,0xeac34f,0xe5d8bd,0x30343e,0x1b3655][k-7]),.68),dark=mat(0x263044,.65),ivory=mat(0xfff4e2,.42);
- const finMat=new T.MeshStandardMaterial({color:(colors[k]||[0x1967b7,0xf7eddd,0x7443ac,0xeac34f,0xe5d8bd,0x30343e,0x1b3655][k-7]),roughness:.7,transparent:true,opacity:.86,side:T.DoubleSide,depthWrite:false,flatShading:true});
- // The silhouette is the character: plump forehead, tiny snout, tapering tail.
+ const bases=[0xf28b32,0x236bdb,0xf4d72c,0xf9e8ad,0x9b50be,0xe9e2d4,0xa96e55,0x29988e,0xf7e8dc,0x7954bd,0xf3d447,0xe8d9bd,0x343949,0x1b3955];
+ const finColors=[0xf49239,0xf3d346,0xf3d332,0xeed476,0xe8bd43,0xd9d3c3,0xb58269,0xe59b45,0xe56769,0xe5bd36,0xe8ce45,0xc7b7c6,0x444c61,0x439dd4];
+ const main=mat(bases[k],.7),dark=mat(0x1a2638,.65),ivory=mat(0xfff2dc,.65);
+ const finMat=new T.MeshStandardMaterial({color:finColors[k],roughness:.76,side:T.DoubleSide,flatShading:true});
  mesh(fishBodies[k],fishSkins[k],g);
- const tailPivot=new T.Group();tailPivot.position.x=-p.l+.03;g.add(tailPivot);
- const fork=k===1||k===2||k===3;
- const tailPoints=fork?[[0,0],[-.28,.19],[-p.tail,.55],[-p.tail*.52,.1],[-p.tail*.52,-.1],[-p.tail,-.55],[-.28,-.19]]:
- [[0,0],[-.25,.21],[-p.tail*.85,.48],[-p.tail,.12],[-p.tail,-.12],[-p.tail*.85,-.48],[-.25,-.21]];
- sculptFin(tailPivot,tailPoints,finMat,0x746a7e);
- const dorsal=k===6?[[-.82,.28],[-.7,.8],[-.43,.63],[-.22,.93],[.02,.7],[.36,.65],[.68,.26]]:
- [[-.8,.24],[-.58,.43],[-.34,p.h+.13],[.12,p.h+.18],[.48,.4],[.72,.23]];
- sculptFin(g,dorsal,finMat,0x746a7e,.002);
- sculptFin(g,[[-.73,-.23],[-.4,-.42],[-.08,-p.h-.11],[.35,-p.h-.08],[.6,-.23]],finMat,0x746a7e,.002);
- const finPivot=new T.Group();finPivot.position.set(.03,-.13,p.w*.96);g.add(finPivot);
- const oppositeFin=new T.Group();oppositeFin.position.set(.03,-.13,-p.w*.96);g.add(oppositeFin);
- const pectoral=[[0,0],[-.2,.12],[-.45,-.13],[-.28,-.32],[-.08,-.24]];
- sculptFin(finPivot,pectoral,finMat,0x746a7e,.012);
- sculptFin(oppositeFin,pectoral,finMat,0x746a7e,-.012);
- // Eyes are restrained and anatomically placed, not giant pasted-on googly eyes.
- const iris=mat(k===1?0x344e74:k===5?0x70513f:0x483c38,.32);
- const black=mat(0x151d2b,.24);
+ const tailPivot=new T.Group();tailPivot.position.set(-p.l+.035,0,0);g.add(tailPivot);
+ const fork=[1,2,5,9,10,11].includes(k),tailHeight=[.32,.45,.46,.37,.30,.57,.42,.35,.24,.46,.44,.43,.32,.20][k];
+ const tailPoints=fork?[[.03,.09],[-p.tail,tailHeight],[-p.tail*.65,.05],[-p.tail*.65,-.05],[-p.tail,-tailHeight],[.03,-.09]]:
+ [[.03,.09],[-p.tail*.8,tailHeight],[-p.tail,tailHeight*.65],[-p.tail,-tailHeight*.65],[-p.tail*.8,-tailHeight],[.03,-.09]];
+ sculptFin(tailPivot,tailPoints,finMat,finColors[k]);
+ // Dorsal membranes follow the body's upper ridge instead of crossing the belly.
+ const longFin=[0,1,2,3,9,10,12].includes(k);
+ let dorsal;
+ if(longFin)dorsal=[[-.78*p.l,.24*p.h],[-.54*p.l,.68*p.h],[-.30*p.l,1.18*p.h],[.10*p.l,1.28*p.h],[.47*p.l,.94*p.h],[.65*p.l,.51*p.h],[.36*p.l,.86*p.h],[-.12*p.l,.98*p.h],[-.48*p.l,.72*p.h]];
+ else if(k===5||k===11)dorsal=[[-.76*p.l,.32*p.h],[-.50*p.l,1.72*p.h],[-.08*p.l,1.18*p.h],[.10*p.l,.98*p.h],[.45*p.l,1.45*p.h],[.60*p.l,.57*p.h],[.15*p.l,.90*p.h],[-.28*p.l,.90*p.h]];
+ else if(k===8)dorsal=[[-.67*p.l,.47*p.h],[-.32*p.l,.84*p.h],[.12*p.l,.98*p.h],[.22*p.l,3.25*p.h],[.40*p.l,.87*p.h],[.07*p.l,.91*p.h],[-.42*p.l,.70*p.h]];
+ else dorsal=[[-.72*p.l,.40*p.h],[-.40*p.l,1.24*p.h],[.12*p.l,1.32*p.h],[.48*p.l,.77*p.h],[.12*p.l,.94*p.h],[-.40*p.l,.78*p.h]];
+ if(k!==6)sculptFin(g,dorsal,finMat,finColors[k]);
+ const anal=[[-.72*p.l,-.28*p.h],[-.48*p.l,-1.08*p.h],[.10*p.l,-1.12*p.h],[.43*p.l,-.69*p.h],[.02*p.l,-.86*p.h],[-.40*p.l,-.71*p.h]];
+ sculptFin(g,anal,finMat,finColors[k]);
+ const finPivot=new T.Group(),oppositeFin=new T.Group();
+ finPivot.position.set(.18*p.l,-.12*p.h,p.w*.95);oppositeFin.position.set(.18*p.l,-.12*p.h,-p.w*.95);g.add(finPivot,oppositeFin);
+ const wing=k===6?[[0,0],[-.20,.25],[-.65,.33],[-1.02,.08],[-.98,-.30],[-.72,-.65],[-.25,-.48]]:
+ [[0,0],[-.19,.08],[-.43,-.09],[-.32,-.30],[-.10,-.19]];
+ for(const [pivot,side] of [[finPivot,1],[oppositeFin,-1]]){sculptFin(pivot,wing,finMat,finColors[k]);pivot.rotation.y=side*(k===6?.70:.40);}
+ // Small inset eyes sit on the actual narrowing forehead surface.
+ const eyeX=.66*p.l,eyeY=.21*p.h,eyeZ=.67*p.w;
  for(const side of [-1,1]){
-  const z=side*p.w*.93;
-  const eye=mesh(new T.OctahedronGeometry(.14,0),iris,g,p.l*.7,p.h*.22,z);
-  eye.scale.set(1.02,1.08,.6);
-  const pupil=mesh(new T.OctahedronGeometry(.103,0),black,g,p.l*.717,p.h*.22,z+side*.055);
-  pupil.scale.set(1,1.05,.54);
-  const shine=mesh(new T.TetrahedronGeometry(.027),ivory,g,p.l*.7,p.h*.265,z+side*.101);
-  shine.scale.set(.7,.75,.45);
-  const gill=mesh(polygonRing(.16,.008,7,Math.PI*.8),main,g,p.l*.38,-.075,side*p.w*1.04);
-  gill.rotation.z=-.18;
+  const eye=mesh(new T.SphereGeometry(.078,8,6),dark,g,eyeX,eyeY,side*eyeZ);eye.scale.set(1,.95,.38);
+  const shine=mesh(new T.OctahedronGeometry(.018,0),ivory,g,eyeX+.012,eyeY+.022,side*(eyeZ+.028));
+  // Three straight segments suggest the gill without a ring stuck to the flank.
+  const pts=[[.36,.38],[.29,.16],[.32,-.12],[.42,-.29]].map(([x,y])=>new T.Vector3(x*p.l,y*p.h,side*p.w*.94));
+  g.add(new T.Line(new T.BufferGeometry().setFromPoints(pts),new T.LineBasicMaterial({color:bases[k],transparent:true,opacity:.65})));
  }
- // Tiny integrated mouth, not a human smile or oversized lipstick.
- const mouth=mesh(new T.TetrahedronGeometry(.042),dark,g,p.l*.985,-.11,0);
- mouth.scale.set(.55,.4,1.25);
- if(k===0){
-  // Clownfish: rounded snout and compact paddles.
-  const snout=mesh(new T.OctahedronGeometry(1,0),main,g,p.l*.9,-.08,0);
-  snout.scale.set(.12,.095,.13);
- }
- if(k===1||k===2){
-  // Tangs: characteristic sharp tail scalpel and narrow muzzle.
-  const blade=mesh(new T.TetrahedronGeometry(.12),k===1?mat(0xe6d06d):ivory,g,-p.l*.87,0,0);
-  blade.scale.set(.7,.3,1.1);
- }
- if(k===3){
-  // Butterflyfish: delicate feeding beak and small rear eye spot.
-  const beak=mesh(new T.CylinderGeometry(.052,.085,.23,5),main,g,p.l*.99,-.13,0);
-  beak.rotation.z=-Math.PI/2;
-  for(const side of [-1,1]){
-   const spot=mesh(new T.OctahedronGeometry(.085,0),dark,g,-p.l*.58,.15,side*p.w*.88);
-   spot.scale.z=.22;
-  }
- }
- if(k===4){
-  const snout=mesh(new T.TetrahedronGeometry(.11),main,g,p.l*.91,-.08,0);
-  snout.scale.set(1,.6,.8);
- }
- if(k===5){
-  // Cardinalfish: distinct long pelvic streamers.
-  for(const side of [-1,1])cylinderBetween(g,new T.Vector3(-.22,-.3,side*.12),new T.Vector3(-.47,-.82,side*.2),.01,.002,ivory,4);
- }
+ if(k===3||k===10){const snout=mesh(new T.ConeGeometry(.075,.22,4),main,g,p.l+.035,-.05,0);snout.rotation.z=-Math.PI/2;}
+ const mouth=mesh(new T.BoxGeometry(.025,.018,p.w*.22),dark,g,p.l+.008,-.07*p.h,0);
+ if(k===5||k===11)for(const side of [-1,1])cylinderBetween(g,new T.Vector3(.04,-p.h*.7,side*.07),new T.Vector3(-.30,-p.h*1.6,side*.12),.012,.003,ivory,4);
  if(k===6){
-  // Lionfish: unmistakable separate polygon fan fins and venomous spines.
-  for(const side of [-1,1]){
-   const fan=new T.Group();fan.position.set(-.02,-.07,side*.3);g.add(fan);
-   sculptFin(fan,[[0,0],[-.37,.27],[-.82,.16],[-1.06,-.12],[-.91,-.4],[-.56,-.62]],finMat,0x715d68,side*.01);
-   fan.rotation.y=side*.24;
-  }
-  for(let n=0;n<7;n++){
-   const x=-.68+n*.22;
-   cylinderBetween(g,new T.Vector3(x,.33,0),new T.Vector3(x-.12,.86+(n%3)*.14,0),.012,.003,n%2?ivory:dark,4);
+  // Individual striped spines and short membranes form the lionfish crown.
+  for(let n=0;n<10;n++){
+   const x=(-.68+n*.13)*p.l,y=p.h*(.65+Math.sin(n/9*Math.PI)*.34),tip=y+.40+Math.sin(n/9*Math.PI)*.35;
+   cylinderBetween(g,new T.Vector3(x,y,0),new T.Vector3(x-.18,tip,0),.014,.004,n%2?ivory:main,4);
+   if(n<9)sculptFin(g,[[x,y],[x-.18,tip],[x+.13*p.l-.10,tip-.20],[x+.13*p.l,y]],finMat,finColors[k]);
   }
  }
  g.scale.setScalar(size);
@@ -1849,8 +1788,8 @@ for(let i=foodParticles.length-1;i>=0;i--){
 for(const f of fish){
  const dt=Math.min(45,Math.max(0,t-(f.lastSwim||t-16)));f.lastSwim=t;
  const pos=f.g.position,k=f.k,phase=f.phase;
- const hx=[-2.3,0,0,2.4,-2.7,1.4,2.4][k],hz=[1.6,0,0,-1.7,-2,1.4,1.7][k];
- const hy=[2.1,4,3.8,2.5,2.1,3.2,1.8][k];
+ const hx=[-2.3,0,0,2.4,-2.7,1.4,2.4,-1.8,.8,-.8,1.2,-1.3,-2.1,1.8][k],hz=[1.6,0,0,-1.7,-2,1.4,1.7,-1.5,.8,-.5,-1.2,1.1,1.6,-.8][k];
+ const hy=[2.1,4,3.8,2.5,2.1,3.2,1.8,1.7,3.4,3.8,3.3,3.1,2.2,2.4][k];
  const v=f.velocity,cycle=t*.00071+f.seed;
  const close=fish.filter(o=>o!==f&&o.k===k&&pos.distanceToSquared(o.g.position)<2.8);
  let danger=false;
@@ -1864,12 +1803,13 @@ for(const f of fish){
   const r=(Math.sin(t*.00091+f.seed*8.7)*43758.5453)%1;
   const choice=Math.abs(r);
   if(k===0)f.behavior=choice<.20?'guard':choice<.52?'hover':'forage';
-  else if(k===1||k===2)f.behavior=choice<.20?'graze':choice<.32?'burst':'cruise';
+  else if(k===1||k===2||k===9||k===10)f.behavior=choice<.20?'graze':choice<.32?'burst':'cruise';
   else if(k===3)f.behavior=choice<.63?'peck':choice<.82?'hover':'forage';
   else if(k===4)f.behavior=choice<.38?'hide':choice<.63?'hover':'forage';
-  else if(k===5)f.behavior=choice<.72?'school':'hover';
-  else f.behavior=choice<.58?'stalk':choice<.86?'hover':'lunge';
-  f.behaviorUntil=t+[2200,3600,3300,2400,2700,4200,4500][k]*(.75+choice*.65);
+  else if(k===5||k===11)f.behavior=choice<.72?'school':'hover';
+  else if(k===6)f.behavior=choice<.58?'stalk':choice<.86?'hover':'lunge';
+  else f.behavior=choice<.35?'hover':'forage';
+  f.behaviorUntil=t+[2200,3600,3300,2400,2700,4200,4500,2600,2200,3600,3300,4200,2200,2400][k]*(.75+choice*.65);
   f.nextTurn=0;
  }
  if(danger&&k===4){f.behavior='hide';f.behaviorUntil=t+1300;f.nextTurn=0;}
@@ -1963,7 +1903,7 @@ for(const f of fish){
  f.g.rotation.z=Math.sin(t*.0011+phase)*(mode==='hover'?.015:.035);
  f.g.rotation.x=Math.max(-.15,Math.min(.15,-v.y*85));
  const effort=Math.min(2.1,Math.max(.35,v.length()/(f.swimSpeed*.8)));
- const beat=t*[.019,.025,.024,.017,.022,.011,.009][k]*effort+phase;
+ const beat=t*[.019,.025,.024,.017,.022,.011,.009,.020,.026,.024,.022,.012,.019,.027][k]*effort+phase;
  f.tail.rotation.y=Math.sin(beat)*(mode==='hover'?.13:k===6?.21:.36);
  f.fin.rotation.x=Math.sin(beat*1.3)*.34;
  f.oppositeFin.rotation.x=-Math.sin(beat*1.3+1.1)*.34;
