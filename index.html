@@ -1726,11 +1726,12 @@ function createFish(k,i){
  }
  g.scale.setScalar(size);
  const angle=i*2.399;
- const startX=Math.cos(angle)*(1.3+(i%5)*.55),startZ=Math.sin(angle)*(1.3+(i%5)*.55);
- g.position.set(startX,2+(i%5)*.7,startZ);
+ const startRadius=2.1+seeded(i+240)*4.7;
+ const startX=Math.cos(angle)*startRadius,startZ=Math.sin(angle)*startRadius,startY=1.6+seeded(i+340)*5.8;
+ g.position.set(startX,startY,startZ);
  fish.push({g,tail:tailPivot,fin:finPivot,oppositeFin,k,phase:i*1.6,
   velocity:new T.Vector3(Math.cos(angle+1),.06,Math.sin(angle+1)).multiplyScalar(.0006),
-  target:new T.Vector3(startX,2+(i%5)*.7,startZ),nextTurn:0,
+  target:new T.Vector3(startX,startY,startZ),nextTurn:0,
   swimSpeed:([.00078,.00115,.00102,.00076,.00094,.00048,.00043,.00085,.0011,.00095,.0009,.0007,.0008,.0012][k]||.0008),
   lastSwim:0,behavior:'explore',behaviorUntil:0,burstUntil:0,seed:i*17.13});
 }
@@ -1843,8 +1844,8 @@ for(const f of fish){
   if(mode==='cruise'||mode==='burst'){
    // Tangs travel across open water in long, noncircular passes.
    const direction=Math.sin(cycle*1.1)>0?1:-1;
-   tx=direction*3.8;tz=Math.sin(cycle*.49+phase)*2.3;
-   ty=hy+Math.sin(cycle*.73)*1.3;
+   tx=direction*6.6;tz=Math.sin(cycle*.49+phase)*4.2;
+   ty=4.5+Math.sin(cycle*.73+phase)*2.9;
   }else if(mode==='graze'){
    // Short repeated visits to algae-covered reef surfaces.
    tx=1.8+Math.sin(theta)*1.7;tz=-2.0+Math.cos(theta)*1.4;ty=1.6+Math.abs(Math.sin(theta))*.6;
@@ -1874,9 +1875,17 @@ for(const f of fish){
    tx=intruder?hx+(intruder.g.position.x-hx)*.55:hx+Math.sin(theta)*.65;
    tz=intruder?hz+(intruder.g.position.z-hz)*.55:hz+Math.cos(theta)*.65;
   }
+  // Regular excursions spread every species across the full tank volume.
+  // Destinations persist until reached, so slow fish also complete outer passes.
+  if(f.excursion&&pos.distanceToSquared(f.excursion)<.36)f.excursion=null;
+  if(!f.excursion&&mode!=='hide'&&mode!=='guard'&&seeded(f.seed+Math.floor(t/9000))<.55){
+   const a=theta+phase,r=4.8+seeded(f.seed+t*.001)*2.1;
+   f.excursion=new T.Vector3(Math.cos(a)*r,1.8+seeded(f.seed+t*.003+71)*5.9,Math.sin(a)*r);
+  }
+  if(f.excursion&&mode!=='hide'&&mode!=='guard'){tx=f.excursion.x;ty=f.excursion.y;tz=f.excursion.z;}
   const planar=Math.hypot(tx,tz);
-  if(planar>4.25){tx*=4.25/planar;tz*=4.25/planar;}
-  f.target.set(tx,Math.max(1.15,Math.min(6.35,ty)),tz);
+  if(planar>7.1){tx*=7.1/planar;tz*=7.1/planar;}
+  f.target.set(tx,Math.max(1.15,Math.min(7.8,ty)),tz);
   f.nextTurn=t+(mode==='hover'?420:mode==='peck'?480:mode==='lunge'?800:mode==='cruise'?1800:950);
  }
  // Override wandering with pursuit of a visible, reachable food particle.
@@ -1894,6 +1903,7 @@ for(const f of fish){
  const desired=f.target.clone().sub(pos);
  const distance=desired.length();
  let factor=mode==='feeding'?1.35:mode==='hover'?.12:mode==='hide'?.55:mode==='stalk'?.28:mode==='school'?.4:mode==='graze'?.62:mode==='peck'?.55:mode==='lunge'?2.2:mode==='burst'?1.65:mode==='guard'?1.35:1;
+ if(f.excursion&&mode!=='hide'&&mode!=='guard')factor=Math.max(.85,factor);
  if(distance<.35&&mode!=='lunge'&&mode!=='burst')factor*=.4+distance;
  if(distance>.0001)desired.normalize().multiplyScalar(f.swimSpeed*factor);
  // Local separation and alignment for fish of the same species.
@@ -1914,8 +1924,8 @@ for(const f of fish){
  v.lerp(desired,Math.min(.13,dt*.004));
  pos.addScaledVector(v,dt);
  const radial=Math.hypot(pos.x,pos.z);
- if(radial>4.5){pos.x*=4.5/radial;pos.z*=4.5/radial;v.x*=-.25;v.z*=-.25;f.nextTurn=0;}
- pos.y=Math.max(1.1,Math.min(6.5,pos.y));
+ if(radial>7.2){pos.x*=7.2/radial;pos.z*=7.2/radial;v.x*=-.25;v.z*=-.25;f.nextTurn=0;}
+ pos.y=Math.max(1.1,Math.min(7.9,pos.y));
  const horizontal=Math.hypot(v.x,v.z);
  if(horizontal>.000012){
   const heading=Math.atan2(-v.z,v.x);
