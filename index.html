@@ -2022,6 +2022,13 @@ if(localStorage.getItem(viewPreferenceKey)==='3d'){
 </div>
 <script>
 (()=>{
+ // Developer tools are available only on a local development server.
+ // Never trust query strings or localStorage as proof of owner identity.
+ const localDevelopmentHosts=new Set(['localhost','127.0.0.1','[::1]']);
+ if(!localDevelopmentHosts.has(window.location.hostname)){
+  document.getElementById('aquariaDev')?.remove();
+  return;
+ }
  const panel=document.getElementById('aquariaDev'),status=document.getElementById('aquariaDevStatus');
  let snapshot=null,opener=null;
  const menu=document.querySelector('#aquariaDrawer .drawer-actions');
