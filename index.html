@@ -599,8 +599,8 @@ function touchFishAt(clientX,clientY){
 let fishPlay=null;
 function fishPlayCoords(e){const r=canvas.getBoundingClientRect(),px=(e.clientX-r.left)*W/r.width,py=(e.clientY-r.top)*H/r.height;return {x:camera.x+(px-W/2)/camera.zoom,y:camera.y+(py-H/2)/camera.zoom};}
 canvas.addEventListener('pointerdown',e=>{const p=fishPlayCoords(e);let nearest=null,d=22;for(const f of fish){const n=Math.hypot(f.x-p.x,f.y-p.y);if(n<d){nearest=f;d=n;}}if(nearest){fishPlay={id:e.pointerId,fish:nearest,startX:e.clientX,startY:e.clientY,down:performance.now(),active:false,moved:false};canvas.setPointerCapture(e.pointerId);}});
-canvas.addEventListener('pointermove',e=>{if(!fishPlay||fishPlay.id!==e.pointerId)return;const play=fishPlay;if(!play.active){if(performance.now()-play.down<350){if(Math.hypot(e.clientX-play.startX,e.clientY-play.startY)>14)fishPlay=null;return;}play.active=true;}const p=fishPlayCoords(e),f=play.fish;play.moved=true;f.tx=Math.max(20,Math.min(W-20,p.x));f.ty=Math.max(76,Math.min(309,p.y));f.waitUntil=0;f.swimRate=2.5;f.playUntil=performance.now()+300;});
-canvas.addEventListener('pointerup',e=>{if(fishPlay?.id===e.pointerId){const moved=fishPlay.moved;fishPlay=null;if(moved){window.aquariaSuppressTapUntil=performance.now()+500;e.preventDefault();}}});
+canvas.addEventListener('pointermove',e=>{if(!fishPlay||fishPlay.id!==e.pointerId)return;const play=fishPlay;if(!play.active){if(performance.now()-play.down<350){if(Math.hypot(e.clientX-play.startX,e.clientY-play.startY)>14)fishPlay=null;return;}play.active=true;}const p=fishPlayCoords(e),f=play.fish;play.moved=true;f.tx=Math.max(20,Math.min(W-20,p.x));f.ty=Math.max(76,Math.min(309,p.y));f.waitUntil=0;f.swimRate=3.6;f.playUntil=performance.now()+650;});
+canvas.addEventListener('pointerup',e=>{if(fishPlay?.id===e.pointerId){const moved=fishPlay.moved;if(moved)fishPlay.fish.playUntil=performance.now()+800;fishPlay=null;if(moved){window.aquariaSuppressTapUntil=performance.now()+500;e.preventDefault();}}});
 canvas.addEventListener('pointercancel',()=>{fishPlay=null;});
 canvas.addEventListener('click',e=>{if(performance.now()<(window.aquariaSuppressTapUntil||0))return;touchFishAt(e.clientX,e.clientY)});
 const visibleFood=[];
@@ -1100,11 +1100,11 @@ nextPoint(f,i,k,t);
 }
 let nearestFood=null,foodDist=Infinity;
 for(const p of visibleFood){const d=Math.hypot(p.x-f.x,p.y-f.y);if(d<foodDist){nearestFood=p;foodDist=d;}}
-if(nearestFood&&foodDist<85){
+if(nearestFood&&foodDist<85&&!(f.playUntil>t)){
  f.tx=nearestFood.x;f.ty=nearestFood.y;f.swimRate=2.1;f.waitUntil=0;
  if(foodDist<4){nearestFood.eaten=true;nextPoint(f,i,k,t);}
 }
-if(f.playUntil>t){f.waitUntil=0;f.swimRate=2.5;}
+if(f.playUntil>t){f.waitUntil=0;f.swimRate=3.6;}
 const dx=f.tx-f.x,dy=f.ty-f.y;
 const distance=Math.hypot(dx,dy);
 if(distance<2.3){
@@ -1113,8 +1113,8 @@ if(f.playUntil<=t&&t>=f.waitUntil)nextPoint(f,i,k,t);
 }else{
 const moveSpeed=f.speed*f.swimRate*dt*1.65;
 // Decelerate before a feeding or hiding spot; fast pelagic tangs retain momentum.
-const braking=k===1?1:Math.max(.22,Math.min(1,distance/15));
-const step=Math.min(distance,moveSpeed*braking);
+const braking=f.playUntil>t?1:(k===1?1:Math.max(.22,Math.min(1,distance/15)));
+const step=Math.min(distance,moveSpeed*braking*(f.playUntil>t?1.8:1));
 f.x+=dx/distance*step;f.y+=dy/distance*step;
 if(Math.abs(dx)>2.7){
 const newDir=dx>0?1:-1;
