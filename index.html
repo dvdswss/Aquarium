@@ -1728,10 +1728,13 @@ function createFish(k,i){
  const angle=i*2.399;
  const startRadius=2.1+seeded(i+240)*4.7;
  const startX=Math.cos(angle)*startRadius,startZ=Math.sin(angle)*startRadius,startY=1.6+seeded(i+340)*5.8;
- g.position.set(startX,startY,startZ);
+ const habitatStarts=[[-2.3,1.7,1.6],null,null,[4.6,2.3,-2.5],[-4.9,1.7,-2.2],[3.9,3,2.8],[4.7,1.7,1.8],[-4.5,1.2,-2.8],[-3.6,2.7,3.9],null,null,[-4.1,3,-2.7],[-2.3,1.7,1.6],[4.8,1.5,-2.2]];
+ const home=habitatStarts[k];
+ if(home)g.position.set(home[0]+Math.sin(i*2.399)*.35,home[1],home[2]+Math.cos(i*2.399)*.35);
+ else g.position.set(startX,startY,startZ);
  fish.push({g,tail:tailPivot,fin:finPivot,oppositeFin,k,phase:i*1.6,
   velocity:new T.Vector3(Math.cos(angle+1),.06,Math.sin(angle+1)).multiplyScalar(.0006),
-  target:new T.Vector3(startX,startY,startZ),nextTurn:0,
+  target:g.position.clone(),nextTurn:0,
   swimSpeed:([.00078,.00115,.00102,.00076,.00094,.00048,.00043,.00085,.0011,.00095,.0009,.0007,.0008,.0012][k]||.0008),
   lastSwim:0,behavior:'explore',behaviorUntil:0,burstUntil:0,seed:i*17.13});
 }
