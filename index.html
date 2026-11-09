@@ -2022,12 +2022,8 @@ if(localStorage.getItem(viewPreferenceKey)==='3d'){
 </div>
 <script>
 (()=>{
- // Developer tools are available only on a local development server.
- // Never trust query strings or localStorage as proof of owner identity.
- const localDevelopmentHosts=new Set(['localhost','127.0.0.1','[::1]']);
- if(!localDevelopmentHosts.has(window.location.hostname)){
-  document.getElementById('aquariaDev')?.remove();
-  return;
+ async function authenticated(){
+  try{const response=await fetch('/api/dev-auth',{credentials:'same-origin',cache:'no-store'});return response.ok&&(await response.json()).authenticated===true}catch{return false}
  }
  const panel=document.getElementById('aquariaDev'),status=document.getElementById('aquariaDevStatus');
  let snapshot=null,opener=null;
@@ -2036,13 +2032,29 @@ if(localStorage.getItem(viewPreferenceKey)==='3d'){
  const select=document.getElementById('devSpecies');
  aquariaFishCatalog.forEach((entry,i)=>{const option=document.createElement('option');option.value=i;option.textContent=entry[0];select.append(option)});
  function refresh(){document.getElementById('devCoins').value=state.coins||0;document.getElementById('devXP').value=state.xp||0;document.getElementById('aquariaDevSummary').textContent='물고기 '+state.virtual+'/38 · 청결도 '+(state.cleanliness??100)+'% · 산호 '+(state.plants||0);}
- button.onclick=()=>{aquariaInitLives();snapshot=JSON.stringify(state);opener=button;panel.hidden=false;document.getElementById('aquariaDrawer').open=false;status.textContent='복원 지점 저장 완료';refresh();document.getElementById('aquariaDevClose').focus()};
+ button.onclick=async()=>{
+ if(!await authenticated()){
+  const password=await new Promise(resolve=>{
+  const dialog=document.createElement('dialog');dialog.style.cssText='background:#092432;color:#eafbf8;border:1px solid #70c9bd;border-radius:16px;padding:22px;max-width:90vw';
+  dialog.innerHTML='<form><h3>개발자 인증</h3><label for="devPassword">비밀번호</label><input id="devPassword" type="password" autocomplete="current-password" maxlength="256" required style="display:block;margin:12px 0"><button type="submit">인증</button> <button type="button">취소</button></form>';
+  const finish=value=>{dialog.close();dialog.remove();resolve(value)};
+  dialog.querySelector('form').onsubmit=e=>{e.preventDefault();finish(dialog.querySelector('input').value)};
+  dialog.querySelector('[type=button]').onclick=()=>finish(null);
+  dialog.addEventListener('cancel',e=>{e.preventDefault();finish(null)});
+  document.body.append(dialog);dialog.showModal();dialog.querySelector('input').focus();
+ });if(password===null)return;
+  try{const response=await fetch('/api/dev-auth',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({password})});
+   if(!response.ok){const result=await response.json();window.alert(result.error||'인증에 실패했어.');return}
+  }catch{window.alert('인증 서버에 연결할 수 없어.');return}
+ }
+ aquariaInitLives();snapshot=JSON.stringify(state);opener=button;panel.hidden=false;document.getElementById('aquariaDrawer').open=false;status.textContent='복원 지점 저장 완료';refresh();document.getElementById('aquariaDevClose').focus()};
  function close(){panel.hidden=true;document.getElementById('aquariaDrawer').open=true;opener?.focus()}
  document.getElementById('aquariaDevClose').onclick=close;
  document.addEventListener('keydown',e=>{if(!panel.hidden&&e.key==='Escape')close()});
  function add(kind){if(state.fishLives.length>=38)return false;state.fishLives.push({kind,born:Date.now(),lifeDays:28,stress:0,stressAt:Date.now()});return true}
- panel.addEventListener('click',e=>{
+ panel.addEventListener('click',async e=>{
   const action=e.target.closest('[data-dev]')?.dataset.dev;if(!action)return;
+  if(!await authenticated()){panel.hidden=true;window.alert('인증이 만료됐어. 다시 비밀번호를 입력해.');return}
   let message='적용 완료';
   if(action==='values'){
    const coins=Number(document.getElementById('devCoins').value),xp=Number(document.getElementById('devXP').value);
