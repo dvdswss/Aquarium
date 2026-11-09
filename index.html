@@ -946,17 +946,17 @@ async function load(){
 }
 function build(){
 const T=window.THREE;
-scene=new T.Scene();scene.background=new T.Color(0x123b67);scene.fog=new T.FogExp2(0x16466d,.022);
+scene=new T.Scene();scene.background=new T.Color(0x122747);scene.fog=new T.FogExp2(0x33466e,.034);
 camera=new T.PerspectiveCamera(54,1,.1,90);
 renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'default'});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));renderer.outputColorSpace=T.SRGBColorSpace;
 layer.insertBefore(renderer.domElement,hint);
-scene.add(new T.HemisphereLight(0x91f6ff,0x18234d,2.2));
-const light=new T.DirectionalLight(0xb7f7ff,2.2);light.position.set(-4,13,5);scene.add(light);
-const glow=new T.PointLight(0x9e78e8,35,19);glow.position.set(2,4,-2);scene.add(glow);
+scene.add(new T.HemisphereLight(0x9deeea,0x291b56,1.8));
+const light=new T.DirectionalLight(0xb5eafc,1.7);light.position.set(-4,13,5);scene.add(light);
+const glow=new T.PointLight(0xb88dff,42,21);glow.position.set(2,4,-2);scene.add(glow);
 const mat=(c,rough=.8,transparent=false,opacity=1)=>new T.MeshStandardMaterial({color:c,roughness:rough,metalness:.04,transparent,opacity,side:T.DoubleSide});
 
-const sand=mat(0x3b536e),rock=mat(0x63768e),stone=mat(0x8c9bb0),algae=mat(0x38a99b),coral=[mat(0xe88caa),mat(0xbb92d9),mat(0x7dd6c9),mat(0xf0b98e)];
+const sand=mat(0x394b72),rock=mat(0x60728d),stone=mat(0x8798b5),algae=mat(0x46ac9d),coral=[mat(0xe89cbb),mat(0xc2a0e5),mat(0x85ded5),mat(0xf1bca7)];
 function mesh(geo,m,parent,x=0,y=0,z=0){const o=new T.Mesh(geo,m);o.position.set(x,y,z);parent.add(o);return o}
 function seeded(n){const v=Math.sin(n*127.17+31.7)*43758.545;return v-Math.floor(v)}
 function cylinderBetween(parent,a,b,r1,r2,material,sides=7){
@@ -1047,6 +1047,33 @@ for(let i=0;i<23;i++){
  for(let j=0;j<4;j++){
   const p=j*1.57,tip=mesh(new T.SphereGeometry(.035,6,5),polypMat,scene,x+Math.cos(p)*.21,.65+(j%2)*.16,z+Math.sin(p)*.21);
  }
+}
+// Dreamlike underwater atmosphere: translucent aurora veils, moon shafts and luminous motes.
+const auroraColors=[0x64dcd5,0xa98fe6,0x82bce8];
+const veils=[];
+for(let i=0;i<7;i++){
+ const material=new T.MeshBasicMaterial({color:auroraColors[i%3],transparent:true,opacity:.055,side:T.DoubleSide,depthWrite:false,blending:T.AdditiveBlending});
+ const plane=mesh(new T.PlaneGeometry(2.1+(i%3)*1.1,7.4),material,scene,
+  Math.cos(i*2.4)*5.5,4.4,Math.sin(i*2.4)*5.5);
+ plane.rotation.y=i*2.4;plane.rotation.z=(i%2?-.13:.13);
+ veils.push({plane,phase:i*1.7});
+}
+const shafts=[];
+for(let i=0;i<6;i++){
+ const m=new T.MeshBasicMaterial({color:i%2?0xa8e7fa:0xb5a0ff,transparent:true,opacity:.038,depthWrite:false,side:T.DoubleSide,blending:T.AdditiveBlending});
+ const beam=mesh(new T.ConeGeometry(.85+(i%3)*.35,8,4,1,true),m,scene,
+ Math.cos(i*2.39)*4.4,5.2,Math.sin(i*2.39)*4.4);
+ beam.rotation.z=(i%2?-.12:.12);
+ shafts.push({beam,phase:i*1.9});
+}
+const motes=[];
+const moteColors=[0x8ef7e8,0xd7b7ff,0xf9d5bc];
+for(let i=0;i<105;i++){
+ const a=seeded(i+700)*Math.PI*2,r=Math.sqrt(seeded(i+710))*7.7;
+ const material=new T.MeshBasicMaterial({color:moteColors[i%3],transparent:true,opacity:.3,depthWrite:false,blending:T.AdditiveBlending});
+ const o=mesh(new T.SphereGeometry(.014+seeded(i+720)*.028,5,4),material,scene,
+ Math.cos(a)*r,.5+seeded(i+730)*7.4,Math.sin(a)*r);
+ motes.push({o,phase:seeded(i+740)*9});
 }
 // Particles and bubbles give the water depth and movement.
 const bubbles=[];
@@ -1184,6 +1211,9 @@ function frame(t){
  if(t-last<30)return;last=t;
  resize();syncFish();updateCamera();
  for(const k of kelps)k.g.rotation.z=Math.sin(t*.0008+k.phase)*.08;
+ for(const v of veils){v.plane.material.opacity=.04+.025*(1+Math.sin(t*.0004+v.phase));v.plane.rotation.z=Math.sin(t*.00023+v.phase)*.12;}
+ for(const sh of shafts)sh.beam.material.opacity=.022+.016*(1+Math.sin(t*.00035+sh.phase));
+ for(const m of motes){m.o.position.y=.3+((t*.00013+m.phase)%8);m.o.material.opacity=.16+.23*(.5+.5*Math.sin(t*.0018+m.phase));}
  for(const b of bubbles){b.o.position.y=.25+((t*.00027+b.phase)%8);}
  for(const f of fish){
  const a=f.angle+t*f.speed;
