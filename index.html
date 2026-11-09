@@ -713,8 +713,8 @@ branch(x,y,size,0,3);ctx.restore();
 function fishPosture(f,t){
 const k=f.kind||0;
 const near=Math.hypot((f.tx??f.x)-f.x,(f.ty??f.y)-f.y)<5;
-const sway=Math.sin(t*[.003,.002,.0027,.004,.0035,.0015,.001][k]+f.phase);
-const posture=[.025,.045,.075,.11,.08,.025,.04][k];
+const sway=Math.sin(t*[.003,.002,.0027,.004,.0035,.0015,.001,.003,.0025,.002,.0027,.0015,.003,.002][k]+f.phase);
+const posture=[.025,.045,.075,.11,.08,.025,.04,.08,.025,.045,.065,.025,.025,.02][k];
 const foraging=(k===2||k===3)&&near;
 return (foraging?.11*Math.sin(t*.006+f.phase):0)+sway*posture;
 }
