@@ -1274,7 +1274,7 @@ const eyeGeo=new T.OctahedronGeometry(.075,0);
 // Calm, storybook reef fish: Abyssrium-like proportions, original polygon-only meshes.
 function createFish(k,i){
  const g=new T.Group();scene.add(g);
- const p=fishProfiles[k],size=[.42,.46,.44,.42,.39,.38,.46][k]*(.9+(i%4)*.035);
+ const p=fishProfiles[k],size=[.30,.33,.31,.30,.28,.27,.33][k]*(.9+(i%4)*.035);
  const main=mat(colors[k],.68),dark=mat(0x263044,.65),ivory=mat(0xfff4e2,.42);
  const finMat=new T.MeshStandardMaterial({color:colors[k],roughness:.7,transparent:true,opacity:.86,side:T.DoubleSide,depthWrite:false,flatShading:true});
  // The silhouette is the character: plump forehead, tiny snout, tapering tail.
