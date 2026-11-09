@@ -744,9 +744,10 @@ function drawReefFish(f,t,k){
  function line(x,y,X,Y,color,w=.6){path(()=>{C.moveTo(x,y);C.lineTo(X,Y)},null,color,w);}
  function fin(points,color,edge){path(()=>{C.moveTo(...points[0]);for(let i=1;i<points.length;i++){const p=points[i],n=points[(i+1)%points.length];C.lineTo(p[0],p[1]);}C.closePath()},color,edge,.4);}
  const thin=[4,7,8,13].includes(k),deep=[2,3,9,10].includes(k),tall=k===5;
- const half=deep?9.3:tall?7.1:thin?4.5:k===6?6.2:6.9;
+ // Species-specific body depth: long gobies, lean clowns and naturally deep tangs.
+ const half=[4.9,5.7,6.8,6.6,3.4,5.2,4.8,3.5,2.9,6.5,5.8,5.0,4.9,2.4][k];
  const head=k===8||k===13?15:k===10?14:12;
- const tailX=-11+beat*1.7,tailSpread=k===6?10:k===5?10:k===9?9:thin?5:7;
+ const tailX=-11+beat*1.7,tailSpread=k===6?9:k===5?8:k===9?7:thin?4:5.8;
  // Flexible caudal peduncle and individually shaped caudal fin.
  const fork=[1,2,9,10,13].includes(k);
  fin(fork?[[ -10,-1],[tailX-9,-tailSpread],[tailX-5,0],[tailX-9,tailSpread],[-10,1]]:
@@ -769,8 +770,8 @@ function drawReefFish(f,t,k){
  }else if(k===7){
   fin([[-8,-3],[-5,-12],[-2,-16],[1,-9],[5,-13],[8,-4]],'#3288c3','#80e9d2');
  }else{
-  fin([[-9,-3],[-6,-half-3],[-2,-half-5],[3,-half-4],[9,-4]],palette[0],palette[2]);
-  fin([[-7,3],[-3,half+4],[4,half+4],[9,3]],palette[2]);
+  fin([[-9,-3],[-6,-half-2],[-2,-half-3.5],[3,-half-3],[9,-4]],palette[0],palette[2]);
+  fin([[-7,3],[-3,half+2.8],[4,half+2.8],[9,3]],palette[2]);
  }
  // Angular hand-built fish body with straight-edged contours.
  const bodyPath=()=>{C.moveTo(-11,0);C.lineTo(-9,-half*.75);C.lineTo(-3,-half);C.lineTo(3,-half*.96);C.lineTo(9,-half*.65);C.lineTo(head,0);C.lineTo(8,half*.72);C.lineTo(2,half);C.lineTo(-5,half*.9);C.lineTo(-11,0);C.closePath();};
