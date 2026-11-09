@@ -389,7 +389,8 @@ poly([[-9,3],[-3,5],[4,5],[9,2],[4,6],[-5,6]],shadow);
 }
 function tail(base,shade,wide=6){
 const sw=Math.sin(t*.017+f.phase)*2.1;
-poly([[-9,-1],[-18+sw,-wide],[-16+sw,0],[-18+sw,wide],[-9,2]],base);
+const pinch=1-.12*Math.abs(Math.sin(t*.017+f.phase));
+poly([[-9,-1],[-18+sw,-wide*pinch],[-16+sw,0],[-18+sw,wide*pinch],[-9,2]],base);
 for(let k=-2;k<=2;k++)poly([[-10,0],[-17+sw,wide*k/3],[-16+sw,wide*k/3+.5]],shade);
 }
 function dorsal(base,edge){
@@ -459,6 +460,51 @@ poly([[xx,-5],[xx+1,-5],[xx+2,5],[xx,5]],k%2?'#fff1d8':'#a65f5e');
 }
 for(let k=0;k<5;k++)poly([[-7+k*3,4],[-11+k*4,13+(k%2)*3],[-4+k*3,5]],'rgba(244,205,184,.8)');
 eye(9,-2);face();
+}
+// Distinctive anatomical detailing for each reef species.
+ctx.lineWidth=.55;
+if(kind===0){ // clownfish: dark edging on each white saddle, orange fin rays
+for(const bx of [-7,0,7]){
+rect(bx-1,-5,.5,10,'rgba(32,38,53,.65)');
+rect(bx+1,5,.75,.5,'rgba(255,246,222,.7)');
+}
+for(let j=0;j<5;j++)rect(-7+j*2,-9+(j%2),.5,2,'#f7c080');
+}else if(kind===1){ // tang: dark blue dorsal rim, yellow tail spokes
+for(let j=0;j<6;j++)rect(-7+j*2,-7-(j%3)*.5,.7,.7,'#183e8b');
+for(let j=-3;j<=3;j++)rect(-16+Math.abs(j)*.45,j*1.6,.5,.5,'#fff0a3');
+rect(-3,3,7,.7,'rgba(96,168,255,.55)');
+}else if(kind===2){ // tang: radial fin striations and white scalpel by tail
+for(let j=0;j<7;j++){
+ctx.strokeStyle='rgba(255,245,163,.75)';
+ctx.beginPath();ctx.moveTo(-6+j*2,-5);ctx.lineTo(-5+j*2,-8+(j%3));ctx.stroke();
+}
+rect(-10,1,2,.65,'#f7f5d7');rect(-9.5,1.7,.7,.5,'#d8b55e');
+}else if(kind===3){ // butterflyfish: pearly scale rows and blue edge
+for(let row=0;row<4;row++)for(let col=0;col<3;col++){
+const sx=-7+col*3+(row%2),sy=-5+row*3;
+rect(sx,sy,.7,.6,'rgba(221,182,113,.44)');
+}
+ctx.strokeStyle='#e6c884';ctx.beginPath();ctx.moveTo(-5,-8);ctx.lineTo(2,-10);ctx.lineTo(7,-6);ctx.stroke();
+}else if(kind===4){ // royal gramma: purple stippling and yellow fin rays
+for(let j=0;j<9;j++)rect(-9+(j%3)*2,-4+Math.floor(j/3)*3,.6,.5,'rgba(229,174,250,.5)');
+for(let j=0;j<5;j++)rect(3+j*1.5,5-(j%2),.6,.7,'rgba(255,243,167,.65)');
+}else if(kind===5){ // cardinalfish: pearl dots on tall fins, black fin margins
+for(let j=0;j<6;j++){
+rect(-1+j*.6,-13+j*1.3,.5,.5,'#f8f5ea');
+rect(1+j*.5,13-j*1.2,.5,.5,'#e5e7e3');
+}
+rect(-2,-13,1,1,'#354056');
+}else{ // lionfish: long delicate venomous spines and fan membrane rays
+for(let j=0;j<7;j++){
+const sx=-10+j*3.1,tip=-17-(j%3)*2;
+ctx.strokeStyle=j%2?'#fff0df':'#ad6773';ctx.lineWidth=.5;
+ctx.beginPath();ctx.moveTo(sx,-5);ctx.lineTo(sx-2,tip);ctx.stroke();
+rect(sx-2,tip,.5,.75,'#fff3dd');
+}
+for(let j=0;j<6;j++){
+ctx.strokeStyle='rgba(255,230,214,.55)';
+ctx.beginPath();ctx.moveTo(-7,3);ctx.lineTo(-15+j*3,13+(j%2)*3);ctx.stroke();
+}
 }
 // Species-aware pixel texture: restrained scales and light, never a generic overlay.
 const shimmer=Math.max(0,Math.sin(t*.002+f.phase));
