@@ -1179,6 +1179,10 @@ header h1{font-size:18px!important;letter-spacing:.11em!important;opacity:.83}
 </style><style id="aquaria-3d-touch-fix">
 #scene .three-world canvas{touch-action:none}
 #scene .aquaria-heart-layer{z-index:35!important;pointer-events:none!important}
+</style><style id="aquaria-heart-polish">
+#scene .aquaria-heart-shape{width:19px;height:19px;display:block;filter:drop-shadow(0 2px 5px rgba(255,129,188,.4));text-shadow:none!important}
+#scene .aquaria-heart-shape svg{width:100%;height:100%;display:block}
+#scene .aquaria-floating-heart:not(.aquaria-heart-shape){font-size:12px!important;font-weight:700;letter-spacing:.2px;padding:3px 7px;border-radius:12px;background:rgba(20,38,65,.7);border:1px solid rgba(255,236,183,.35);text-shadow:none!important}
 </style><style id="aquaria-3d-heart-style">
 #scene .aquaria-heart-layer{position:absolute;inset:0;z-index:30;overflow:hidden;pointer-events:none}
 #scene .aquaria-floating-heart{position:absolute;font-size:23px;font-family:Arial,sans-serif;color:#ffb8df;text-shadow:0 0 12px #ff7dc6,0 1px 4px #122a55;pointer-events:none;will-change:transform,opacity;white-space:nowrap}
@@ -1228,7 +1232,7 @@ function spawnFishHearts(f){
  if(!f||!camera||!renderer)return;
  const p=f.g.position.clone();p.y+=.35;
  for(let i=0;i<3;i++){
-  const el=document.createElement('span');el.className='aquaria-floating-heart';el.textContent=i===1?'💗':'♡';
+  const el=document.createElement('span');el.className='aquaria-floating-heart aquaria-heart-shape';el.innerHTML='<svg viewBox="0 0 32 30" aria-hidden="true"><defs><linearGradient id="heartGlow'+i+'" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0f6"/><stop offset=".55" stop-color="#ffaccb"/><stop offset="1" stop-color="#ec81b4"/></linearGradient></defs><path d="M16 27 C13 24 3 18 3 11 C3 3 12 2 16 9 C20 2 29 3 29 11 C29 18 19 24 16 27Z" fill="url(#heartGlow'+i+')" stroke="#fff3f8" stroke-width="1.1"/><path d="M8 10 Q9 6 13 7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".8"/></svg>';
   heartLayer.append(el);
   floatingHearts.push({el,fish:f,born:performance.now(),offset:i-1,base:p.clone()});
  }
