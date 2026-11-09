@@ -717,280 +717,112 @@ const posture=[.025,.045,.075,.11,.08,.025,.04][k];
 const foraging=(k===2||k===3)&&near;
 return (foraging?.11*Math.sin(t*.006+f.phase):0)+sway*posture;
 }
-function drawNewSpecies(f,t,k){
- // Seven hand-drawn species silhouettes, shared by the aquarium and shop thumbnails.
- const z=(f.z||1)*.95,phase=f.phase||0,sw=Math.sin(t*.014+phase)*2;
- ctx.save();ctx.translate(f.x,f.y+Math.sin(t*.0026+phase)*.65);ctx.scale((f.dir||1)*z,z);
- const C=ctx;
- function shape(pts,fill,stroke){C.beginPath();C.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++){const p=pts[i],n=pts[(i+1)%pts.length];C.quadraticCurveTo(p[0],p[1],(p[0]+n[0])/2,(p[1]+n[1])/2);}C.quadraticCurveTo(pts[0][0],pts[0][1],(pts[0][0]+pts[1][0])/2,(pts[0][1]+pts[1][1])/2);C.closePath();C.fillStyle=fill;C.fill();if(stroke){C.strokeStyle=stroke;C.lineWidth=.55;C.stroke();}}
- function ellipse(x,y,rx,ry,color){C.beginPath();C.ellipse(x,y,rx,ry,0,0,Math.PI*2);C.fillStyle=color;C.fill();}
- function line(x,y,X,Y,color,w=.55){C.strokeStyle=color;C.lineWidth=w;C.beginPath();C.moveTo(x,y);C.lineTo(X,Y);C.stroke();}
- function curved(points,color,w=1){C.strokeStyle=color;C.lineWidth=w;C.lineCap='round';C.beginPath();C.moveTo(points[0],points[1]);for(let i=2;i<points.length;i+=2)C.lineTo(points[i],points[i+1]);C.stroke();}
- function body(color,half=6,head=12){C.beginPath();C.moveTo(-11,0);C.bezierCurveTo(-8,-half,3,-half-1,head,-2);C.quadraticCurveTo(head+2,0,head,2);C.bezierCurveTo(3,half+1,-8,half,-11,0);C.fillStyle=color;C.fill();C.strokeStyle='rgba(29,41,61,.27)';C.lineWidth=.55;C.stroke();}
- function tail(color,spread=6){shape([[-10,0],[-19+sw,-spread],[-16+sw,0],[-19+sw,spread]],color);}
- function eye(x=9,y=-1.7){ellipse(x,y,1.12,1.22,'#17283a');ellipse(x-.35,y-.43,.37,.4,'#fff9ea');line(12,.7,13,1,'rgba(35,49,64,.6)');}
- if(k===7){ // Mandarin dragonet: squat body, ornate dorsal sail, flowing paired fins
-  tail('#276baf',8);
-  shape([[-8,-3],[-6,-11],[-3,-17],[0,-11],[3,-14],[6,-5]],'#267dba','#77dfd2');
-  shape([[-4,3],[-13,11],[-9,13],[2,5]],'#239ab2');
-  body('#126ca8',5.7,11);
-  C.save();C.beginPath();C.moveTo(-10,0);C.bezierCurveTo(-7,-6,3,-7,11,-2);C.quadraticCurveTo(13,0,11,2);C.bezierCurveTo(3,7,-7,6,-10,0);C.clip();
-  for(let j=0;j<6;j++){const x=-8+j*3.5,y=Math.sin(j*1.8)*2;ellipse(x,y,2.2,1.45,'#f3a045');ellipse(x+.15,y,1.25,.65,'#70e1cb');}
-  curved([-9,3,-4,4,1,3,6,4,10,2],'#ffb24b',1.1);C.restore();
-  for(let j=0;j<5;j++)line(-5+j*2,-6,-3+j*2,-11-(j%2)*2,'#b8f3dc');
-  eye(9,-1.4);
- }else if(k===8){ // Firefish goby: narrow elongated body, tall first dorsal ray
-  tail('#d95b6b',6);
-  shape([[-5,-2],[-2,-9],[0,-20],[1,-21],[2,-6],[7,-3]],'#f4d28d');
-  shape([[-7,2],[-3,7],[4,5]],'#eea38c');
-  body('#f7f0e4',3.6,14);
-  C.save();C.beginPath();C.moveTo(-11,0);C.bezierCurveTo(-8,-4,4,-4,14,-2);C.lineTo(14,2);C.bezierCurveTo(4,4,-8,4,-11,0);C.clip();
-  const grad=C.createLinearGradient(-11,0,14,0);grad.addColorStop(0,'#db5967');grad.addColorStop(.42,'#f0b7a0');grad.addColorStop(.73,'#fff4e5');grad.addColorStop(1,'#fff9ed');C.fillStyle=grad;C.fillRect(-12,-5,28,10);C.restore();
-  eye(11,-1);
- }else if(k===9){ // Purple tang: tall oval surgeonfish with forked yellow caudal fin
-  tail('#f2cd60',10);
-  shape([[-9,-3],[-6,-9],[1,-11],[8,-6]],'#604097');
-  shape([[-9,3],[-4,10],[3,11],[9,4]],'#64419c');
-  body('#7043a5',8.2,11);
-  for(let j=0;j<10;j++){const x=-8+j*1.8;line(x,-5.8-Math.sin(j/9*Math.PI)*1.3,x+1,-6.8-Math.sin(j/9*Math.PI)*1.4,'#aa83d0');}
-  curved([-8,1,-4,3,1,3,6,2],'#9b70c9',.7);
-  eye(8.8,-2);
- }else if(k===10){ // Foxface rabbitfish: sharp elongated snout, dark face mask, tall spiny dorsal
-  tail('#e9c45a',8);
-  shape([[-9,-4],[-8,-11],[-5,-13],[-2,-11],[0,-14],[3,-10],[7,-7]],'#e3c45c');
-  shape([[-7,4],[-4,10],[3,10],[8,3]],'#d4b452');
-  body('#efd05c',7.1,13);
-  shape([[1,-6],[4,-6],[8,4],[5,6]],'#fff3ce');
-  shape([[6,-5],[11,-4],[14,-1],[13,2],[10,4],[7,2]],'#343d43');
-  for(let j=0;j<6;j++)line(-7+j*2.3,-7,-6+j*2.3,-12-(j%2),'#f9e6a2');
-  eye(10,-1.9);
- }else if(k===11){ // Pajama cardinal: golden head, bold vertical girdle, lavender dotted tail
-  tail('#c7a4bd',7);
-  shape([[-6,-4],[-4,-11],[0,-8],[3,-4]],'#b5a1b8');
-  shape([[-6,4],[-4,11],[2,8],[5,3]],'#b7a3c0');
-  body('#d4c4d2',6.4,12);
-  C.save();C.beginPath();C.moveTo(-11,0);C.bezierCurveTo(-8,-7,3,-7,12,-2);C.lineTo(12,2);C.bezierCurveTo(3,7,-8,7,-11,0);C.clip();
-  C.fillStyle='#dfcf82';C.fillRect(2,-9,13,18);
-  C.fillStyle='#343d4e';C.fillRect(-1,-9,2.7,18);
-  for(let j=0;j<15;j++)ellipse(-9+(j*11)%8,-5+(j*7)%11,.58,.7,'#a65c81');
-  C.restore();eye(9,-1.8);
- }else if(k===12){ // Black ocellaris clownfish: rounded body, organic ivory saddles
-  tail('#32353d',7);
-  shape([[-7,-4],[-5,-10],[3,-9],[8,-5]],'#30343c');
-  shape([[-7,4],[-3,10],[5,8],[9,3]],'#30343c');
-  body('#2c3038',6.9,12);
-  C.save();C.beginPath();C.moveTo(-11,0);C.bezierCurveTo(-8,-7,3,-8,12,-2);C.lineTo(12,2);C.bezierCurveTo(3,8,-8,7,-11,0);C.clip();
-  for(const [x,w] of [[-7,2.8],[0,2.5],[8,2.2]]){
-   C.fillStyle='#faf3e5';C.beginPath();C.moveTo(x-w/2,-9);C.quadraticCurveTo(x+w,-4,x+w/2,0);C.quadraticCurveTo(x+w,4,x+w/2,9);C.lineTo(x-w/2,9);C.quadraticCurveTo(x-w,2,x-w/2,0);C.quadraticCurveTo(x-w,-4,x-w/2,-9);C.fill();
-  }C.restore();eye(10,-1.8);
- }else{ // Neon goby: long pencil-thin body and a continuous electric-blue lateral line
-  tail('#253c61',4);
-  shape([[-6,-2],[-3,-6],[2,-4],[6,-2]],'#294363');
-  shape([[-5,2],[-2,5],[4,3]],'#294363');
-  body('#1a2e48',3.1,15);
-  C.save();C.beginPath();C.moveTo(-11,0);C.bezierCurveTo(-8,-3,4,-3,15,-1);C.lineTo(15,1);C.bezierCurveTo(4,3,-8,3,-11,0);C.clip();
-  C.fillStyle='#1fbbec';C.fillRect(-12,-.8,29,1.6);
-  C.fillStyle='#9aeaff';C.fillRect(-12,-1,29,.4);C.restore();eye(12,-.9);
+
+/* AQUARIA species renderer v2 — individually sculpted silhouettes, continuous
+   anatomical fins, organic markings and animated caudal/pectoral movement. */
+function drawNewSpecies(f,t,k){drawReefFish(f,t,k);}
+function fishDraw(f,t){drawReefFish(f,t,Math.max(0,Math.min(13,f.kind||0)));}
+function drawReefFish(f,t,k){
+ const C=ctx,phase=f.phase||0,dir=f.dir||1;
+ const sizes=[.91,1.17,1.05,1.04,.79,.83,1.18,.78,.77,1.08,1.03,.82,.91,.73];
+ const z=(f.z||1)*.43*sizes[k],beat=Math.sin(t*(.008+(k%4)*.0018)+phase);
+ const bob=Math.sin(t*.0025+phase)*.65,turn=(f.turnUntil||0)>t?.88:1;
+ C.save();C.translate(f.x,f.y+bob);C.rotate(typeof fishPosture==='function'?fishPosture(f,t):0);
+ C.scale(dir*z*turn,z);
+ const palette=[
+ ['#f58037','#fbb56d','#ac472b'],['#256edb','#6aaaf5','#173e95'],
+ ['#f4d04c','#fff1a0','#bd8b2c'],['#f4e8c7','#fff9e6','#b9a477'],
+ ['#9955c7','#d7a3e8','#633797'],['#eee8d9','#ffffff','#9da3a8'],
+ ['#bf7767','#f6d2ae','#854e50'],['#1776a9','#62e2d1','#164b8b'],
+ ['#f3e7d8','#fffdf1','#e17a81'],['#7146a8','#b89be1','#402675'],
+ ['#efd15e','#fff2ae','#aa943b'],['#c8a8c6','#f4d58b','#856b98'],
+ ['#30343d','#747782','#191e28'],['#183552','#3d718e','#0a1c35']
+ ][k];
+ function path(fn,fill,stroke,width=.55){C.beginPath();fn();if(fill){C.fillStyle=fill;C.fill();}if(stroke){C.strokeStyle=stroke;C.lineWidth=width;C.stroke();}}
+ function ellipse(x,y,rx,ry,fill){path(()=>C.ellipse(x,y,rx,ry,0,0,Math.PI*2),fill);}
+ function line(x,y,X,Y,color,w=.6){path(()=>{C.moveTo(x,y);C.lineTo(X,Y)},null,color,w);}
+ function fin(points,color,edge){path(()=>{C.moveTo(...points[0]);for(let i=1;i<points.length;i++){const p=points[i],n=points[(i+1)%points.length];C.quadraticCurveTo(p[0],p[1],(p[0]+n[0])/2,(p[1]+n[1])/2);}C.closePath()},color,edge,.4);}
+ const thin=[4,7,8,13].includes(k),deep=[2,3,9,10].includes(k),tall=k===5;
+ const half=deep?9.3:tall?7.1:thin?4.5:k===6?6.2:6.9;
+ const head=k===8||k===13?15:k===10?14:12;
+ const tailX=-11+beat*1.7,tailSpread=k===6?10:k===5?10:k===9?9:thin?5:7;
+ // Flexible caudal peduncle and individually shaped caudal fin.
+ const fork=[1,2,9,10,13].includes(k);
+ fin(fork?[[ -10,-1],[tailX-9,-tailSpread],[tailX-5,0],[tailX-9,tailSpread],[-10,1]]:
+ [[-10,-1],[tailX-8,-tailSpread],[tailX-6,0],[tailX-8,tailSpread],[-10,1]],
+ k===1?'#f3d44e':k===4?'#f5c856':k===8?'#d9586b':k===9?'#e7cb65':k===10?'#e8cc68':palette[0],null);
+ // Correct tail color for each species.
+ C.save();C.globalAlpha=.93;
+ const tailColor=['#ed7838','#f4d84b','#f6d44b','#f2e9d7','#f4d06a','#f3ebdd','#c99586','#227bb4','#dc6376','#e9cc68','#ebcb62','#c4a0bb','#34363f','#24496c'][k];
+ fin([[-10,-1],[tailX-8,-tailSpread],[tailX-5,0],[tailX-8,tailSpread],[-10,1]],tailColor);
+ C.restore();
+ // Species-specific dorsal and anal fin silhouettes.
+ if(k===6){
+  for(let j=0;j<12;j++){let x=-9+j*1.8;line(x,-half+1,x-3,-half-9-(j%3)*2,j%2?'#f6d9b7':'#a35e5b',.85);}
+  for(let j=0;j<7;j++)fin([[-6+j*2,3],[-13+j*2,16+(j%2)*2],[-3+j*2,6]],'rgba(238,190,165,.52)');
+ }else if(k===8){
+  fin([[-5,-3],[-1,-8],[1,-22],[2,-6],[7,-3]],'#f5d49c');
+ }else if(k===5){
+  fin([[-7,-4],[-2,-16],[3,-12],[7,-4]],'#e6e4dc','#7d8390');
+  fin([[-5,4],[1,17],[5,6]],'#e5e5dd','#8a8d98');
+ }else if(k===7){
+  fin([[-8,-3],[-5,-12],[-2,-16],[1,-9],[5,-13],[8,-4]],'#3288c3','#80e9d2');
+ }else{
+  fin([[-9,-3],[-6,-half-3],[-2,-half-5],[3,-half-4],[9,-4]],palette[0],palette[2]);
+  fin([[-7,3],[-3,half+4],[4,half+4],[9,3]],palette[2]);
  }
- ctx.restore();
-}
-function fishDraw(f,t){
-const kind=f.kind||0;
-if(kind>=7){drawNewSpecies(f,t,kind);return;}
-// Relative adult lengths: clownfish ~10cm, blue tang ~30cm, yellow tang ~20cm,
-// butterflyfish ~18cm, royal gramma ~8cm, Banggai cardinal ~8cm, lionfish ~30cm.
-// Compress real-world ratios for a readable miniature aquarium while preserving rank.
-const speciesSize=[.86,1.32,1.10,1.02,.72,.75,1.34,.78,.72,1.15,1.03,.77,.88,.68];
-const individual= .94+rand((f.phase||0)*11+13)*.12;
-const z=f.z*speciesSize[kind]*individual*.42;
-const bob=Math.sin(t*.0028+f.phase)*(kind===5?.55:kind===6?.8:1.3);
-const x=Math.round(f.x*2)/2,y=Math.round((f.y+bob)*2)/2;
-const distanceToGoal=Math.hypot((f.tx??f.x)-f.x,(f.ty??f.y)-f.y);
-const active=distanceToGoal>3;
-const effort=active?Math.min(1.8,Math.max(.45,f.swimRate||1)):.23;
-const tailCycle=t*[.020,.026,.018,.023,.024,.012,.010][kind]*(.55+effort*.5)+f.phase;
-const tailSwing=Math.sin(tailCycle);
-const breathing=Math.sin(t*.004+f.phase);
-const pitch=fishPosture(f,t);
-const turning=(f.turnUntil||0)>t;
-const squash=turning?.73:1;
-ctx.save();ctx.translate(x,y);ctx.rotate(pitch);ctx.scale(f.dir*z*squash,z*(1+breathing*.013));
-const swimRate=[.019,.029,.016,.023,.025,.012,.010][kind],beat=tailSwing*2.2;
-function poly(p,c){polygon(p,c)}
-function body(p,base,highlight,shadow){
-poly(p,base);
-poly([[-9,-2],[-5,-5],[2,-5],[7,-3],[5,-1],[-5,-1]],highlight);
-poly([[-9,3],[-3,5],[4,5],[9,2],[4,6],[-5,6]],shadow);
-}
-function tail(base,shade,wide=6){
-const sw=tailSwing*(.7+effort*1.7);
-const pinch=1-.17*Math.abs(tailSwing);
-poly([[-9,-1],[-18+sw,-wide*pinch],[-16+sw,0],[-18+sw,wide*pinch],[-9,2]],base);
-for(let k=-2;k<=2;k++)poly([[-10,0],[-17+sw,wide*k/3],[-16+sw,wide*k/3+.5]],shade);
-}
-function dorsal(base,edge){
-poly([[-8,-5],[-5,-10],[-1,-12],[3,-10],[7,-5]],base);
-for(let k=0;k<5;k++)rect(-5+k*2,-8-(k%2),.5,3,edge);
-}
-function lower(base){poly([[-5,5],[-2,9],[4,11],[7,5]],base)}
-function eye(px=8,py=-2){
-// Small natural dark eyes: no large white sclera or square staring pupils.
-const radius=kind===5?.95:kind===6?1.05:kind===3?1.15:1.25;
-ctx.fillStyle='rgba(31,45,62,.45)';
-ctx.beginPath();ctx.arc(px,py,radius+.35,0,Math.PI*2);ctx.fill();
-ctx.fillStyle=kind===2?'#353225':'#17283d';
-ctx.beginPath();ctx.arc(px,py,radius,0,Math.PI*2);ctx.fill();
-rect(px-.35,py-.55,.45,.45,'rgba(255,247,222,.72)');
-}
-function face(px=11){rect(px,1,1,.5,'rgba(29,39,58,.65)');rect(px-5,-2,.5,5,'rgba(24,41,62,.4)')}
-if(kind===0){ // clownfish: three irregular ivory bands, dark fin rims
-tail('#e67b3d','#f6b169',6);dorsal('#e66e32','#fbd59a');lower('#e68d45');
-body([[-11,-3],[-8,-6],[5,-6],[11,-3],[13,0],[10,5],[3,7],[-8,5],[-12,1]],'#ee7936','#ffad5c','#b84f31');
-for(const [bx,top,bottom] of [[-6,-6,6],[1,-6,7],[8,-4,5]]){
-poly([[bx-2,top],[bx+1,top-.3],[bx+2,bottom],[bx-2,bottom]],'#3b3541');
-poly([[bx-1.3,top+.6],[bx+.5,top+.4],[bx+1,bottom-.8],[bx-1,bottom-.8]],'#fff0d7');
-}
-eye(9,-2);face();
-}else if(kind===1){ // blue tang: cobalt body, midnight sweeping pattern
-tail('#f6d552','#d4a72e',8);dorsal('#244dbe','#5e9dff');lower('#e4bb3e');
-body([[-12,-1],[-8,-7],[4,-8],[11,-4],[13,0],[9,6],[1,8],[-9,5]],'#2364d6','#3e8bf0','#1744a6');
-poly([[-9,-4],[-5,-7],[3,-7],[9,-3],[5,0],[-3,3],[-10,1]],'#14285d');
-poly([[-6,-5],[3,-5],[7,-3],[2,-2],[-5,-2]],'#233d83');
-rect(-6,6,12,1,'#f3d64e');eye(9,-2);face();
-}else if(kind===2){ // yellow tang: angular dorsal and continuous yellow silhouette
-tail('#f8d553','#f6ec8d',8);dorsal('#eab93b','#fff5a0');lower('#eac347');
-body([[-11,0],[-8,-6],[-3,-9],[7,-7],[12,-3],[13,1],[8,6],[-4,9],[-10,4]],'#f5cb3e','#ffe987','#dba932');
-for(let k=0;k<6;k++)rect(-6+k*2,-7-(k%2),.5,3,'rgba(255,246,170,.7)');
-eye(9,-2);face();
-}else if(kind===3){ // butterflyfish: tall disk, black eye-mask, gold accent
-tail('#f4e5c7','#c6af8d',5);
-poly([[-8,-5],[-3,-12],[3,-11],[9,-6],[12,0],[8,7],[2,11],[-5,8],[-11,1]],'#f9edcc');
-poly([[-7,-4],[-3,-9],[2,-8],[7,-5],[4,-2],[-5,-1]],'#fff9e6');
-poly([[-8,4],[-3,7],[4,7],[8,4],[3,9],[-3,7]],'#e6d1a6');
-poly([[-4,-10],[-1,-10],[1,9],[-3,9]],'#34425c');
-poly([[5,-7],[8,-5],[8,7],[5,8]],'#eeb65b');
-rect(9,-3,2,6,'#283850');eye(9,-2);face(12);
-}else if(kind===4){ // royal gramma: clean violet to golden-yellow split
-tail('#f6c954','#ffe3a0',6);dorsal('#8d55bb','#d6a4e7');lower('#e7ba59');
-body([[-11,-3],[-8,-6],[5,-6],[11,-3],[13,0],[9,5],[1,7],[-8,5]],'#9b55c3','#b878e1','#633b9e');
-poly([[0,-6],[6,-6],[11,-3],[13,0],[9,5],[1,7],[0,5]],'#f4cc63');
-poly([[2,-5],[7,-4],[10,-2],[6,-2]],'#ffe398');eye(9,-2);face();
-}else if(kind===5){ // Banggai cardinalfish: elongated fins, stripes and white spots
-tail('#f0e9d7','#8c929d',9);
-poly([[-6,-5],[-2,-15],[2,-12],[5,-5]],'#e7e8e0');
-poly([[-3,6],[2,16],[6,6]],'#e6e4d9');
-body([[-11,-2],[-6,-7],[5,-7],[12,-2],[13,1],[6,7],[-6,7]],'#eee9d9','#fff8e8','#aeb4b8');
-poly([[-6,-7],[-3,-7],[-2,7],[-5,7]],'#2e3d54');
-poly([[2,-7],[5,-7],[6,7],[3,7]],'#334159');
-for(let k=0;k<10;k++)rect(-9+(k%5)*4,-5+Math.floor(k/5)*9,.8,.8,'#fdfaf0');
-eye(9,-2);face();
-}else{ // lionfish: spiny dorsal rays, cream stripes, translucent fan fins
-tail('#d89c85','#f8ddc5',9);
-for(let k=0;k<14;k++){
-const xx=-9+k*3;
-poly([[xx,-3],[xx-3,-13-(k%3)*2],[xx+1,-7]],'#e9b9a1');
-rect(xx-1,-12-(k%3)*2,.5,3,'#fff0d7');
-}
-body([[-11,-3],[-8,-6],[5,-6],[12,-3],[13,1],[9,5],[-6,6],[-12,2]],'#c98770','#e5aa91','#955d60');
-for(let k=0;k<6;k++){
-const xx=-9+k*3.5;
-poly([[xx,-5],[xx+1,-5],[xx+2,5],[xx,5]],k%2?'#fff1d8':'#a65f5e');
-}
-for(let k=0;k<5;k++)poly([[-7+k*3,4],[-11+k*4,13+(k%2)*3],[-4+k*3,5]],'rgba(244,205,184,.8)');
-eye(9,-2);face();
-}
-// Distinctive anatomical detailing for each reef species.
-ctx.lineWidth=.55;
-if(kind===0){ // clownfish: dark edging on each white saddle, orange fin rays
-for(const bx of [-7,0,7]){
-rect(bx-1,-5,.5,10,'rgba(32,38,53,.65)');
-rect(bx+1,5,.75,.5,'rgba(255,246,222,.7)');
-}
-for(let j=0;j<5;j++)rect(-7+j*2,-9+(j%2),.5,2,'#f7c080');
-}else if(kind===1){ // tang: dark blue dorsal rim, yellow tail spokes
-for(let j=0;j<6;j++)rect(-7+j*2,-7-(j%3)*.5,.7,.7,'#183e8b');
-for(let j=-3;j<=3;j++)rect(-16+Math.abs(j)*.45,j*1.6,.5,.5,'#fff0a3');
-rect(-3,3,7,.7,'rgba(96,168,255,.55)');
-}else if(kind===2){ // tang: radial fin striations and white scalpel by tail
-for(let j=0;j<7;j++){
-ctx.strokeStyle='rgba(255,245,163,.75)';
-ctx.beginPath();ctx.moveTo(-6+j*2,-5);ctx.lineTo(-5+j*2,-8+(j%3));ctx.stroke();
-}
-rect(-10,1,2,.65,'#f7f5d7');rect(-9.5,1.7,.7,.5,'#d8b55e');
-}else if(kind===3){ // butterflyfish: pearly scale rows and blue edge
-for(let row=0;row<4;row++)for(let col=0;col<3;col++){
-const sx=-7+col*3+(row%2),sy=-5+row*3;
-rect(sx,sy,.7,.6,'rgba(221,182,113,.44)');
-}
-ctx.strokeStyle='#e6c884';ctx.beginPath();ctx.moveTo(-5,-8);ctx.lineTo(2,-10);ctx.lineTo(7,-6);ctx.stroke();
-}else if(kind===4){ // royal gramma: purple stippling and yellow fin rays
-for(let j=0;j<9;j++)rect(-9+(j%3)*2,-4+Math.floor(j/3)*3,.6,.5,'rgba(229,174,250,.5)');
-for(let j=0;j<5;j++)rect(3+j*1.5,5-(j%2),.6,.7,'rgba(255,243,167,.65)');
-}else if(kind===5){ // cardinalfish: pearl dots on tall fins, black fin margins
-for(let j=0;j<6;j++){
-rect(-1+j*.6,-13+j*1.3,.5,.5,'#f8f5ea');
-rect(1+j*.5,13-j*1.2,.5,.5,'#e5e7e3');
-}
-rect(-2,-13,1,1,'#354056');
-}else{ // lionfish: long delicate venomous spines and fan membrane rays
-for(let j=0;j<7;j++){
-const sx=-10+j*3.1,tip=-17-(j%3)*2;
-ctx.strokeStyle=j%2?'#fff0df':'#ad6773';ctx.lineWidth=.5;
-ctx.beginPath();ctx.moveTo(sx,-5);ctx.lineTo(sx-2,tip);ctx.stroke();
-rect(sx-2,tip,.5,.75,'#fff3dd');
-}
-for(let j=0;j<6;j++){
-ctx.strokeStyle='rgba(255,230,214,.55)';
-ctx.beginPath();ctx.moveTo(-7,3);ctx.lineTo(-15+j*3,13+(j%2)*3);ctx.stroke();
-}
-}
-// Species-aware pixel texture: restrained scales and light, never a generic overlay.
-const shimmer=Math.max(0,Math.sin(t*.002+f.phase));
-const scaleTint=['rgba(255,225,172,.38)','rgba(136,199,255,.35)','rgba(255,247,178,.38)','rgba(255,250,224,.34)','rgba(225,184,250,.33)','rgba(248,249,244,.34)','rgba(255,214,191,.30)'][kind]||'rgba(255,255,255,.3)';
-for(let row=0;row<3;row++){
-for(let col=0;col<6;col++){
-const sx=-7+col*2.25+(row%2)*1.1,sy=-2.75+row*2.2;
-if(sx>4&&sy<0)continue; // preserve face and eye
-rect(sx,sy,.5,.5,scaleTint);
-if((col+row)%4===0)rect(sx+.5,sy+.5,.25,.25,'rgba(21,39,72,.22)');
-}
-}
-// Translucent pectoral fin flutters independently of the tail.
-const moving=Math.hypot((f.tx??f.x)-f.x,(f.ty??f.y)-f.y)>4;
-const flap=Math.sin(t*swimRate*(kind===3||kind===5?2.2:1.35)+f.phase)*[1.6,1.3,1.4,2.0,1.4,1.7,1.2][kind]*(moving?1:1.3);
-const finColors=['rgba(255,185,112,.72)','rgba(76,143,236,.67)','rgba(255,225,120,.72)','rgba(255,232,185,.65)','rgba(194,142,227,.7)','rgba(235,231,215,.7)','rgba(239,177,151,.67)'];
-poly([[-1,1],[1+flap,5],[0+flap,9],[-4,3]],finColors[kind]||finColors[0]);
-for(let k=0;k<3;k++){
-ctx.strokeStyle='rgba(255,250,235,.36)';ctx.lineWidth=.35;
-ctx.beginPath();ctx.moveTo(-1,2);ctx.lineTo(-.5+flap+k*.8,6+k*.8);ctx.stroke();
-}
-// Mouth, gill plate, lateral line and specular spots.
-rect(12,1,.8,.35,'rgba(35,42,64,.65)');
-ctx.strokeStyle='rgba(25,46,74,.35)';ctx.lineWidth=.5;
-ctx.beginPath();ctx.moveTo(4,-3);ctx.quadraticCurveTo(2+breathing*.45,0,4,3);ctx.stroke();
-ctx.strokeStyle='rgba(238,250,245,.24)';ctx.lineWidth=.45;
-ctx.beginPath();ctx.moveTo(4.7,-2);ctx.quadraticCurveTo(3.8+breathing*.3,0,4.7,2);ctx.stroke();
-ctx.strokeStyle='rgba(255,255,240,.18)';
-ctx.beginPath();ctx.moveTo(-7,0);ctx.quadraticCurveTo(-1,1,3,0);ctx.stroke();
-for(let k=0;k<4;k++){
-const sx=-6+k*3,sy=-4+(k%2)*2;
-rect(sx,sy,.5,.5,'rgba(255,255,255,'+(.14+shimmer*.25)+')');
-}
-// Layered reflective scale arcs, intentionally faint at miniature size.
-ctx.lineWidth=.32;
-for(let row=0;row<2;row++)for(let col=0;col<5;col++){
-const sx=-7+col*2.5+(row%2)*1.2,sy=-2+row*3;
-ctx.strokeStyle=(col+row)%3===0?'rgba(255,253,226,.27)':'rgba(16,35,68,.16)';
-ctx.beginPath();ctx.arc(sx,sy,1.15,.1,2.5);ctx.stroke();
-}
-// Soft body volume: upper ridge catches light, belly stays subdued.
-ctx.strokeStyle='rgba(255,251,230,.25)';ctx.lineWidth=.65;
-ctx.beginPath();ctx.moveTo(-7,-4.6);ctx.quadraticCurveTo(1,-7.4,7,-3.7);ctx.stroke();
-// A tiny rhythmic mouth opening, no cartoon teeth or white eyes.
-if(breathing>.3)rect(12.3,1,.6,.45,'rgba(28,41,56,.72)');
-// Animated highlight across the dorsal fin.
-rect(-3+Math.sin(t*.001+f.phase)*2,-8,.5,1,'rgba(245,250,255,.42)');
-ctx.restore();
+ // Smooth tapered fish body: not a polygon or geometric block.
+ const bodyPath=()=>{C.moveTo(-11,0);C.bezierCurveTo(-9,-half*.8,-3,-half*1.12,3,-half*.96);
+ C.bezierCurveTo(8,-half*.82,head-2,-half*.45,head,0);
+ C.bezierCurveTo(head+1,half*.25,7,half*.84,2,half);
+ C.bezierCurveTo(-4,half*1.08,-9,half*.72,-11,0);C.closePath();};
+ path(bodyPath,palette[0],palette[2],.55);
+ C.save();C.beginPath();bodyPath();C.clip();
+ const shade=C.createLinearGradient(0,-half,0,half);shade.addColorStop(0,'rgba(255,255,255,.24)');shade.addColorStop(.45,'rgba(255,255,255,0)');shade.addColorStop(1,'rgba(12,23,50,.29)');C.fillStyle=shade;C.fillRect(-13,-half-2,32,half*2+4);
+ if(k===0||k===12){
+  for(const x of [-6,1,8]){
+   fin([[x-2,-half-2],[x+1,-half-1],[x+2,half+2],[x-2,half+2]],'#fff3df',k===0?'#3b3441':'#e1ddd1');
+  }
+ }else if(k===1){
+  fin([[-10,-4],[-5,-half],[3,-half],[9,-3],[4,0],[-4,3]],'#152b69');
+ }else if(k===3){
+  fin([[-4,-half-2],[-1,-half-2],[2,half+2],[-2,half+2]],'#303d51');
+  fin([[6,-half],[9,-half],[12,half],[8,half]],'#edbc63');
+ }else if(k===4){
+  fin([[0,-half-2],[14,-half-2],[14,half+2],[0,half+2]],'#f5cd62');
+ }else if(k===5){
+  for(const x of [-5,3])fin([[x-1.5,-half-2],[x+1,-half-2],[x+2,half+2],[x-1,half+2]],'#2c384b');
+  for(let j=0;j<12;j++)ellipse(-8+(j*7)%17,-5+(j*5)%11,.45,.45,'#fffdf4');
+ }else if(k===6){
+  for(let j=0;j<7;j++){const x=-9+j*3.2;fin([[x-1,-half],[x+1,-half],[x+2,half],[x,half]],j%2?'#fff1d6':'#95565a');}
+ }else if(k===7){
+  for(let j=0;j<8;j++){const x=-8+(j%4)*4,y=-3+Math.floor(j/4)*5;ellipse(x,y,2.25,1.6,'#f5a247');ellipse(x,y,1.35,.75,'#72e4cf');}
+ }else if(k===8){
+  const g=C.createLinearGradient(-10,0,13,0);g.addColorStop(0,'#df6677');g.addColorStop(.48,'#f4b9ad');g.addColorStop(.8,'#fff5e9');C.fillStyle=g;C.fillRect(-12,-8,30,16);
+ }else if(k===9){
+  for(let j=0;j<12;j++)line(-8+j*1.7,-half+2,-7+j*1.7,-half+4,'rgba(206,172,237,.7)',.5);
+ }else if(k===10){
+  fin([[2,-half],[6,-half],[11,half],[6,half]],'#fff4d9');
+  fin([[7,-half],[15,-half],[15,half],[10,half]],'#303b47');
+ }else if(k===11){
+  C.fillStyle='#ead482';C.fillRect(1,-12,16,24);
+  C.fillStyle='#374055';C.fillRect(-1,-12,3,24);
+  for(let j=0;j<19;j++)ellipse(-10+(j*7)%9,-6+(j*5)%13,.58,.72,'#ac668b');
+ }else if(k===13){
+  fin([[-12,-1],[17,-1],[17,1],[-12,1]],'#23c7f3');
+  line(-11,-1,15,-1,'#a3f4ff',.45);
+ }
+ C.restore();
+ // Separate pectoral fin: it flutters while the body stays stable.
+ const flap=Math.sin(t*.016+phase)*1.5;
+ fin([[-2,0],[2+flap,2],[0+flap,half*.9],[-4,2]],k===6?'rgba(248,216,188,.65)':k===7?'rgba(59,219,203,.64)':'rgba(255,255,235,.28)');
+ for(let j=0;j<4;j++)line(-1,1,flap+j*.6,3+j*.85,'rgba(255,255,255,.24)',.3);
+ // Anatomically placed eye, operculum and small mouth.
+ const ex=head-3,ey=-half*.25;
+ ellipse(ex,ey,1.12,1.17,'#172538');ellipse(ex-.3,ey-.4,.32,.35,'#fff8e9');
+ line(head-.6,.65,head+.35,.75,'rgba(27,35,49,.72)',.45);
+ path(()=>{C.moveTo(head-6,-2);C.quadraticCurveTo(head-8,0,head-6,3)},null,'rgba(24,41,57,.32)',.5);
+ C.restore();
 }
 window.aquariaFishPreview=function(kind){
  const preview=document.createElement('canvas');preview.width=144;preview.height=88;
