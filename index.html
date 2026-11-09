@@ -194,19 +194,25 @@ function aquariaShowRewardToast(amount){
  aquariaRewardToastTimer=setTimeout(()=>toast.classList.remove('show'),2100);
 }
 let aquariaLastTouchReward=0;
-window.aquariaFishTouched=function(){
- aquariaMissionProgress('touch');
- // Shared 2D/3D reward table. A short cooldown prevents tap farming.
+window.aquariaFishTouched=function(index){
+ aquariaInitLives();
+ const fish=state.fishLives?.[index];
+ if(!fish)return {reward:0,stressed:false};
  const now=Date.now();
- if(now-aquariaLastTouchReward<2500)return 0;
- aquariaLastTouchReward=now;
- const roll=Math.random();
- const reward=roll<.02?25:roll<.10?10:roll<.35?3:0;
- if(reward){
-  state.coins=(Number(state.coins)||0)+reward;
-  save();
+ fish.stress=Math.max(0,(Number(fish.stress)||0)-Math.max(0,now-(fish.stressAt||now))/60000*1.5);
+ fish.stressAt=now;
+ fish.stress=Math.min(100,fish.stress+15);
+ const stressed=fish.stress>=60;
+ aquariaMissionProgress('touch');
+ let reward=0;
+ if(!stressed&&now-aquariaLastTouchReward>=2500){
+  aquariaLastTouchReward=now;
+  const roll=Math.random();
+  reward=roll<.02?25:roll<.10?10:roll<.35?3:0;
+  if(reward)state.coins=(Number(state.coins)||0)+reward;
  }
- return reward;
+ save();
+ return {reward,stressed};
 };
 const aquariaFishCatalog=[['흰동가리',20],['블루탱',40],['옐로탱',65],['나비고기',100],['로열 그라마',150],['카디널피시',230],['라이언피시',350]];
 // Food groups: omnivore, algae grazer, plankton picker and carnivore.
@@ -579,8 +585,9 @@ function touchFishAt(clientX,clientY){
  target.tx=Math.max(20,Math.min(W-20,target.x+(Math.random()-.5)*48));
  target.ty=Math.max(80,Math.min(306,target.y-12-Math.random()*22));
  target.swimRate=2.2;target.waitUntil=0;
- const reward=window.aquariaFishTouched?.()||0;
- if(reward){target.rewardText='+'+reward+'coin';target.rewardUntil=performance.now()+1150;}
+ const result=window.aquariaFishTouched?.(fish.indexOf(target))||{};
+ if(result.stressed){target.rewardText='스트레스 ↑';target.rewardUntil=performance.now()+1150;target.swimRate=3.2;target.touchUntil=0;}
+ else if(result.reward){target.rewardText='+'+result.reward+'coin';target.rewardUntil=performance.now()+1150;}
 }
 canvas.addEventListener('click',e=>touchFishAt(e.clientX,e.clientY));
 const visibleFood=[];
@@ -2003,7 +2010,7 @@ layer.addEventListener('pointerup',e=>{
    if(distance<nearest){nearest=distance;touched=f;}
   }
  }
- if(touched){touched.behavior='burst';touched.behaviorUntil=performance.now()+900;touched.nextTurn=0;spawnFishHearts(touched);const reward=window.aquariaFishTouched?.()||0;if(reward){const el=document.createElement('span');el.className='aquaria-floating-heart aquaria-coin-inline';el.textContent='+'+reward+'coin';heartLayer.append(el);floatingHearts.push({el,fish:touched,born:performance.now(),offset:0,base:touched.g.position.clone(),coin:true});}}
+ if(touched){touched.behavior='burst';touched.behaviorUntil=performance.now()+900;touched.nextTurn=0;const result=window.aquariaFishTouched?.(fish.indexOf(touched))||{};if(!result.stressed)spawnFishHearts(touched);if(result.stressed||result.reward){const el=document.createElement('span');el.className='aquaria-floating-heart aquaria-coin-inline';el.textContent=result.stressed?'스트레스 ↑':'+'+result.reward+'coin';if(result.stressed)el.style.color='#ffadad';heartLayer.append(el);floatingHearts.push({el,fish:touched,born:performance.now(),offset:0,base:touched.g.position.clone(),coin:true});}}
 });
 layer.addEventListener('pointerdown',e=>{layer.setPointerCapture(e.pointerId);pointer.set(e.pointerId,{x:e.clientX,y:e.clientY});lastDistance=0});
 layer.addEventListener('pointermove',e=>{
