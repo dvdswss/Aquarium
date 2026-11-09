@@ -1135,54 +1135,50 @@ const fishProfiles=[
  {l:1.22,h:.58,w:.39,tail:.78} // lionfish
 ];
 // Vertex-sculpted closed mesh: grooves and creases are carved into the actual body.
+// Angular hard-surface fish sculpt: straight cuts, planar faces, no curved interpolation.
 function fishShape(p,k){
- const positions=[],uvs=[],indices=[],rings=72,sides=36;
- const smooth=(a,b,t)=>{const q=Math.max(0,Math.min(1,(t-a)/(b-a)));return q*q*(3-2*q)};
- for(let i=0;i<=rings;i++){
-  const u=i/rings,x=-p.l+2*p.l*u;
-  const shoulder=Math.exp(-Math.pow((u-.66)/.23,2));
-  const tail=smooth(.015,.26,u),nose=1-smooth(.87,1,u);
-  const body=Math.pow(Math.max(.001,Math.sin(Math.PI*Math.pow(u,.86))),.59);
-  const fullness=(.15+.85*body)*(.43+.57*tail)*(.4+.6*nose);
-  const deep=k===3?1.17:k===5?1.08:k===1?.92:1;
-  const forehead=k===3?.15:k===5?.1:k===6?.09:.035;
-  for(let j=0;j<=sides;j++){
-   const theta=j/sides*Math.PI*2,v=Math.cos(theta),side=Math.sin(theta);
-   const sideAbs=Math.abs(side);
-   const snout=Math.exp(-Math.pow((u-.94)/.07,2));
-   const cheek=Math.exp(-Math.pow((u-.73)/.12,2))*Math.exp(-Math.pow((v+.12)/.45,2));
-   // Actual recessed operculum crease, not a separate floating ring.
-   const gillCurve=.52+.035*Math.cos(theta*1.4);
-   const gillCut=Math.exp(-Math.pow((u-gillCurve)/.012,2))*Math.pow(sideAbs,5);
-   // Incised mouth seam along the sides of the muzzle.
-   const mouthCut=Math.exp(-Math.pow((u-.968)/.023,2))*Math.exp(-Math.pow((v+.27)/.085,2));
-   // Subtle muscle channel and longitudinal lateral-line groove.
-   const lateral=Math.exp(-Math.pow((v-.06)/.075,2))*Math.pow(sideAbs,5)*(1-smooth(.8,.95,u))*smooth(.16,.28,u);
-   const dorsalRidge=Math.pow(Math.max(0,v),12)*(k===5?.055:.025);
-   const bellyKeel=Math.pow(Math.max(0,-v),10)*(k===3?.035:.015);
-   const y=p.h*deep*fullness*(1+.1*shoulder)*v+
-     forehead*Math.exp(-Math.pow((u-.84)/.13,2))*Math.max(0,v)
-     +dorsalRidge-bellyKeel-(k===6?.045:0)*shoulder;
-   const carved=1-.14*gillCut-.12*mouthCut-.035*lateral;
-   const z=p.w*fullness*(1+.12*shoulder+.13*cheek)*side*carved
-     +side*.028*snout*Math.max(0,-v);
-   positions.push(x,y,z);uvs.push(u,j/sides);
+ const positions=[],uvs=[],indices=[],rings=20,sides=12;
+ const profiles=[
+  [.11,.22,.39,.61,.82,.96,1,.97,.91,.78,.58,.34,.14],
+  [.08,.15,.31,.52,.72,.88,.98,1,.96,.84,.65,.39,.1],
+  [.08,.16,.34,.56,.78,.94,1,1,.94,.79,.57,.33,.1],
+  [.1,.24,.45,.7,.89,1,1,.97,.9,.74,.53,.28,.1],
+  [.09,.2,.38,.58,.77,.92,1,.97,.87,.72,.5,.28,.1],
+  [.1,.2,.42,.65,.87,1,.98,.94,.83,.67,.46,.25,.1],
+  [.1,.2,.4,.62,.82,.96,1,.98,.9,.75,.54,.3,.1]
+ ];
+ const profile=profiles[k];
+ const cross=[ [1,0],[.78,.65],[.34,1],[-.34,1],[-.78,.65],[-1,0],[-.78,-.65],[-.34,-1],[.34,-1],[.78,-.65] ];
+ const facets=cross.length;
+ // 13 fixed longitudinal slices, joined only by flat triangles.
+ for(let i=0;i<profile.length;i++){
+  const u=i/(profile.length-1),x=-p.l+2*p.l*u;
+  let h=p.h*profile[i]*(k===3?1.13:1),w=p.w*profile[i];
+  if(k===5&&i>=6&&i<=9)h*=1.07;
+  if(k===1&&i>=3&&i<=8)w*=.88;
+  for(let j=0;j<facets;j++){
+   const v=cross[j];
+   // Discrete polygonal gill notch, cut into the cheek vertices.
+   const cut=(i===8&&(j===2||j===3||j===7||j===8))?.88:1;
+   positions.push(x,h*v[0],w*v[1]*cut);
+   uvs.push(u,j/facets);
   }
  }
- for(let i=0;i<rings;i++)for(let j=0;j<sides;j++){
-  const n=i*(sides+1)+j;indices.push(n,n+1,n+sides+1,n+1,n+sides+2,n+sides+1);
+ for(let i=0;i<profile.length-1;i++)for(let j=0;j<facets;j++){
+  const n=i*facets+j,next=i*facets+(j+1)%facets;
+  indices.push(n,next,n+facets,next,next+facets,n+facets);
  }
- // Cap both ends so the model stays watertight when viewed from any direction.
  const back=positions.length/3;positions.push(-p.l,0,0);uvs.push(0,.5);
  const front=positions.length/3;positions.push(p.l,0,0);uvs.push(1,.5);
- for(let j=0;j<sides;j++){
-  indices.push(back,j+1,j);
-  const n=rings*(sides+1)+j;indices.push(front,n,n+1);
+ for(let j=0;j<facets;j++){
+  indices.push(back,(j+1)%facets,j);
+  const n=(profile.length-1)*facets+j;
+  indices.push(front,n,(profile.length-1)*facets+(j+1)%facets);
  }
- const geo=new T.BufferGeometry();
+ let geo=new T.BufferGeometry();
  geo.setAttribute('position',new T.Float32BufferAttribute(positions,3));
  geo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));
- geo.setIndex(indices);geo.computeVertexNormals();return geo;
+ geo.setIndex(indices);geo=geo.toNonIndexed();geo.computeVertexNormals();return geo;
 }
 function finShape(points){
  const shape=new T.Shape();
