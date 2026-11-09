@@ -297,13 +297,17 @@ html,body{max-width:100%;overflow-x:hidden}
 #game .pixel-controls .gameBar span{display:block!important;height:100%!important;background:#91dded!important}
 #game .pixel-controls .row{gap:5px!important}
 #game .pixel-controls .row button{min-height:38px!important;padding:5px 2px!important;font-size:10px!important;line-height:1.2!important}
+</style><style id="aquaria-ios-canvas-fix">
+#game .pixel-game>.tank{isolation:isolate!important;contain:layout paint!important}
+#game #scene canvas{display:block!important;position:absolute!important;top:0!important;left:0!important;right:auto!important;bottom:auto!important;width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;min-width:0!important;min-height:0!important;object-fit:fill!important;transform:none!important;filter:none!important;mix-blend-mode:normal!important;will-change:auto!important;z-index:0!important}
+#game #scene{overflow:hidden!important}
 </style><script>
 (function(){
 const host=document.getElementById('scene');if(!host)return;
-const canvas=document.createElement('canvas');canvas.setAttribute('aria-label','움직이는 도트 바닷속 풍경');host.prepend(canvas);
+const canvas=document.createElement('canvas');canvas.setAttribute('aria-label','움직이는 도트 바닷속 풍경');host.querySelectorAll('canvas').forEach(el=>el.remove());host.prepend(canvas);
 const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)return;
 // Render at 2x internal resolution for finer pixel edges and small details.
-const W=240,H=360,PIXEL_SCALE=4;
+const W=240,H=360,PIXEL_SCALE=2;
 canvas.width=W*PIXEL_SCALE;canvas.height=H*PIXEL_SCALE;
 ctx.setTransform(PIXEL_SCALE,0,0,PIXEL_SCALE,0,0);
 ctx.imageSmoothingEnabled=false;
