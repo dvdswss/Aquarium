@@ -1124,109 +1124,116 @@ for(let i=0;i<20;i++){
  const o=mesh(new T.SphereGeometry(.018+seeded(i+90)*.027,5,4),bubbleMat,scene,Math.cos(a)*r,.3+seeded(i+110)*7.5,Math.sin(a)*r);
  bubbles.push({o,phase:seeded(i+150)*8});
 }
-const fishBody=new T.SphereGeometry(1,22,14);
-const finGeo=new T.BufferGeometry();
-finGeo.setAttribute('position',new T.Float32BufferAttribute([0,0,0,-.8,.6,0,-.8,-.6,0],3));finGeo.computeVertexNormals();
+// Sculpted species-specific silhouettes, smooth tapered bodies and curved membrane fins.
+const fishProfiles=[
+ {l:1.05,h:.58,w:.36,tail:.58}, // clownfish
+ {l:1.25,h:.67,w:.27,tail:.72}, // blue tang
+ {l:1.17,h:.73,w:.27,tail:.65}, // yellow tang
+ {l:.98,h:.85,w:.25,tail:.58}, // butterflyfish
+ {l:1.03,h:.55,w:.32,tail:.55}, // royal gramma
+ {l:.83,h:.7,w:.32,tail:.57}, // cardinalfish
+ {l:1.22,h:.58,w:.39,tail:.78} // lionfish
+];
+function fishShape(p){
+ const positions=[],normals=[],uvs=[],indices=[],rings=22,sides=16;
+ for(let i=0;i<=rings;i++){
+  const u=i/rings,x=-p.l+2*p.l*u;
+  // Tapered peduncle, deep chest and rounded snout.
+  const fullness=Math.pow(Math.max(.002,Math.sin(Math.PI*u)),.64);
+  const chest=1+.15*Math.exp(-Math.pow((u-.66)/.2,2));
+  const taper=u<.18?.64+.36*u/.18:1;
+  for(let j=0;j<=sides;j++){
+   const theta=j/sides*Math.PI*2;
+   positions.push(x,Math.cos(theta)*p.h*fullness*chest*taper,Math.sin(theta)*p.w*fullness*taper);
+   uvs.push(u,j/sides);
+  }
+ }
+ for(let i=0;i<rings;i++)for(let j=0;j<sides;j++){
+  const n=i*(sides+1)+j;indices.push(n,n+1,n+sides+1,n+1,n+sides+2,n+sides+1);
+ }
+ const geo=new T.BufferGeometry();
+ geo.setAttribute('position',new T.Float32BufferAttribute(positions,3));
+ geo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));
+ geo.setIndex(indices);geo.computeVertexNormals();return geo;
+}
+function finShape(points){
+ const shape=new T.Shape();
+ shape.moveTo(points[0][0],points[0][1]);
+ for(let i=1;i<points.length;i++)shape.lineTo(points[i][0],points[i][1]);
+ shape.closePath();
+ return new T.ShapeGeometry(shape,6);
+}
+const fishBodies=fishProfiles.map(fishShape);
+const eyeGeo=new T.SphereGeometry(.075,12,9);
 function createFish(k,i){
  const g=new T.Group();scene.add(g);
- const size=[.33,.46,.39,.37,.28,.29,.48][k]*(.87+(i%4)*.05);
- const main=mat(colors[k],.43),dark=mat(k===1?0x142d69:0x493b4c),white=mat(0xfff0d8),eye=mat(0x14202d,.12);
- const body=mesh(fishBody,main,g);body.scale.set(k===5?.78:1.12,k===3?.78:.58,k===5?.23:.35);
- // Fins are thin curved-looking membranes with visible rays, not cones.
- const tailPivot=new T.Group();tailPivot.position.x=-1.06;g.add(tailPivot);
- const tail=mesh(finGeo,k===1?mat(0xf2d45b):main,tailPivot,-.03,0,0);tail.scale.set(.8,.82,1);
- const tailLower=mesh(finGeo,dark,tailPivot,-.04,-.04,-.008);tailLower.scale.set(.58,.54,1);
- const dorsal=mesh(finGeo,k===6?dark:main,g,-.12,.51,0);dorsal.rotation.z=-1.35;dorsal.scale.set(.55,.55,1);
- const finPivot=new T.Group();finPivot.position.set(.0,-.08,.34);g.add(finPivot);
- const fin=mesh(finGeo,k===5?white:main,finPivot,0,0,0);fin.rotation.z=.3;fin.scale.set(.5,.42,1);
+ const p=fishProfiles[k],size=[.34,.47,.42,.39,.3,.31,.49][k]*(.88+(i%4)*.045);
+ const main=mat(colors[k],.44),dark=mat(k===1?0x10275a:0x45364b),white=mat(0xfff0dc);
+ const finMat=new T.MeshStandardMaterial({color:colors[k],roughness:.48,transparent:true,opacity:.88,side:T.DoubleSide,depthWrite:false});
+ const eye=mat(0x101923,.14),iris=mat(0xe3d6ad,.2);
+ mesh(fishBodies[k],main,g);
+ const tailPivot=new T.Group();tailPivot.position.x=-p.l+.035;g.add(tailPivot);
+ const fork=k===1||k===2||k===3;
+ const tailPoints=fork?[[0,0],[-.45,.12],[-p.tail,.67],[-p.tail*.53,.13],[-p.tail*.53,-.13],[-p.tail,-.67],[-.45,-.12]]:
+ [[0,0],[-.33,.25],[-p.tail,.58],[-p.tail*.84,0],[-p.tail,-.58],[-.33,-.25]];
+ mesh(finShape(tailPoints),k===1?mat(0xe8cf64):finMat,tailPivot);
+ const dorsalPoints=k===6?[[-.92,.34],[-.85,1.05],[-.62,.8],[-.43,1.18],[-.2,.83],[.08,1.06],[.37,.6],[.72,.4]]:
+ [[-.9,.25],[-.62,.62],[-.38,p.h+.33],[.02,p.h+.27],[.45,p.h+.12],[.76,.28]];
+ mesh(finShape(dorsalPoints),finMat,g,0,0,.005);
+ mesh(finShape([[-.85,-.28],[-.55,-.58],[-.23,-p.h-.2],[.35,-p.h-.15],[.65,-.25]]),finMat,g,0,0,.005);
+ const finPivot=new T.Group();finPivot.position.set(.15,-.12,p.w*.92);g.add(finPivot);
+ mesh(finShape([[0,0],[-.28,.14],[-.64,-.3],[-.3,-.42]]),finMat,finPivot);
+ const opposite=mesh(finShape([[0,0],[-.28,.14],[-.64,-.3],[-.3,-.42]]),finMat,g,.15,-.12,-p.w*.92);
  for(const side of [-1,1]){
-  mesh(new T.SphereGeometry(.075,10,8),eye,g,.78,.13,side*.32);
-  mesh(new T.SphereGeometry(.022,7,6),white,g,.805,.16,side*.38);
+  const z=side*p.w*.88;
+  const socket=mesh(eyeGeo,iris,g,p.l*.69,p.h*.15,z);
+  socket.scale.set(1.25,1.25,.5);
+  const pupil=mesh(eyeGeo,eye,g,p.l*.7,p.h*.15,z+side*.035);
+  pupil.scale.set(.76,.85,.45);
+  const glint=mesh(new T.SphereGeometry(.018,6,5),white,g,p.l*.71,p.h*.19,z+side*.066);
+  const mouth=mesh(new T.SphereGeometry(1,10,6),dark,g,p.l*.985,-.12,side*.035);
+  mouth.scale.set(.025,.023,.11);
+  const gill=mesh(new T.TorusGeometry(.2,.012,4,18,Math.PI*.82),dark,g,p.l*.38,-.08,side*p.w*.93);
+  gill.rotation.z=-.28;
  }
+ // Distinct markings follow the body silhouette without bulky spherical stripes.
  if(k===0){
-  for(const x of [-.58,.04,.64]){const stripe=mesh(new T.SphereGeometry(1,16,12),white,g,x,0,0);stripe.scale.set(.12,.57,.35)}
- }
- if(k===1){const mark=mesh(new T.SphereGeometry(1,16,10),dark,g,-.12,.14,.03);mark.scale.set(.7,.3,.35)}
- if(k===2){const mark=mesh(new T.SphereGeometry(1,12,10),white,g,.86,-.05,0);mark.scale.set(.13,.11,.31)}
- if(k===3){for(const x of [-.4,.22]){const bar=mesh(new T.SphereGeometry(1,12,10),dark,g,x,0,0);bar.scale.set(.11,.72,.36)}}
- if(k===4){const purple=mesh(new T.SphereGeometry(1,16,10),mat(0x653ca5),g,.46,0,0);purple.scale.set(.65,.57,.35)}
- if(k===5){for(const x of [-.55,.3]){const bar=mesh(new T.BoxGeometry(.1,1,.47),dark,g,x,0,0)}}
- if(k===6){
-  for(let j=0;j<9;j++){
-   const x=-.8+j*.2;
-   cylinderBetween(g,new T.Vector3(x,.38,0),new T.Vector3(x+(j-4)*.06,1.15+(j%3)*.17,0),.023,.008,j%2?white:dark,5);
-  }
-  for(let j=0;j<5;j++){const bar=mesh(new T.SphereGeometry(1,10,8),dark,g,-.8+j*.37,0,0);bar.scale.set(.07,.56,.36)}
- }
- // Subtle lateral-line pores, segmented scale highlights and a narrow mouth.
- const poreMat=mat(k===2?0xc8a54c:0x8a9db1,.75,true,.62);
- for(const side of [-1,1]){
-  const mouth=mesh(new T.SphereGeometry(1,10,6),dark,g,1.08,-.12,side*.035);
-  mouth.scale.set(.035,.025,.12);
-  for(let row=0;row<3;row++)for(let col=0;col<8;col++){
-   const x=-.82+col*.2+(row%2)*.1;
-   const y=-.26+row*.21;
-   const radial=Math.max(.08,1-(x*x/1.4+y*y/.4));
-   const z=side*(.34*Math.sqrt(radial)+.008);
-   const dot=mesh(new T.SphereGeometry(.012,5,4),poreMat,g,x,y,z);
-   dot.scale.set(1.35,.5,.45);
-  }
-  for(let j=0;j<5;j++){
-   const x=-.55+j*.3;
-   const dot=mesh(new T.SphereGeometry(.012,5,4),dark,g,x,.02,side*.354);
-   dot.scale.set(1,.6,.4);
-  }
- }
- // Gill plates, nostrils, translucent fin rays and individual scale glints.
- const gill=mat(k===2?0xb18c2b:0x6b6675,.8),shine=mat(0xd5f3ec,.28,true,.44);
- for(const side of [-1,1]){
-  const z=side*.346;
-  const cheek=mesh(new T.SphereGeometry(1,12,9),main,g,.49,-.12,side*.2);
-  cheek.scale.set(.38,.32,.18);
-  const nostril=mesh(new T.SphereGeometry(.018,6,5),eye,g,.98,.035,side*.19);
-  for(let n=0;n<4;n++){
-   const x=-.74+n*.34;
-   const spot=mesh(new T.SphereGeometry(.022+(n%2)*.008,6,5),shine,g,x,.25-(n%2)*.15,z);
-   spot.scale.set(1,.65,.3);
-  }
-  const gillLine=mesh(new T.TorusGeometry(.24,.013,4,18,Math.PI*.75),gill,g,.47,-.08,side*.325);
-  gillLine.rotation.y=side*.17;gillLine.rotation.z=-.35;
-  // Small pectoral fin with separate rays on both sides.
-  const pectoral=mesh(finGeo,main,g,-.04,-.13,side*.39);
-  pectoral.scale.set(.46,.35,1);pectoral.rotation.z=-.22;
- }
- // Fine segmented dorsal and anal fin edges.
- for(let n=0;n<7;n++){
-  const x=-.78+n*.25;
-  cylinderBetween(g,new T.Vector3(x,.47,0),new T.Vector3(x-.09,.72+Math.sin(n*.7)*.16,0),.012,.004,k===6?dark:main,4);
- }
- for(let n=0;n<5;n++){
-  const x=-.7+n*.27;
-  cylinderBetween(g,new T.Vector3(x,-.45,0),new T.Vector3(x-.13,-.69-(n%2)*.07,0),.012,.004,main,4);
- }
- // Species-specific markings remain readable from both sides.
- if(k===0){
-  for(const side of [-1,1])for(const x of [-.58,.04,.64]){
-   const rim=mesh(new T.TorusGeometry(.29,.028,4,18),dark,g,x,0,side*.35);
-   rim.scale.set(.25,1.9,1);rim.rotation.y=Math.PI/2;
+  for(const x of [-.57,.06,.63]){
+   const radius=p.h*Math.sqrt(Math.max(.15,1-(x/p.l)**2));
+   const band=mesh(new T.CylinderGeometry(radius*.97,radius*.97,.13,24,1,true),white,g,x,0,0);
+   band.rotation.z=Math.PI/2;band.scale.z=p.w/p.h;
   }
  }
  if(k===1){
   for(const side of [-1,1]){
-   const line=mesh(new T.SphereGeometry(1,14,8),mat(0x4c9bda),g,-.23,-.11,side*.33);
-   line.scale.set(.65,.09,.045);
+   const patch=mesh(new T.SphereGeometry(1,16,10),dark,g,-.1,.13,side*.16);
+   patch.scale.set(.83,.32,.14);
+   const line=mesh(new T.SphereGeometry(1,12,8),mat(0x5bade0),g,-.14,-.16,side*.25);
+   line.scale.set(.72,.07,.035);
   }
  }
+ if(k===3){for(const x of [-.43,.3]){const band=mesh(new T.BoxGeometry(.09,1.34,.47),dark,g,x,0,0);}}
+ if(k===4){
+  const purple=mesh(new T.SphereGeometry(1,18,12),mat(0x7140af),g,.48,0,0);
+  purple.scale.set(.59,.51,.31);
+ }
  if(k===5){
-  for(const side of [-1,1])for(let n=0;n<4;n++){
-   cylinderBetween(g,new T.Vector3(-.55+n*.3,.35,side*.1),new T.Vector3(-.85+n*.36,1.12+(n%2)*.22,side*.08),.014,.004,dark,5);
+  for(const x of [-.48,.26])mesh(new T.BoxGeometry(.09,1.04,.53),dark,g,x,0,0);
+  for(let n=0;n<5;n++){
+   const x=-.5+n*.22;
+   cylinderBetween(g,new T.Vector3(x,.36,0),new T.Vector3(x-.1,.95+(n%2)*.16,0),.012,.004,dark,5);
   }
  }
  if(k===6){
-  for(const side of [-1,1])for(let n=0;n<7;n++){
-   const x=-.65+n*.23;
-   cylinderBetween(g,new T.Vector3(x,-.13,side*.25),new T.Vector3(x-.55,-.7-(n%3)*.15,side*(.5+n*.045)),.018,.005,n%2?white:dark,5);
+  for(let n=0;n<11;n++){
+   const x=-.9+n*.18;
+   cylinderBetween(g,new T.Vector3(x,.35,0),new T.Vector3(x+(n-5)*.04,1.15+(n%3)*.17,0),.018,.004,n%2?white:dark,5);
   }
+  for(const side of [-1,1])for(let n=0;n<8;n++){
+   const x=-.7+n*.2;
+   cylinderBetween(g,new T.Vector3(x,-.1,side*.25),new T.Vector3(x-.48,-.7-(n%3)*.15,side*.72),.013,.004,n%2?white:dark,5);
+  }
+  for(let n=0;n<6;n++){const stripe=mesh(new T.SphereGeometry(1,10,8),dark,g,-.75+n*.29,0,0);stripe.scale.set(.05,.45,.38)}
  }
  g.scale.setScalar(size);
  const angle=i*2.399;
