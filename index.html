@@ -1136,53 +1136,55 @@ const fishProfiles=[
 ];
 // Vertex-sculpted closed mesh: grooves and creases are carved into the actual body.
 // Angular hard-surface fish sculpt: straight cuts, planar faces, no curved interpolation.
+// Hand-authored polygon silhouettes. No spline, subdivision, or curved surface.
 function fishShape(p,k){
- const positions=[],uvs=[],indices=[],rings=20,sides=12;
- const profiles=[
-  [.11,.22,.39,.61,.82,.96,1,.97,.91,.78,.58,.34,.14],
-  [.08,.15,.31,.52,.72,.88,.98,1,.96,.84,.65,.39,.1],
-  [.08,.16,.34,.56,.78,.94,1,1,.94,.79,.57,.33,.1],
-  [.1,.24,.45,.7,.89,1,1,.97,.9,.74,.53,.28,.1],
-  [.09,.2,.38,.58,.77,.92,1,.97,.87,.72,.5,.28,.1],
-  [.1,.2,.42,.65,.87,1,.98,.94,.83,.67,.46,.25,.1],
-  [.1,.2,.4,.62,.82,.96,1,.98,.9,.75,.54,.3,.1]
+ const silhouettes=[
+  [.16,.27,.46,.68,.88,1,1.03,1.01,.95,.83,.68,.48,.27,.13],
+  [.12,.2,.37,.57,.77,.91,.98,1,.98,.91,.78,.58,.33,.11],
+  [.12,.22,.41,.64,.83,.96,1,1,.98,.91,.76,.53,.3,.12],
+  [.12,.24,.46,.72,.91,1,1.03,1.02,.96,.84,.65,.43,.22,.08],
+  [.14,.25,.44,.66,.85,.97,1,1,.96,.86,.7,.49,.28,.12],
+  [.14,.27,.49,.73,.92,1,1,.97,.91,.78,.62,.42,.23,.1],
+  [.14,.26,.46,.67,.84,.96,1,1,.95,.85,.69,.47,.27,.12]
  ];
- const profile=profiles[k];
- // 14-sided anatomical section: planar dorsal ridge, broad cheeks, narrow belly.
- const cross=[[1,0],[.91,.39],[.65,.77],[.26,1],[-.24,1],[-.65,.77],[-.91,.39],[-1,0],[-.91,-.39],[-.65,-.77],[-.24,-1],[.26,-1],[.65,-.77],[.91,-.39]];
- const facets=cross.length;
- // 13 fixed longitudinal slices, joined only by flat triangles.
- for(let i=0;i<profile.length;i++){
-  const u=i/(profile.length-1),x=-p.l+2*p.l*u;
-  let h=p.h*profile[i]*(k===3?1.13:1),w=p.w*profile[i];
-  if(k===5&&i>=6&&i<=9)h*=1.07;
-  if(k===1&&i>=3&&i<=8)w*=.88;
-  // Character proportions are sculpted into the mesh, not glued on.
-  if(i>=8&&i<=10){w*=k===5?1.2:1.13;h*=k===3?1.04:1.025;}
-  if(i===11){w*=.92;h*=.95;}
-  for(let j=0;j<facets;j++){
-   const v=cross[j];
-   // Discrete polygonal gill notch, cut into the cheek vertices.
-   const cut=(i===8&&(j===2||j===3||j===7||j===8))?.88:1;
-   positions.push(x,h*v[0],w*v[1]*cut);
-   uvs.push(u,j/facets);
+ const profile=silhouettes[k],positions=[],uvs=[],indices=[];
+ // Octagonal cross-sections with distinct planes, gentle overall silhouette.
+ const section=[[1,0],[.72,.72],[0,1],[-.72,.72],[-1,0],[-.72,-.72],[0,-1],[.72,-.72]];
+ const sides=section.length,last=profile.length-1;
+ for(let i=0;i<=last;i++){
+  const u=i/last,x=-p.l+2*p.l*u;
+  let fullness=profile[i],h=p.h*fullness,w=p.w*fullness;
+  // Butterflyfish are taller, tangs flatter, cardinalfish deep-bodied.
+  if(k===3)h*=1.14;
+  if(k===5)h*=1.07;
+  if(k===1||k===2)w*=.91;
+  // Cute silhouette comes from the forehead and cheeks, not facial stickers.
+  if(i>=9&&i<=11){w*=1.12;h*=1.035;}
+  for(let j=0;j<sides;j++){
+   const [vy,vz]=section[j];
+   const brow=(i===10||i===11)&&vy>0?.035:0;
+   const chin=(i===11&&vy<0)?.025:0;
+   positions.push(x,h*vy+brow-chin,w*vz);
+   uvs.push(u,j/sides);
   }
  }
- for(let i=0;i<profile.length-1;i++)for(let j=0;j<facets;j++){
-  const n=i*facets+j,next=i*facets+(j+1)%facets;
-  indices.push(n,next,n+facets,next,next+facets,n+facets);
+ for(let i=0;i<last;i++)for(let j=0;j<sides;j++){
+  const a=i*sides+j,b=i*sides+(j+1)%sides,c=(i+1)*sides+j,d=(i+1)*sides+(j+1)%sides;
+  indices.push(a,b,c,b,d,c);
  }
- const back=positions.length/3;positions.push(-p.l,0,0);uvs.push(0,.5);
- const front=positions.length/3;positions.push(p.l,0,0);uvs.push(1,.5);
- for(let j=0;j<facets;j++){
-  indices.push(back,(j+1)%facets,j);
-  const n=(profile.length-1)*facets+j;
-  indices.push(front,n,(profile.length-1)*facets+(j+1)%facets);
+ const rear=positions.length/3;positions.push(-p.l,0,0);uvs.push(0,.5);
+ const nose=positions.length/3;positions.push(p.l,0,0);uvs.push(1,.5);
+ for(let j=0;j<sides;j++){
+  indices.push(rear,(j+1)%sides,j);
+  const n=last*sides+j;indices.push(nose,n,last*sides+(j+1)%sides);
  }
- let geo=new T.BufferGeometry();
- geo.setAttribute('position',new T.Float32BufferAttribute(positions,3));
- geo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));
- geo.setIndex(indices);geo=geo.toNonIndexed();geo.computeVertexNormals();return geo;
+ let geometry=new T.BufferGeometry();
+ geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));
+ geometry.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));
+ geometry.setIndex(indices);
+ geometry=geometry.toNonIndexed();
+ geometry.computeVertexNormals();
+ return geometry;
 }
 function finShape(points){
  const shape=new T.Shape();
@@ -1272,7 +1274,7 @@ const eyeGeo=new T.OctahedronGeometry(.075,0);
 // Calm, storybook reef fish: Abyssrium-like proportions, original polygon-only meshes.
 function createFish(k,i){
  const g=new T.Group();scene.add(g);
- const p=fishProfiles[k],size=[.38,.43,.41,.38,.33,.32,.43][k]*(.9+(i%4)*.035);
+ const p=fishProfiles[k],size=[.39,.43,.41,.38,.34,.33,.43][k]*(.9+(i%4)*.035);
  const main=mat(colors[k],.68),dark=mat(0x263044,.65),ivory=mat(0xfff4e2,.42);
  const finMat=new T.MeshStandardMaterial({color:colors[k],roughness:.7,transparent:true,opacity:.86,side:T.DoubleSide,depthWrite:false,flatShading:true});
  // The silhouette is the character: plump forehead, tiny snout, tapering tail.
@@ -1295,12 +1297,12 @@ function createFish(k,i){
  const iris=mat(k===1?0x344e74:k===5?0x70513f:0x483c38,.32);
  const black=mat(0x151d2b,.24);
  for(const side of [-1,1]){
-  const z=side*p.w*.89;
-  const eye=mesh(new T.OctahedronGeometry(.091,0),iris,g,p.l*.69,p.h*.16,z);
-  eye.scale.set(1,1,.55);
-  const pupil=mesh(new T.OctahedronGeometry(.063,0),black,g,p.l*.707,p.h*.16,z+side*.04);
-  pupil.scale.set(1,1,.52);
-  const shine=mesh(new T.TetrahedronGeometry(.022),ivory,g,p.l*.697,p.h*.188,z+side*.073);
+  const z=side*p.w*.95;
+  const eye=mesh(new T.OctahedronGeometry(.115,0),iris,g,p.l*.73,p.h*.17,z);
+  eye.scale.set(1.02,1.08,.6);
+  const pupil=mesh(new T.OctahedronGeometry(.083,0),black,g,p.l*.747,p.h*.17,z+side*.055);
+  pupil.scale.set(1,1.05,.54);
+  const shine=mesh(new T.TetrahedronGeometry(.027),ivory,g,p.l*.733,p.h*.208,z+side*.101);
   shine.scale.set(.7,.75,.45);
   const gill=mesh(polygonRing(.16,.008,7,Math.PI*.8),main,g,p.l*.38,-.075,side*p.w*.88);
   gill.rotation.z=-.18;
