@@ -912,6 +912,51 @@ document.addEventListener('dblclick',function(e){e.preventDefault()});
 #game #scene{position:relative!important;overflow:hidden!important;contain:layout paint!important}
 #game #scene canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;image-rendering:auto!important;object-fit:fill!important;transform:none!important}
 </style>
+<style id="aquaria-dream-ui">
+/* Dreamlike, restrained glass HUD. Visual layer only: preserve gameplay and 3D scene. */
+:root{--deep:#081a32;--panel:#152e4a;--edge:#89b7d0;--mint:#bcefe8;--sand:#ffdfbd;--text:#f1f8ff}
+body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Segoe UI",sans-serif!important;background:#081a32!important;color:#f1f8ff!important;letter-spacing:-.015em}
+header{top:env(safe-area-inset-top,0px)!important;left:0!important;right:0!important;padding:17px 18px 12px!important;background:linear-gradient(180deg,#06182dba,#071d3200)!important;z-index:28!important}
+header h1{font-family:Georgia,"Times New Roman",serif!important;font-size:clamp(22px,4vw,30px)!important;letter-spacing:.22em!important;font-weight:500!important;color:#f1fbff!important;text-shadow:0 2px 18px #b3e6ff7a!important}
+header h1::first-letter{color:#e7d7ff}
+#game .tank{background:radial-gradient(ellipse at 52% 12%,#5799b6 0%,#205b7e 36%,#0b294c 77%,#071a35 100%)!important;box-shadow:inset 0 0 115px #071e47aa!important}
+#game .tank:before{background:linear-gradient(110deg,#ffffff0a,transparent 32%,#bce9ff08 54%,transparent 75%)!important}
+#game .gameStats{top:calc(env(safe-area-inset-top,0px) + 67px)!important;right:14px!important;gap:7px!important;z-index:24!important}
+#game .gameStats div{min-width:77px!important;padding:9px 10px!important;border:1px solid #c8edff46!important;border-radius:16px!important;background:linear-gradient(155deg,#204664a8,#0a203b9c)!important;box-shadow:inset 0 1px #ffffff23,0 8px 28px #03112630!important;backdrop-filter:blur(20px) saturate(125%)!important;-webkit-backdrop-filter:blur(20px) saturate(125%)!important;font-size:10px!important;color:#c6e5f2!important;line-height:1.5!important}
+#game .gameStats div span{display:block;white-space:nowrap;letter-spacing:.02em}
+#game .gameStats strong{display:block;font-family:Georgia,serif;font-size:22px!important;font-weight:500;color:#fff1d7!important;line-height:1.3}
+#game .oceanHudBottom{position:fixed!important;top:calc(env(safe-area-inset-top,0px) + 144px)!important;right:14px!important;z-index:24!important;width:235px!important;padding:10px 13px!important;background:#0a2340a8!important;border:1px solid #b4dffb36!important;border-radius:15px!important;backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important;box-shadow:0 8px 22px #03112320!important}
+#game .oceanLevel{display:flex!important;justify-content:space-between!important;gap:8px!important;align-items:center!important;font-size:10px!important;color:#cdebf2!important}
+#game .oceanClean{font-size:10px!important;white-space:nowrap}
+#game .oceanClean strong{color:#ffe7cb!important}
+#game .gameBar{position:static!important;top:auto!important;right:auto!important;width:100%!important;height:5px!important;margin:8px 0 0!important;border:0!important;border-radius:20px!important;background:#ffffff24!important;overflow:hidden!important}
+#game .gameBar span{border-radius:20px!important;background:linear-gradient(90deg,#8cdded,#d2b9f5,#ffe0c4)!important;box-shadow:0 0 10px #c3e8ff75!important}
+#game .row.game-actions-primary,#game .row.game-actions-secondary{border:1px solid #c1e6f742!important;border-radius:22px!important;background:linear-gradient(145deg,#15344bcf,#091f38dd)!important;box-shadow:0 12px 36px #020c1c70,inset 0 1px #ffffff1b!important;backdrop-filter:blur(22px) saturate(130%)!important;-webkit-backdrop-filter:blur(22px) saturate(130%)!important}
+#game .row.game-actions-primary{bottom:calc(env(safe-area-inset-bottom,0px) + 11px)!important;padding:9px!important;gap:8px!important;width:min(95vw,620px)!important}
+#game .row.game-actions-secondary{bottom:calc(env(safe-area-inset-bottom,0px) + 88px)!important;padding:6px!important;gap:7px!important;width:min(86vw,480px)!important}
+#game .row.game-actions-primary button,#game .row.game-actions-secondary button{border:1px solid #b9e3f63b!important;border-radius:15px!important;background:linear-gradient(160deg,#3667839c,#1a39569c)!important;color:#f4fbff!important;box-shadow:inset 0 1px #ffffff25!important;font-weight:500!important;letter-spacing:-.025em!important;text-shadow:0 1px 2px #0b243d!important;transition:background .2s,transform .18s,box-shadow .18s!important}
+#game .row.game-actions-primary button{min-height:53px!important;font-size:clamp(10px,2.55vw,13px)!important}
+#game .row.game-actions-secondary button{min-height:38px!important;font-size:clamp(10px,2.5vw,12px)!important;background:#27445c77!important}
+#game .row button:active{transform:scale(.96)!important;box-shadow:inset 0 1px 5px #051c36!important}
+#notice{bottom:calc(env(safe-area-inset-bottom,0px) + 151px)!important;padding:7px 16px!important;border:1px solid #c8ecff28!important;border-radius:100px!important;background:#0a244199!important;color:#dceefa!important;font-size:11px!important;letter-spacing:.01em!important;backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important;box-shadow:0 5px 22px #0210243b!important}
+#scene .view-switch{top:calc(env(safe-area-inset-top,0px) + 13px)!important;right:14px!important;z-index:31!important;min-height:36px!important;border:1px solid #c5edfa5e!important;border-radius:100px!important;padding:8px 14px!important;background:#0d2c48b8!important;color:#eafaff!important;box-shadow:0 6px 22px #07162a48,inset 0 1px #ffffff22!important;backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important;font-size:12px!important}
+#scene .three-hint{bottom:calc(env(safe-area-inset-bottom,0px) + 202px)!important;border:1px solid #d0f1ff20!important;background:#0a23408c!important;color:#d4e8f6!important;backdrop-filter:blur(8px)!important;font-size:10px!important}
+button:focus-visible{outline:2px solid #e6d5ff!important;outline-offset:3px!important}
+@media(max-width:520px){
+ header{padding:13px 13px 10px!important}
+ header h1{font-size:21px!important;letter-spacing:.15em!important}
+ #game .gameStats{top:calc(env(safe-area-inset-top,0px) + 56px)!important;right:8px!important;gap:5px!important}
+ #game .gameStats div{min-width:62px!important;padding:6px 7px!important;border-radius:13px!important;font-size:9px!important}
+ #game .gameStats strong{font-size:17px!important}
+ #game .oceanHudBottom{top:calc(env(safe-area-inset-top,0px) + 121px)!important;right:8px!important;width:205px!important;padding:8px 11px!important}
+ #game .row.game-actions-primary{width:calc(100vw - 16px)!important;padding:7px!important;gap:5px!important;border-radius:19px!important}
+ #game .row.game-actions-secondary{width:min(90vw,430px)!important;bottom:calc(env(safe-area-inset-bottom,0px) + 85px)!important}
+ #notice{bottom:calc(env(safe-area-inset-bottom,0px) + 146px)!important;max-width:92vw!important}
+ #scene .view-switch{right:9px!important;top:calc(env(safe-area-inset-top,0px) + 10px)!important;padding:7px 10px!important;font-size:11px!important}
+}
+@media(max-height:650px){#notice{display:none!important}#game .row.game-actions-secondary{bottom:calc(env(safe-area-inset-bottom,0px) + 75px)!important}}
+@media(prefers-reduced-motion:reduce){#game .row button{transition:none!important}}
+</style>
 <style id="aquaria-3d-style">
 #scene .view-switch{position:absolute;top:12px;right:12px;z-index:30;min-height:34px;padding:5px 11px;border:1px solid #9be9df;border-radius:18px;background:#0a3449df;color:#e8fffb;font-size:12px;box-shadow:0 2px 9px #041b30}
 #scene .three-world{position:absolute;inset:0;z-index:12;display:none;overflow:hidden;touch-action:none}
