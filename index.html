@@ -925,23 +925,7 @@ const host=document.getElementById('scene');if(!host)return;
 const button=document.createElement('button');button.className='view-switch';button.textContent='◈ 3D 보기';button.type='button';host.append(button);
 const layer=document.createElement('div');layer.className='three-world';host.append(layer);
 const hint=document.createElement('div');hint.className='three-hint';hint.textContent='드래그: 360° 회전 · 두 손가락: 확대/이동';layer.append(hint);
-let showcase=false;let initialized=false,active=false,renderer,scene,camera,start3DFrame=null,fish=[],orbit={theta:0,phi:1.32,radius:14,targetY:2.8},pointer=new Map(),lastDistance=0;
-const speciesNames=['흰동가리','블루탱','옐로탱','나비고기','로열 그라마','카디널피시','라이언피시'];
-const galleryButton=document.createElement('button');
-galleryButton.type='button';galleryButton.textContent='🐠 7종 한눈에';
-galleryButton.style.cssText='position:absolute;right:12px;top:12px;z-index:18;border:1px solid #a4e7e1;border-radius:18px;background:#103b51e8;color:#eafff7;padding:9px 12px;font-size:12px;cursor:pointer';
-layer.append(galleryButton);
-const galleryLegend=document.createElement('div');
-galleryLegend.style.cssText='position:absolute;top:53px;right:12px;z-index:18;background:#092b45dc;border:1px solid #5a9caa;border-radius:12px;padding:8px 11px;color:#eafff7;font-size:11px;line-height:1.7;display:none;pointer-events:none';
-galleryLegend.textContent=speciesNames.map((name,i)=>(i+1)+'. '+name).join('　');
-galleryLegend.style.maxWidth='260px';
-layer.append(galleryLegend);
-galleryButton.addEventListener('click',()=>{
- showcase=!showcase;
- galleryButton.textContent=showcase?'↩ 자유 수족관':'🐠 7종 한눈에';
- galleryLegend.style.display=showcase?'block':'none';
- if(showcase){orbit.theta=0;orbit.phi=1.28;orbit.radius=13;orbit.targetY=3.0;syncFish();updateCamera();}
-});
+let initialized=false,active=false,renderer,scene,camera,start3DFrame=null,fish=[],orbit={theta:0,phi:1.32,radius:14,targetY:2.8},pointer=new Map(),lastDistance=0;
 const colors=[0xf17d35,0x256dce,0xf3d347,0xf2e5b0,0x9255bc,0xe8e5d8,0xb87565];
 // Modern Three.js is an ES module; the old three.min.js URL no longer exists.
 async function load(){
@@ -1367,7 +1351,7 @@ function createFish(k,i){
  fish.push({g,tail:tailPivot,fin:finPivot,oppositeFin,k,phase:i*1.6,angle,radius:2.15+(i%5)*.42,height:2.25+(i%4)*.65,speed:[.00017,.0003,.00021,.00018,.00026,.00012,.0001][k]});
 }
 function syncFish(){
- const count=showcase?7:Math.min(38,Math.max(0,Number((window.state||{}).virtual)||Number(document.getElementById('population')?.textContent)||5));
+ const count=Math.min(38,Math.max(0,Number((window.state||{}).virtual)||Number(document.getElementById('population')?.textContent)||5));
  while(fish.length<count)createFish(fish.length%7,fish.length);
  while(fish.length>count){const f=fish.pop();scene.remove(f.g)}
 }
@@ -1401,17 +1385,6 @@ function frame(t){
   j.group.scale.setScalar((.7+(Math.round(j.phase/2.1)%3)*.12)*pulse);
  }
  for(const f of fish){
- if(showcase){
-  const n=f.k;
-  const x=(n%4-1.5)*1.8+(n>=4?.85:0);
-  const y=n<4?4.05:2.65;
-  f.g.position.set(x,y,0);
-  f.g.rotation.set(0,-.28+Math.sin(t*.0007+f.phase)*.12,0);
-  f.tail.rotation.y=Math.sin(t*.012+f.phase)*.26;
-  f.fin.rotation.x=Math.sin(t*.017+f.phase)*.25;
-  f.oppositeFin.rotation.x=-Math.sin(t*.017+f.phase)*.25;
-  continue;
- }
  const a=f.angle+t*f.speed;
  const r=f.radius+Math.sin(t*.00037+f.phase)*.23;
  f.g.position.set(Math.cos(a)*r,f.height+Math.sin(t*.0018+f.phase)*.13,Math.sin(a)*r);
