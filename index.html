@@ -526,7 +526,7 @@ function touchFishAt(clientX,clientY){
  target.ty=Math.max(80,Math.min(306,target.y-12-Math.random()*22));
  target.swimRate=2.2;target.waitUntil=0;
  const reward=window.aquariaFishTouched?.()||0;
- if(reward){target.rewardText='+'+reward+' 🪙';target.rewardUntil=performance.now()+1250;}
+ if(reward){target.rewardText='🪙 '+reward+'코인 획득!';target.rewardUntil=performance.now()+1250;}
 }
 canvas.addEventListener('click',e=>touchFishAt(e.clientX,e.clientY));
 const visibleFood=[];
@@ -1050,7 +1050,7 @@ f.dir=newDir;
 f.x=clamp(f.x,17,W-17);f.y=clamp(f.y,75,311);
 fishDraw(f,t);
 if(f.rewardUntil>t){
- ctx.fillStyle='#ffe9a5';ctx.font='bold 9px sans-serif';ctx.fillText(f.rewardText,f.x-11,f.y-24-(1-(f.rewardUntil-t)/1250)*12);
+ ctx.fillStyle='#ffe9a5';ctx.font='bold 8px sans-serif';ctx.fillText(f.rewardText,f.x+9,f.y-13-(1-(f.rewardUntil-t)/1250)*8);
 }
 if(f.touchUntil>t){
  const pulse=(f.touchUntil-t)/1100;
@@ -1756,7 +1756,7 @@ function frame(t){
  for(let i=floatingHearts.length-1;i>=0;i--){
   const h=floatingHearts[i],age=(t-h.born)/(h.heart?950:1250);
   if(age>=1){h.el.remove();floatingHearts.splice(i,1);continue;}
-  const p=h.heart&&h.fish?.g?h.fish.g.position.clone().add(new window.THREE.Vector3(0,.42+age*.38,0)):h.base.clone().add(new window.THREE.Vector3(h.offset*.24,age*.85,0));
+  const p=h.heart&&h.fish?.g?h.fish.g.position.clone().add(new window.THREE.Vector3(0,.42+age*.38,0)):h.coin&&h.fish?.g?h.fish.g.position.clone().add(new window.THREE.Vector3(.85,.42+age*.38,0)):h.base.clone().add(new window.THREE.Vector3(h.offset*.24,age*.85,0));
   p.project(camera);
   if(p.z>1||p.z< -1){h.el.style.display='none';continue;}
   h.el.style.display='block';
@@ -1935,7 +1935,7 @@ layer.addEventListener('pointerup',e=>{
    if(distance<nearest){nearest=distance;touched=f;}
   }
  }
- if(touched){touched.behavior='burst';touched.behaviorUntil=performance.now()+900;touched.nextTurn=0;spawnFishHearts(touched);const reward=window.aquariaFishTouched?.()||0;if(reward){const p=touched.g.position.clone();p.y+=.7;const el=document.createElement('span');el.className='aquaria-floating-heart aquaria-coin-popup';el.textContent='+'+reward+' 🪙';heartLayer.append(el);floatingHearts.push({el,fish:touched,born:performance.now(),offset:0,base:p});}}
+ if(touched){touched.behavior='burst';touched.behaviorUntil=performance.now()+900;touched.nextTurn=0;spawnFishHearts(touched);const reward=window.aquariaFishTouched?.()||0;if(reward){const p=touched.g.position.clone();p.y+=.7;const el=document.createElement('span');el.className='aquaria-floating-heart aquaria-coin-popup';el.textContent='🪙 '+reward+'코인 획득!';heartLayer.append(el);floatingHearts.push({el,fish:touched,born:performance.now(),offset:0,base:p,coin:true});}}
 });
 layer.addEventListener('pointerdown',e=>{layer.setPointerCapture(e.pointerId);pointer.set(e.pointerId,{x:e.clientX,y:e.clientY});lastDistance=0});
 layer.addEventListener('pointermove',e=>{
