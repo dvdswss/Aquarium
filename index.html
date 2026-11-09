@@ -132,8 +132,20 @@ function openAquariaMissions(){
  });
  panel.hidden=false;
 }
+let aquariaLastTouchReward=0;
 window.aquariaFishTouched=function(){
  aquariaMissionProgress('touch');
+ // Shared 2D/3D reward table. A short cooldown prevents tap farming.
+ const now=Date.now();
+ if(now-aquariaLastTouchReward<2500)return 0;
+ aquariaLastTouchReward=now;
+ const roll=Math.random();
+ const reward=roll<.02?25:roll<.10?10:roll<.35?3:0;
+ if(reward){
+  state.coins=(Number(state.coins)||0)+reward;
+  save();
+ }
+ return reward;
 };
 const aquariaFishCatalog=[['흰동가리',20],['블루탱',40],['옐로탱',65],['나비고기',100],['로열 그라마',150],['카디널피시',230],['라이언피시',350]];
 // Food groups: omnivore, algae grazer, plankton picker and carnivore.
@@ -506,7 +518,8 @@ function touchFishAt(clientX,clientY){
  target.tx=Math.max(20,Math.min(W-20,target.x+(Math.random()-.5)*48));
  target.ty=Math.max(80,Math.min(306,target.y-12-Math.random()*22));
  target.swimRate=2.2;target.waitUntil=0;
- window.aquariaFishTouched?.();
+ const reward=window.aquariaFishTouched?.()||0;
+ if(reward){target.rewardText='+'+reward+' 🪙';target.rewardUntil=performance.now()+1250;}
 }
 canvas.addEventListener('click',e=>touchFishAt(e.clientX,e.clientY));
 const visibleFood=[];
@@ -1029,6 +1042,9 @@ f.dir=newDir;
 }
 f.x=clamp(f.x,17,W-17);f.y=clamp(f.y,75,311);
 fishDraw(f,t);
+if(f.rewardUntil>t){
+ ctx.fillStyle='#ffe9a5';ctx.font='bold 9px sans-serif';ctx.fillText(f.rewardText,f.x-11,f.y-24-(1-(f.rewardUntil-t)/1250)*12);
+}
 if(f.touchUntil>t){
  const pulse=(f.touchUntil-t)/1100;
  ctx.fillStyle='rgba(255,207,232,'+(pulse*.85)+')';
@@ -1890,7 +1906,7 @@ layer.addEventListener('pointerup',e=>{
  const hit=ray.intersectObjects(fish.map(f=>f.g),true)[0];
  if(!hit)return;
  const touched=fish.find(f=>{let obj=hit.object;while(obj){if(obj===f.g)return true;obj=obj.parent;}return false;});
- if(touched){touched.behavior='burst';touched.behaviorUntil=performance.now()+900;touched.nextTurn=0;spawnFishHearts(touched);window.aquariaFishTouched?.();}
+ if(touched){touched.behavior='burst';touched.behaviorUntil=performance.now()+900;touched.nextTurn=0;spawnFishHearts(touched);const reward=window.aquariaFishTouched?.()||0;if(reward){const p=touched.g.position.clone();p.y+=.7;const el=document.createElement('span');el.className='aquaria-floating-heart';el.textContent='+'+reward+' 🪙';el.style.color='#ffe7a0';heartLayer.append(el);floatingHearts.push({el,fish:touched,born:performance.now(),offset:0,base:p});}}
 });
 layer.addEventListener('pointerdown',e=>{layer.setPointerCapture(e.pointerId);pointer.set(e.pointerId,{x:e.clientX,y:e.clientY});lastDistance=0});
 layer.addEventListener('pointermove',e=>{
