@@ -1010,7 +1010,33 @@ header h1{font-size:18px!important;letter-spacing:.11em!important;opacity:.83}
 #scene.is-3d>canvas{visibility:hidden}
 #scene .three-hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:15;pointer-events:none;color:#e5faff;background:#092b45b8;padding:6px 10px;border-radius:20px;font-size:11px;white-space:nowrap}
 </style>
-<script id="aquaria-3d-world">
+<style id="aquaria-screen-space-fix">
+/* Override legacy stacked layout: the tank fills the viewport, controls float above it. */
+html body #game .pixel-game{position:fixed!important;inset:0!important;display:block!important;width:100vw!important;height:100dvh!important;min-height:0!important;max-height:none!important;padding:0!important;margin:0!important;overflow:hidden!important;background:transparent!important}
+html body #game .pixel-game>#scene.tank{position:absolute!important;inset:0!important;display:block!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important}
+html body #game .pixel-game>.pixel-controls{position:absolute!important;inset:0!important;display:block!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;background:transparent!important;overflow:visible!important;pointer-events:none!important;z-index:22!important}
+html body #game .pixel-controls>.oceanHud{position:absolute!important;top:auto!important;bottom:calc(env(safe-area-inset-bottom,0px) + 67px)!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important;display:flex!important;flex-direction:row!important;align-items:center!important;gap:8px!important;width:max-content!important;max-width:calc(100vw - 22px)!important;height:auto!important;min-height:0!important;padding:6px 10px!important;border:1px solid #cceaff3a!important;border-radius:13px!important;background:#071c31b9!important;box-shadow:0 3px 18px #03111f35!important;backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important;pointer-events:none!important}
+html body #game .pixel-controls .oceanHud>.gameStats{position:static!important;inset:auto!important;display:flex!important;grid-template-columns:none!important;gap:10px!important;width:auto!important;min-width:0!important;max-width:none!important;height:auto!important;margin:0!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important;transform:none!important}
+html body #game .pixel-controls .gameStats>div{display:flex!important;flex-direction:row!important;align-items:center!important;gap:4px!important;min-width:0!important;min-height:0!important;height:auto!important;padding:0!important;border:0!important;background:none!important;box-shadow:none!important;font-size:10px!important}
+html body #game .pixel-controls .gameStats span{display:inline!important;font-size:10px!important;white-space:nowrap!important}
+html body #game .pixel-controls .gameStats strong{display:inline!important;font-size:13px!important;font-weight:600!important;line-height:1!important}
+html body #game .pixel-controls .oceanHud>.oceanHudBottom{position:static!important;inset:auto!important;display:block!important;flex:none!important;width:95px!important;min-width:0!important;height:auto!important;margin:0!important;padding:0 0 0 8px!important;border:0!important;border-left:1px solid #ffffff35!important;background:none!important;box-shadow:none!important;transform:none!important;opacity:1!important}
+html body #game .pixel-controls .oceanHudBottom .oceanLevel{display:flex!important;gap:5px!important;justify-content:space-between!important;align-items:center!important;font-size:9px!important;line-height:1.2!important;white-space:nowrap!important}
+html body #game .pixel-controls .oceanHudBottom .oceanClean{font-size:8px!important;white-space:nowrap!important}
+html body #game .pixel-controls .oceanHudBottom .gameBar{position:static!important;width:100%!important;height:3px!important;min-height:3px!important;margin:4px 0 0!important;padding:0!important;border:0!important;border-radius:4px!important;background:#ffffff30!important}
+html body #game .pixel-controls .aquaria-quick,html body #game .pixel-controls .aquaria-drawer{pointer-events:auto!important;bottom:calc(env(safe-area-inset-bottom,0px) + 10px)!important}
+html body #game .pixel-controls .aquaria-quick button,html body #game .pixel-controls .aquaria-drawer summary{min-height:38px!important;padding:0 12px!important;font-size:11px!important}
+html body #game .pixel-controls #notice{display:none!important}
+@media(max-width:390px){
+ html body #game .pixel-controls>.oceanHud{gap:5px!important;padding:5px 7px!important}
+ html body #game .pixel-controls .oceanHud>.gameStats{gap:6px!important}
+ html body #game .pixel-controls .gameStats>div{gap:2px!important}
+ html body #game .pixel-controls .gameStats span{font-size:9px!important}
+ html body #game .pixel-controls .gameStats strong{font-size:12px!important}
+ html body #game .pixel-controls .oceanHud>.oceanHudBottom{width:77px!important;padding-left:5px!important}
+ html body #game .pixel-controls .oceanHudBottom .oceanClean{display:none!important}
+}
+</style><script id="aquaria-3d-world">
 (function(){
 const host=document.getElementById('scene');if(!host)return;
 const button=document.createElement('button');button.className='view-switch';button.textContent='◈ 3D 보기';button.type='button';host.append(button);
