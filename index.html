@@ -885,7 +885,11 @@ f.x=clamp(f.x,17,W-17);f.y=clamp(f.y,75,311);
 fishDraw(f,t);
 });
 }
-let last=0;function frame(t){requestAnimationFrame(frame);if(document.hidden||t-last<32)return;last=t;resizeScene();ctx.save();ctx.translate(canvas.width/2,canvas.height/2);ctx.scale(camera.zoom, camera.zoom);ctx.translate(-camera.x*canvas.width/W,-camera.y*canvas.height/H);draw(t);ctx.restore()}
+let last=0;function frame(t){requestAnimationFrame(frame);if(document.hidden||t-last<32)return;last=t;resizeScene();ctx.save();
+// Keep the canvas backing transform fixed on iOS; zoom only logical world coordinates.
+ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);
+ctx.translate(W/2,H/2);ctx.scale(camera.zoom,camera.zoom);ctx.translate(-camera.x,-camera.y);
+draw(t);ctx.restore()}
 requestAnimationFrame(frame);
 })();
 </script><style id="aquaria-no-zoom-drag">
@@ -912,7 +916,7 @@ document.addEventListener('dblclick',function(e){e.preventDefault()});
 #scene .view-switch{position:absolute;top:12px;right:12px;z-index:30;min-height:34px;padding:5px 11px;border:1px solid #9be9df;border-radius:18px;background:#0a3449df;color:#e8fffb;font-size:12px;box-shadow:0 2px 9px #041b30}
 #scene .three-world{position:absolute;inset:0;z-index:12;display:none;overflow:hidden;touch-action:none}
 #scene.is-3d .three-world{display:block}
-#scene.is-3d>canvas:not(.three-world canvas){visibility:hidden}
+#scene.is-3d>canvas{visibility:hidden}
 #scene .three-hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:15;pointer-events:none;color:#e5faff;background:#092b45b8;padding:6px 10px;border-radius:20px;font-size:11px;white-space:nowrap}
 </style>
 <script id="aquaria-3d-world">
@@ -923,12 +927,12 @@ const layer=document.createElement('div');layer.className='three-world';host.app
 const hint=document.createElement('div');hint.className='three-hint';hint.textContent='드래그: 360° 회전 · 두 손가락: 확대/이동';layer.append(hint);
 let initialized=false,active=false,renderer,scene,camera,fish=[],orbit={theta:0,phi:1.32,radius:17,targetY:2.2},pointer=new Map(),lastDistance=0;
 const colors=[0xf17d35,0x256dce,0xf3d347,0xf2e5b0,0x9255bc,0xe8e5d8,0xb87565];
-const THREE_URL='https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js';
-function load(){
-return new Promise((resolve,reject)=>{
- if(window.THREE)return resolve(window.THREE);
- const script=document.createElement('script');script.src=THREE_URL;script.onload=()=>window.THREE?resolve(window.THREE):reject(Error('3D library missing'));script.onerror=reject;document.head.append(script);
-});
+// Modern Three.js is an ES module; the old three.min.js URL no longer exists.
+async function load(){
+ if(window.THREE)return window.THREE;
+ const T=await import('https://esm.sh/three@0.160.1?bundle');
+ window.THREE=T;
+ return T;
 }
 function build(){
 const T=window.THREE;
@@ -1044,7 +1048,7 @@ button.addEventListener('click',async()=>{
  if(active){active=false;host.classList.remove('is-3d');button.textContent='◈ 3D 보기';return}
  button.textContent='3D 불러오는 중…';button.disabled=true;
  try{await load();if(!initialized)build();active=true;host.classList.add('is-3d');button.textContent='▤ 2D 보기';requestAnimationFrame(frame)}
- catch(err){button.textContent='3D 로딩 실패';console.error(err)}
+ catch(err){button.textContent='3D 재시도';console.error('AQUARIA 3D error:',err);hint.textContent='3D를 불러오지 못했어. 버튼을 다시 눌러줘.'}
  finally{button.disabled=false}
 });
 })();
