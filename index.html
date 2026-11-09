@@ -1353,7 +1353,7 @@ function createFish(k,i){
  fish.push({g,tail:tailPivot,fin:finPivot,oppositeFin,k,phase:i*1.6,
   velocity:new T.Vector3(Math.cos(angle+1),.06,Math.sin(angle+1)).multiplyScalar(.0006),
   target:new T.Vector3(startX,2+(i%5)*.7,startZ),nextTurn:0,
-  swimSpeed:[.00047,.00065,.00055,.00042,.00062,.00032,.00028][k],
+  swimSpeed:[.00078,.00115,.00102,.00076,.00094,.00048,.00043][k],
   lastSwim:0});
 }
 function syncFish(){
@@ -1399,8 +1399,8 @@ for(const f of fish){
  const homeX=[-2.6,0,0,2.5,-2.8,1.6,2.8][k];
  const homeZ=[1.8,0,0,-1.8,-2.1,1.3,1.9][k];
  const homeY=[2.0,4.0,3.7,2.7,2.0,3.0,1.8][k];
- const roam=[1.0,4.1,3.7,1.5,1.0,1.1,1.8][k];
- const cycle=t*.001+phase*2.4;
+ const roam=[1.35,4.1,4.0,2.1,1.4,1.35,2.1][k];
+ const cycle=t*.00145+phase*2.4;
  if(t>=f.nextTurn||pos.distanceToSquared(f.target)<(k===5?.08:.22)){
   const theta=cycle*1.17+Math.sin(cycle*.73)*2.4;
   let tx=homeX+Math.cos(theta)*roam*(.45+.5*Math.abs(Math.sin(cycle*.53)));
@@ -1425,12 +1425,12 @@ for(const f of fish){
   const planar=Math.hypot(tx,tz);
   if(planar>4.5){tx*=4.5/planar;tz*=4.5/planar;}
   f.target.set(tx,Math.max(1.2,Math.min(6.5,ty)),tz);
-  f.nextTurn=t+[1700,3700,3200,2400,2300,4800,5200][k]+450*Math.abs(Math.sin(cycle));
+  f.nextTurn=t+[1100,2400,2200,1550,1500,3200,3600][k]+300*Math.abs(Math.sin(cycle));
  }
  const desired=f.target.clone().sub(pos);
  const distance=desired.length();
  if(distance>.001){
-  const pause=(k===0||k===3||k===4)&&distance<.42?.38:1;
+  const pause=(k===0||k===3||k===4)&&distance<.3?.65:1;
   desired.normalize().multiplyScalar(f.swimSpeed*pause*(k===6?.65:1));
   // Nearby fish avoid overlapping while schooling species tolerate proximity.
   for(const other of fish){
@@ -1442,7 +1442,7 @@ for(const f of fish){
     desired.add(away);
    }
   }
-  f.velocity.lerp(desired,Math.min(.07,dt*.0026));
+  f.velocity.lerp(desired,Math.min(.11,dt*.0042));
  }
  pos.addScaledVector(f.velocity,dt);
  pos.y=Math.max(1.15,Math.min(6.6,pos.y));
@@ -1450,12 +1450,12 @@ for(const f of fish){
  if(horizontal>.000008){
   const heading=Math.atan2(-f.velocity.z,f.velocity.x);
   const delta=Math.atan2(Math.sin(heading-f.g.rotation.y),Math.cos(heading-f.g.rotation.y));
-  f.g.rotation.y+=delta*Math.min(.11,dt*.004);
+  f.g.rotation.y+=delta*Math.min(.16,dt*.006);
  }
  f.g.rotation.z=Math.sin(t*.0008+phase)*.025;
  f.g.rotation.x=Math.max(-.14,Math.min(.14,-f.velocity.y*85));
  const beat=t*[.023,.028,.025,.018,.026,.012,.009][k]+phase;
- f.tail.rotation.y=Math.sin(beat)*(k===5?.16:k===6?.18:.35);
+ f.tail.rotation.y=Math.sin(beat)*(k===5?.22:k===6?.24:.45);
  f.fin.rotation.x=Math.sin(beat*1.25)*.34;
  f.oppositeFin.rotation.x=-Math.sin(beat*1.25+1.1)*.34;
 }
