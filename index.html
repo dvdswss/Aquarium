@@ -981,7 +981,29 @@ button:focus-visible{outline:2px solid #cdebf6!important;outline-offset:2px!impo
 @media(max-width:520px){#game .aquaria-quick{left:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 13px)}#game .aquaria-drawer{right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 13px);width:min(330px,calc(100vw - 20px))}#game .aquaria-quick button,#game .aquaria-drawer summary{min-height:46px;padding-left:14px;padding-right:14px;font-size:12px}#notice{bottom:calc(env(safe-area-inset-bottom,0px) + 75px)!important}}
 @media(max-height:580px){#game .aquaria-drawer-content{padding:10px}#game .drawer-actions button{min-height:48px}#game .drawer-title{padding-bottom:6px}}
 </style>
-<style id="aquaria-3d-style">
+<style id="aquaria-view-clearance">
+/* Move nonessential overlays toward the edges and give the aquarium center back to the fish. */
+header{padding-top:calc(env(safe-area-inset-top,0px) + 5px)!important;padding-left:13px!important}
+header h1{font-size:18px!important;letter-spacing:.11em!important;opacity:.83}
+#game .gameStats{top:auto!important;bottom:calc(env(safe-area-inset-bottom,0px) + 74px)!important;right:10px!important;gap:10px!important;padding:6px 11px!important;border-radius:13px!important;background:#061a2bb0!important}
+#game .gameStats div span{font-size:9px!important}
+#game .gameStats strong{font-size:15px!important}
+#game .oceanHudBottom{top:auto!important;bottom:calc(env(safe-area-inset-bottom,0px) + 65px)!important;right:auto!important;left:12px!important;width:150px!important;opacity:.8}
+#game .oceanLevel{font-size:9px!important}
+#game .oceanClean{font-size:9px!important}
+#game .aquaria-quick{bottom:calc(env(safe-area-inset-bottom,0px) + 9px)!important;left:10px!important}
+#game .aquaria-drawer{bottom:calc(env(safe-area-inset-bottom,0px) + 9px)!important;right:10px!important}
+#game .aquaria-quick button,#game .aquaria-drawer summary{min-height:40px!important;padding:0 12px!important;font-size:11px!important}
+#notice{display:none!important}
+#scene .three-hint{display:none!important}
+#scene .view-switch{top:calc(env(safe-area-inset-top,0px) + 8px)!important;right:9px!important;min-height:31px!important;padding:5px 10px!important;font-size:10px!important}
+@media(max-width:420px){
+ #game .gameStats{bottom:calc(env(safe-area-inset-bottom,0px) + 65px)!important;gap:8px!important;padding:5px 8px!important}
+ #game .gameStats strong{font-size:13px!important}
+ #game .oceanHudBottom{bottom:calc(env(safe-area-inset-bottom,0px) + 61px)!important;width:132px!important}
+ #game .oceanClean{font-size:8px!important}
+}
+</style><style id="aquaria-3d-style">
 #scene .view-switch{position:absolute;top:12px;right:12px;z-index:30;min-height:34px;padding:5px 11px;border:1px solid #9be9df;border-radius:18px;background:#0a3449df;color:#e8fffb;font-size:12px;box-shadow:0 2px 9px #041b30}
 #scene .three-world{position:absolute;inset:0;z-index:12;display:none;overflow:hidden;touch-action:none}
 #scene.is-3d .three-world{display:block}
