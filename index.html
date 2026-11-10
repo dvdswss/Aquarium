@@ -291,9 +291,10 @@ function openAquariaDecorShop(category='해조류'){
  for(const group of ['해조류','산호','지형','보유 장식']){const b=document.createElement('button');b.textContent=group;b.style.opacity=group===category?'1':'.55';b.onclick=()=>openAquariaDecorShop(group);tabs.append(b)}list.append(tabs);
  aquariaDecorCatalog.forEach((item,kind)=>{
   const owned=state.decorations.filter(d=>d.kind===kind).length;
+  const isNew=state.lastDecorPurchase?.kind===kind&&Date.now()-state.lastDecorPurchase.at<86400000;
   if(category==='보유 장식'?!owned:item[0]!==category)return;
   const b=document.createElement('button');b.className='aquaria-shop-item';b.style.cssText='display:flex;align-items:center;gap:10px;width:100%;margin-bottom:8px';
-  b.innerHTML=aquariaDecorIcon(item)+'<span style="flex:1;text-align:left">'+item[1]+'<small style="display:block">보유 '+owned+'개 · 구매하면 수조에 배치</small></span><strong>구매 '+item[2]+' 🪙</strong>';
+  b.innerHTML=aquariaDecorIcon(item)+'<span style="flex:1;text-align:left">'+(isNew?'✨ NEW · ':'')+item[1]+'<small style="display:block">보유 '+owned+'개 · 구매하면 수조에 배치</small></span><strong>구매 '+item[2]+' 🪙</strong>';
   b.disabled=state.coins<item[2]||state.decorations.length>=80;
   if(b.disabled){b.style.opacity='.6';b.title=state.decorations.length>=80?'장식 공간이 가득 찼어':'코인이 부족해';}
   b.onclick=()=>buyAquariaDecor(kind,category);list.append(b);
@@ -311,7 +312,7 @@ function openAquariaDecorShop(category='해조류'){
 
 
 let aquariaDecorMoveIndex=null,aquariaDecorMoveOriginal=null;
-function startAquariaDecorMove(index){
+function startAquariaDecorMove(index,newPurchase=false){
  const d=aquariaDecorInit()[index];if(!d)return;
  aquariaDecorMoveIndex=index;aquariaDecorMoveOriginal=JSON.parse(JSON.stringify(d));
  document.getElementById('aquariaShop').hidden=true;
@@ -321,7 +322,9 @@ function startAquariaDecorMove(index){
  document.getElementById('aquariaDecorMoveDone').onclick=()=>finishAquariaDecorMove(true);
  document.getElementById('aquariaDecorMoveCancel').onclick=()=>finishAquariaDecorMove(false);
  }
- document.getElementById('aquariaDecorMoveName').textContent=aquariaDecorCatalog[d.kind][1]+' 위치 편집';
+ document.getElementById('aquariaDecorMoveName').textContent=(newPurchase?'✨ 방금 구매한 장식 · ':'')+aquariaDecorCatalog[d.kind][1]+' 위치 편집';
+ let preview=document.getElementById('aquariaDecorMovePreview');if(!preview){preview=document.createElement('div');preview.id='aquariaDecorMovePreview';document.getElementById('aquariaDecorMoveName').before(preview)}preview.innerHTML=aquariaDecorIcon(aquariaDecorCatalog[d.kind]);
+ document.getElementById('aquariaDecorMoveCancel').textContent=newPurchase?'기본 위치에 두기':'취소';
  bar.hidden=false;window.dispatchEvent(new Event('aquaria-decor-sync'));
 }
 function previewAquariaDecorMove(x,y,worldX,worldZ){
@@ -350,11 +353,12 @@ function aquariaDecorToast(message){
 function buyAquariaDecor(kind,category){
  const item=aquariaDecorCatalog[kind];aquariaDecorInit();
  if(!item||state.coins<item[2]||state.decorations.length>=80)return;
+ if(!window.confirm(item[1]+'을(를) '+item[2]+' 코인에 구매할까?\n구매 후 잔액: '+(state.coins-item[2])+' 코인\n구매하면 바로 위치를 정할 수 있어.'))return;
  const i=state.decorations.length;
  state.coins-=item[2];state.decorations.push({kind,x:.12+(i*.61803398875)% .76,y:.87+(i%4)*.023});
  state.lastDecorPurchase={kind,index:i,at:Date.now(),price:item[2]};
  state.plants=state.decorations.filter(d=>aquariaDecorCatalog[d.kind]?.[0]!=='지형').length;
- gainXP(3);save();window.dispatchEvent(new Event('aquaria-decor-sync'));openAquariaDecorShop(category);
+ gainXP(3);save();window.dispatchEvent(new Event('aquaria-decor-sync'));startAquariaDecorMove(i,true);
  aquariaDecorToast(item[1]+' 구매 완료 · −'+item[2]+' 코인 · 보유 '+state.decorations.filter(d=>d.kind===kind).length+'개');
 }
 aquariaDecorInit();
