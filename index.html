@@ -166,13 +166,13 @@ function aquariaRenderHunger(){
  const average=statuses.length?Math.round(statuses.reduce((n,h)=>n+h.value,0)/statuses.length):0;
  const lowest=statuses.length?Math.min(...statuses.map(h=>h.value)):100;
  root.dataset.danger=lowest<=0?'critical':lowest<=30?'hungry':'normal';
- root.querySelector('.hunger-summary').textContent=lives.length?'🍤 포만감 '+average+'% · '+aquariaHungerLabel(lowest):'🍤 물고기 없음';
+ root.querySelector('.hunger-summary').textContent=lives.length?'🍤 '+average+'%':'🍤 —';root.querySelector('summary').setAttribute('aria-label','전체 포만감 '+average+'% · '+aquariaHungerLabel(lowest)+' · 자세히 보기');
  const bar=root.querySelector('progress');bar.value=average;
  root.querySelector('.hunger-warning').textContent=!lives.length?'새 친구를 입양해 줘':lowest<=0?'⚠ 굶주리는 물고기가 있어! 지금 먹이를 줘':lowest<=30?'배가 고파! 먹이를 챙겨 줘':'먹이를 주면 포만감 +40%';
  const list=root.querySelector('.hunger-fish-list');list.replaceChildren();
  lives.forEach((f,i)=>{
   const h=statuses[i],row=document.createElement('div'),label=document.createElement('span'),meter=document.createElement('progress'),time=document.createElement('small');
-  label.textContent=(i+1)+'. '+(aquariaFishCatalog[f.kind]?.[0]||'물고기')+' · '+Math.round(h.value)+'% · '+aquariaHungerLabel(h.value);
+  label.textContent=(i+1)+'. '+(f.name||aquariaFishCatalog[f.kind]?.[0]||'물고기')+' · '+Math.round(h.value)+'% · '+aquariaHungerLabel(h.value);
   meter.max=100;meter.value=h.value;meter.setAttribute('aria-label',label.textContent);
   time.textContent=h.value>0?'배가 빌 때까지 '+aquariaHungerTime(h.emptyAt-now):'⚠ 굶어 죽기까지 '+aquariaHungerTime(h.deathAt-now);
   row.append(label,meter,time);list.append(row);
@@ -607,12 +607,29 @@ function aquariaStartFishFollow(index,view){
  aquariaFishFollow={life,view};
  let panel=document.getElementById('aquariaFishDetails');
  if(!panel){panel=document.createElement('aside');panel.id='aquariaFishDetails';panel.setAttribute('aria-label','선택한 물고기 정보');panel.style.cssText='position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 84px);left:50%;transform:translateX(-50%);z-index:90;width:min(390px,94vw);max-height:32dvh;overflow:auto;padding:15px 18px;border:1px solid #a2eadb88;border-radius:18px;background:#09283bf5;color:#eafbf8;box-shadow:0 8px 32px #0005;font:12px/1.55 system-ui';
- panel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><strong id="aquariaFishDetailsTitle"></strong><button type="button" id="aquariaFishDetailsStop" style="min-height:36px;padding:6px 10px">추적 종료 ✕</button></div><p id="aquariaFishDetailsDescription"></p><div id="aquariaFishDetailsStats"></div><small style="color:#a8c6d3">게임 내 개체 상태 · 다른 물고기도 두 번 터치하면 전환돼</small>';
+ panel.innerHTML="<div class=\"fish-detail-head\"><strong id=\"aquariaFishDetailsTitle\"></strong><button type=\"button\" id=\"aquariaFishRename\" aria-label=\"물고기 이름 바꾸기\">✎</button><button type=\"button\" id=\"aquariaFishDetailsStop\" aria-label=\"추적 종료\">✕</button></div><div id=\"aquariaFishDetailsBrief\"></div><form id=\"aquariaFishNameForm\" hidden><label for=\"aquariaFishNameInput\">이름 <input id=\"aquariaFishNameInput\" maxlength=\"20\" placeholder=\"최대 20자\" autocomplete=\"off\"></label><button type=\"submit\">저장</button><button type=\"button\" id=\"aquariaFishNameCancel\">취소</button><small id=\"aquariaFishNameFeedback\" role=\"status\"></small></form><details id=\"aquariaFishExtra\"><summary>상세 정보</summary><small id=\"aquariaFishDetailsSpecies\"></small><p id=\"aquariaFishDetailsDescription\"></p><div id=\"aquariaFishDetailsStats\"></div></details>";
  document.body.append(panel);document.getElementById('aquariaFishDetailsStop').onclick=aquariaStopFishFollow;
+ document.getElementById('aquariaFishRename').onclick=()=>{const form=document.getElementById('aquariaFishNameForm');form.hidden=false;document.getElementById('aquariaFishNameInput').value=aquariaFishFollow?.life.name||'';document.getElementById('aquariaFishNameFeedback').textContent='';document.getElementById('aquariaFishNameInput').focus()};
+ document.getElementById('aquariaFishNameCancel').onclick=()=>document.getElementById('aquariaFishNameForm').hidden=true;
+ document.getElementById('aquariaFishNameForm').onsubmit=e=>{e.preventDefault();aquariaSaveFishName(document.getElementById('aquariaFishNameInput').value)};
  }
+ document.getElementById('aquariaFishNameForm').hidden=true;document.getElementById('aquariaFishExtra').open=false;
  panel.hidden=false;document.getElementById('aquariaShop').hidden=true;document.getElementById('aquariaDrawer').open=false;
  window.dispatchEvent(new Event('aquaria-follow-start'));aquariaUpdateFishDetails();
 }
+
+function aquariaSaveFishName(value){
+ const fish=aquariaFishFollow?.life;if(!fish||!state.fishLives.includes(fish))return false;
+ const name=String(value).trim().slice(0,20),previous=fish.name;
+ if(!name){document.getElementById('aquariaFishNameFeedback').textContent='이름을 입력해줘.';return false;}
+ fish.name=name;
+ try{
+  localStorage.setItem(key,JSON.stringify(state));
+  if(JSON.parse(localStorage.getItem(key)).fishLives[state.fishLives.indexOf(fish)].name!==name)throw new Error('저장 확인 실패');
+ }catch(error){fish.name=previous;document.getElementById('aquariaFishNameFeedback').textContent='저장하지 못했어. 다시 시도해줘.';return false;}
+ document.getElementById('aquariaFishNameForm').hidden=true;aquariaUpdateFishDetails();aquariaRenderHunger();return true;
+}
+
 function aquariaStopFishFollow(){
  aquariaFishFollow=null;const panel=document.getElementById('aquariaFishDetails');if(panel)panel.hidden=true;
  window.dispatchEvent(new Event('aquaria-follow-stop'));
@@ -624,7 +641,9 @@ function aquariaUpdateFishDetails(){
  const kind=f.kind||0,now=Date.now(),age=Math.max(0,(now-(f.born||now))/86400000),stress=Math.max(0,Math.min(100,Number(f.stress)||0));
  const penalty=stress>=75?.45:stress>=50?.2:0,remaining=Math.max(0,(f.lifeDays||28)*(1-penalty)-age);
  const hunger=aquariaHungerStatus(f,now);
- document.getElementById('aquariaFishDetailsTitle').textContent=(aquariaFishCatalog[kind]?.[0]||'물고기')+' · 개체 #'+(index+1);
+ document.getElementById('aquariaFishDetailsTitle').textContent=f.name||(aquariaFishCatalog[kind]?.[0]||'물고기')+' #'+(index+1);
+ document.getElementById('aquariaFishDetailsSpecies').textContent=(aquariaFishCatalog[kind]?.[0]||'물고기')+' · 개체 #'+(index+1);
+ document.getElementById('aquariaFishDetailsBrief').textContent='🍤 '+Math.round(hunger.value)+'% · 스트레스 '+Math.round(stress)+'%';
  document.getElementById('aquariaFishDetailsDescription').textContent=aquariaSpeciesDescriptions[kind]||'수조 안을 유영하는 물고기야.';
  const stats=document.getElementById('aquariaFishDetailsStats');stats.replaceChildren();
  for(const label of ['포만감 '+Math.round(hunger.value)+'% · '+aquariaHungerLabel(hunger.value),'스트레스 '+Math.round(stress)+'% · '+(stress>=75?'높음':stress>=40?'주의':'안정'),'나이 '+age.toFixed(1)+'일 · 예상 남은 수명 '+remaining.toFixed(1)+'일','수조 청결도 '+(state.cleanliness??100)+'%']){
@@ -2760,6 +2779,32 @@ if(localStorage.getItem(viewPreferenceKey)==='3d'){
  });
 })();
 </script>
+
+
+<style id="aquaria-compact-fish-ui">
+html body #aquariaFishDetails{left:auto!important;right:10px!important;bottom:calc(env(safe-area-inset-bottom,0px) + 128px)!important;transform:none!important;width:min(245px,calc(100vw - 20px))!important;max-height:30dvh!important;padding:9px 11px!important;border-radius:13px!important;font:11px/1.45 system-ui!important}
+ #aquariaFishDetails[hidden]{display:none}
+#aquariaFishDetails .fish-detail-head{display:flex;align-items:center;gap:6px}
+#aquariaFishDetailsTitle{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+#aquariaFishDetails .fish-detail-head button{min-height:32px;min-width:32px;padding:4px 7px;font-size:12px;box-shadow:none}
+#aquariaFishDetailsBrief{margin:4px 0;color:#c0e4e3;font-size:10px}
+#aquariaFishExtra summary{cursor:pointer;font-size:10px;color:#b5cdd8}
+#aquariaFishExtra p{margin:5px 0!important;font-size:10px}
+#aquariaFishNameForm{margin:8px 0}
+#aquariaFishNameForm[hidden]{display:none!important}
+#aquariaFishNameInput{width:150px;min-height:32px;padding:5px 7px;font-size:12px}
+#aquariaFishNameForm button{min-height:32px;padding:5px 8px;font-size:11px;margin-top:5px}
+#aquariaFishNameFeedback{display:block;color:#ffccac}
+#game #aquariaHunger{top:auto!important;bottom:calc(env(safe-area-inset-bottom,0px) + 77px)!important;left:10px!important;width:112px!important;border-radius:10px!important;font-size:10px!important}
+#game #aquariaHunger>summary{display:flex;align-items:center;gap:5px;padding:6px 8px!important;min-height:30px}
+#game #aquariaHunger .hunger-summary{font-size:10px;white-space:nowrap;font-weight:500}
+#game #aquariaHunger>summary>progress{width:31px!important;height:4px!important;flex:none;margin:0!important}
+#game #aquariaHunger>summary>.hunger-warning{display:none!important}
+#game #aquariaHunger[open]{width:min(260px,calc(100vw - 20px))!important}
+#game #aquariaHunger[open]>.hunger-content{max-height:28dvh}
+#game #aquariaHunger[data-danger=critical]{border-color:#f19d8e!important}
+#game #aquariaHunger[data-danger=hungry]{border-color:#d9bd86!important}
+</style>
 
 </html>
 <style>
