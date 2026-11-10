@@ -342,6 +342,12 @@ function aquariaDecorIcon(item){
   if(k===6){for(let j=0;j<4;j++){const x=9+j*6,y=70-j*10;s+=path('M'+x+' '+y+'v-9h'+(62-j*12)+'v9Z',1,'#486c77',c)+path('M'+(x+2)+' '+(y-8)+'h'+(58-j*12),1,'#a9d0c6');}}
   if(k===7){for(let j=0;j<6;j++){const x=15+j*10,top=17+(j%3)*10;s+=path('M'+(x-5)+' 70V'+(top+8)+'l5 -8l5 8V70Z',1,'#887faa',c)+path('M'+x+' '+top+'v48',.9,'#e6eaff');}}
  }
+
+ // Surface detail remains inside the silhouette rather than adding visual clutter.
+ if(type==='산호'&&k<4){for(let j=0;j<18;j++){const x=24+(j*13)%33,y=32+(j*7)%28;s+=oval(x,y,.65,.85,'#ffe8db');}}
+ if(type==='해조류'&&k!==2){for(let j=0;j<5;j++){const x=21+j*9;s+=path('M40 69Q'+x+' 46 '+x+' '+(24+j%3*7),.45,'#d4f3db');}}
+ if(type==='지형'&&(k===1||k===2)){s+=path('M24 34l5 8l-3 9l8 6M55 39l-7 7l4 8',.85,'#3d526c');for(let j=0;j<12;j++)s+=oval(17+(j*11)%45,58+(j*5)%10,1.4,.65,j%2?'#799985':'#b7c6c7');}
+ if(type==='지형'&&[3,4,5].includes(k)){for(let j=0;j<6;j++){const x=k===3?36:19;s+=path('M'+x+' '+(30+j*6)+'l5 2l-2 3',.7,'#50677e');}s+=path('M16 68l10 -3l4 4M54 67l7 -2l5 4',2,'#76a18c');}
  return '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80" aria-hidden="true">'+s+'</svg>';
 }
 const aquariaDecorImageCache=new Map();
@@ -1615,6 +1621,41 @@ if(item[0]==='해조류'){
    else if(k===6){for(let j=0;j<3;j++)mesh(new T.CylinderGeometry(.95-j*.23,1-j*.23,.3,7),stone,g,0,.15+j*.3,0);}
    else{for(let j=0;j<6;j++){const p=j*2.4,o=mesh(new T.ConeGeometry(.15,.65+(j%3)*.25,5),stone,g,Math.cos(p)*.35,.4,Math.sin(p)*.35);o.rotation.z=Math.cos(p)*.25;}}
   }
+  // Surface accents follow the actual mesh geometry.
+  const highlight=c.clone();highlight.color.lerp(new T.Color(0xe3f1e8),.3);
+  const shade=c.clone();shade.color.multiplyScalar(.65);
+  if(item[0]==='산호'){
+   const stems=[];g.traverse(o=>{if(o.isMesh&&o.geometry?.type==='CylinderGeometry')stems.push(o)});
+   for(let j=0;j<Math.min(stems.length,24);j++){
+    const stem=stems[j],length=stem.geometry.parameters.height||.2;
+    const tip=new T.Vector3(0,length*.42,0).applyQuaternion(stem.quaternion).add(stem.position);
+    mesh(new T.SphereGeometry(.022,5,4),highlight,g,tip.x,tip.y,tip.z);
+   }
+  }else if(item[0]==='말미잘'){
+   mesh(new T.CylinderGeometry(.25,.28,.025,16),shade,g,0,.23,0);
+   mesh(new T.SphereGeometry(.055,8,4),highlight,g,0,.25,0).scale.set(1,.15,.55);
+   const tips=[];g.traverse(o=>{if(o.isMesh&&o.geometry?.type==='SphereGeometry')tips.push(o)});
+   tips.forEach(o=>{o.material=highlight});
+  }else if(item[0]==='해조류'){
+   const leaves=[];g.traverse(o=>{if(o.isMesh&&o.geometry?.type==='SphereGeometry')leaves.push(o)});
+   leaves.forEach((o,j)=>{if(j%3===0)o.material=highlight;else if(j%4===0)o.material=shade});
+  }else{
+   const mossMaterial=mat(0x6b9382);
+   for(let j=0;j<5;j++){
+    const angle=j*2.399,r=.24+(j%3)*.13;
+    const patch=mesh(new T.IcosahedronGeometry(.06+(j%2)*.025,0),mossMaterial,g,Math.cos(angle)*r,.055,Math.sin(angle)*r);patch.scale.y=.3;
+   }
+   if([3,4,5].includes(k)){
+    const cols=k===3?[[0,1.7]]:k===4?[[-.75,2.1],[.75,2.1]]:[[-.55,1.1],[.6,.7]];
+    for(const [x,height] of cols)for(let j=1;j<5;j++){
+     const groove=mesh(new T.TorusGeometry(k===4?.17:.245,.009,3,12),shade,g,x,height*j/5,0);groove.rotation.x=Math.PI/2;
+    }
+   }else if(k===1||k===2){
+    const crackPoints=[new T.Vector3(-.3,.65,.42),new T.Vector3(-.1,.5,.56),new T.Vector3(-.18,.3,.64),new T.Vector3(.05,.2,.67)];
+    const crack=new T.Line(new T.BufferGeometry().setFromPoints(crackPoints),new T.LineBasicMaterial({color:0x3c5368,transparent:true,opacity:.65}));g.add(crack);
+   }else if(k===7){g.traverse(o=>{if(o.isMesh&&o.geometry?.type==='ConeGeometry'&&o.position.x>0)o.material=highlight});}
+  }
+  const usedMaterials=new Set();g.traverse(o=>{if(o.material)usedMaterials.add(o.material)});if(!usedMaterials.has(highlight))highlight.dispose();if(!usedMaterials.has(shade))shade.dispose();
  });
 }
 syncDecorations();window.addEventListener('aquaria-decor-sync',syncDecorations);
