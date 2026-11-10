@@ -1567,23 +1567,22 @@ for(const eventName of ['pointerdown','pointermove','pointerup','pointercancel']
  },{capture:true,passive:false});
 }
 
-// Dreamlike underwater atmosphere: translucent aurora veils, moon shafts and luminous motes.
-const auroraColors=[0x64dcd5,0xa98fe6,0x82bce8];
-const veils=[];
-for(let i=0;i<7;i++){
- const material=new T.MeshBasicMaterial({color:auroraColors[i%3],transparent:true,opacity:.055,side:T.DoubleSide,depthWrite:false,blending:T.AdditiveBlending});
- const plane=mesh(new T.PlaneGeometry(2.1+(i%3)*1.1,28),material,scene,
-  Math.cos(i*2.4)*5.5,14,Math.sin(i*2.4)*5.5);
- plane.rotation.y=i*2.4;plane.rotation.z=(i%2?-.13:.13);
- veils.push({plane,phase:i*1.7});
+// Two softly feathered daylight patches replace the repeated geometric shafts.
+const veils=[],shafts=[];
+const daylightCanvas=document.createElement('canvas');daylightCanvas.width=128;daylightCanvas.height=256;
+const daylightCtx=daylightCanvas.getContext('2d'),daylightImage=daylightCtx.createImageData(128,256);
+for(let y=0;y<256;y++)for(let x=0;x<128;x++){
+ const v=y/255,center=64+Math.sin(v*2.1)*9,width=19+v*25;
+ const feather=Math.exp(-Math.pow((x-center)/width,2)*2.4),fade=Math.pow(Math.sin(Math.PI*v),1.6);
+ const n=(y*128+x)*4;daylightImage.data[n]=192;daylightImage.data[n+1]=225;daylightImage.data[n+2]=239;daylightImage.data[n+3]=Math.round(feather*fade*110);
 }
-const shafts=[];
-for(let i=0;i<6;i++){
- const m=new T.MeshBasicMaterial({color:i%2?0xa8e7fa:0xb5a0ff,transparent:true,opacity:.038,depthWrite:false,side:T.DoubleSide,blending:T.AdditiveBlending});
- const beam=mesh(new T.ConeGeometry(.85+(i%3)*.35,30,4,1,true),m,scene,
- Math.cos(i*2.39)*4.4,16,Math.sin(i*2.39)*4.4);
- beam.rotation.z=(i%2?-.12:.12);
- shafts.push({beam,phase:i*1.9});
+daylightCtx.putImageData(daylightImage,0,0);
+const daylightTexture=new T.CanvasTexture(daylightCanvas);
+for(let i=0;i<2;i++){
+ const material=new T.MeshBasicMaterial({map:daylightTexture,color:0xc9e7ee,transparent:true,opacity:.055,side:T.DoubleSide,depthWrite:false,blending:T.AdditiveBlending});
+ const plane=mesh(new T.PlaneGeometry(8+i*3,26),material,scene,i===0?-4.7:5.3,13,-5-i*2);
+ plane.rotation.y=i===0?.25:-.3;plane.rotation.z=i===0?-.16:.1;
+ veils.push({plane,phase:i*2.3,baseTilt:plane.rotation.z});
 }
 const motes=[];
 const moteColors=[0x8ef7e8,0xd7b7ff,0xf9d5bc];
@@ -1909,7 +1908,7 @@ function frame(t){
  }
  for(const k of kelps)k.g.rotation.z=Math.sin(t*.0008+k.phase)*.08;
  for(const arm of anemoneArms){arm.root.rotation.z=Math.sin(t*arm.speed+arm.phase)*arm.amplitude;arm.root.rotation.x=Math.cos(t*arm.speed*.86+arm.phase)*arm.amplitude*.8;}
- for(const v of veils){v.plane.material.opacity=.04+.025*(1+Math.sin(t*.0004+v.phase));v.plane.rotation.z=Math.sin(t*.00023+v.phase)*.12;}
+ for(const v of veils){v.plane.material.opacity=.045+Math.sin(t*.00012+v.phase)*.008;v.plane.rotation.z=v.baseTilt+Math.sin(t*.00007+v.phase)*.015;}
  for(const sh of shafts)sh.beam.material.opacity=.022+.016*(1+Math.sin(t*.00035+sh.phase));
  for(const m of motes){m.o.position.y=.3+((t*.00013+m.phase)%8);m.o.material.opacity=.07+.10*(.5+.5*Math.sin(t*.0018+m.phase));}
  for(const b of bubbles){b.o.position.y=.25+((t*.00027+b.phase)%8);}
