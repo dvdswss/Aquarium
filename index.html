@@ -2850,4 +2850,14 @@ window.addEventListener('aquaria-dev-sync',aquariaRenderHunger);
 #game .aquaria-quick #aquariaHunger>summary>progress{width:17px!important}
 #game .aquaria-quick #aquariaHunger[open]{width:72px!important}
 #game .aquaria-quick #aquariaHunger[open]>.hunger-content{position:absolute;bottom:calc(100% + 10px);left:calc(-100% - 40px);width:min(270px,calc(100vw - 20px));max-height:35dvh;padding:10px 12px;background:#092338ee;border:1px solid #bee7df55;border-radius:12px;box-shadow:0 6px 24px #0004}
+</style><style id="aquaria-hunger-meter-fit">
+#game .aquaria-quick #aquariaHunger>summary{display:grid!important;grid-template-columns:minmax(0,1fr)!important;justify-items:stretch;gap:4px!important;padding:6px 8px!important;min-height:38px!important;box-sizing:border-box;overflow:hidden}
+#game .aquaria-quick #aquariaHunger .hunger-summary{font-size:10px!important;line-height:13px!important;text-align:center;min-width:0}
+#game .aquaria-quick #aquariaHunger>summary>progress{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important;height:4px!important;margin:0!important;appearance:none;-webkit-appearance:none;border:0!important;border-radius:4px;background:#ffffff26;overflow:hidden}
+#game .aquaria-quick #aquariaHunger>summary>progress::-webkit-progress-bar{background:#ffffff26;border-radius:4px}
+#game .aquaria-quick #aquariaHunger>summary>progress::-webkit-progress-value{background:#8cdec1;border-radius:4px}
+#game .aquaria-quick #aquariaHunger[data-danger=hungry]>summary>progress::-webkit-progress-value{background:#f5c570}
+#game .aquaria-quick #aquariaHunger[data-danger=critical]>summary>progress::-webkit-progress-value{background:#ff8181}
+#game .aquaria-quick #aquariaHunger>summary>progress::-moz-progress-bar{background:#8cdec1;border-radius:4px}
+html body #aquariaFishDetails{bottom:calc(env(safe-area-inset-bottom,0px) + 120px)!important}
 </style>
