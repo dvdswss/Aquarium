@@ -318,18 +318,21 @@ function startAquariaDecorMove(index,newPurchase=false){
  document.getElementById('aquariaShop').hidden=true;
  let bar=document.getElementById('aquariaDecorMoveBar');
  if(!bar){bar=document.createElement('div');bar.id='aquariaDecorMoveBar';bar.style.cssText='position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 82px);transform:translateX(-50%);z-index:9998;width:min(380px,94vw);padding:12px;background:#092b3bf5;border:1px solid #8af2d9;border-radius:15px;color:#eafbf8;text-align:center;font:13px system-ui';
- bar.innerHTML='<p id="aquariaDecorMoveName"></p><p>수조의 원하는 곳을 누르거나 끌어서 옮겨줘</p><button type="button" id="aquariaDecorMoveDone">배치 저장</button> <button type="button" id="aquariaDecorMoveCancel">취소</button>';document.body.append(bar);
+ bar.innerHTML='<p id="aquariaDecorMoveName"></p><p>수조를 누르거나 아래 조절바로 위치를 옮겨줘</p><label style="display:block">좌우 <input id="aquariaDecorMoveX" aria-label="장식 좌우 위치" type="range" min="4" max="96" step="1" style="width:100%"></label><label style="display:block">앞뒤 <input id="aquariaDecorMoveY" aria-label="장식 앞뒤 위치" type="range" min="79" max="96" step="0.5" style="width:100%"></label><button type="button" id="aquariaDecorMoveDone">배치 저장</button> <button type="button" id="aquariaDecorMoveCancel">취소</button>';document.body.append(bar);
  document.getElementById('aquariaDecorMoveDone').onclick=()=>finishAquariaDecorMove(true);
+ for(const id of ['aquariaDecorMoveX','aquariaDecorMoveY'])document.getElementById(id).oninput=()=>previewAquariaDecorMove(Number(document.getElementById('aquariaDecorMoveX').value)/100,Number(document.getElementById('aquariaDecorMoveY').value)/100);
  document.getElementById('aquariaDecorMoveCancel').onclick=()=>finishAquariaDecorMove(false);
  }
  document.getElementById('aquariaDecorMoveName').textContent=(newPurchase?'✨ 방금 구매한 장식 · ':'')+aquariaDecorCatalog[d.kind][1]+' 위치 편집';
  let preview=document.getElementById('aquariaDecorMovePreview');if(!preview){preview=document.createElement('div');preview.id='aquariaDecorMovePreview';document.getElementById('aquariaDecorMoveName').before(preview)}preview.innerHTML=aquariaDecorIcon(aquariaDecorCatalog[d.kind]);
  document.getElementById('aquariaDecorMoveCancel').textContent=newPurchase?'기본 위치에 두기':'취소';
+ document.getElementById('aquariaDecorMoveX').value=d.x*100;document.getElementById('aquariaDecorMoveY').value=d.y*100;
  bar.hidden=false;window.dispatchEvent(new Event('aquaria-decor-sync'));
 }
 function previewAquariaDecorMove(x,y,worldX,worldZ){
  const d=state.decorations[aquariaDecorMoveIndex];if(!d)return;
  d.x=Math.max(.04,Math.min(.96,x));d.y=Math.max(.79,Math.min(.96,y));
+ document.getElementById('aquariaDecorMoveX').value=d.x*100;document.getElementById('aquariaDecorMoveY').value=d.y*100;
  d.worldX=Number.isFinite(worldX)?worldX:(d.x-.5)*13;
  d.worldZ=Number.isFinite(worldZ)?worldZ:(d.y-.875)/.085*6.3;
  window.dispatchEvent(new Event('aquaria-decor-sync'));
@@ -350,10 +353,31 @@ function aquariaDecorToast(message){
  el.textContent=message;el.hidden=false;clearTimeout(aquariaDecorToastTimer);aquariaDecorToastTimer=setTimeout(()=>el.hidden=true,5500);
 }
 
-function buyAquariaDecor(kind,category){
+
+let aquariaDecorPurchasePending=false;
+function confirmAquariaDecorPurchase(item){
+ return new Promise(resolve=>{
+  const modal=document.createElement('dialog');modal.setAttribute('aria-label','장식 구매 확인');
+  modal.style.cssText='background:#102b40;color:#eafbf8;border:1px solid #8af2d9;border-radius:20px;padding:24px;width:min(360px,90vw);box-shadow:0 20px 80px #0009';
+  modal.innerHTML='<h3 style="margin-top:0">이 장식을 구매할까?</h3>'+aquariaDecorIcon(item)+'<p>'+item[1]+'</p><p>가격 <strong>'+item[2]+' 코인</strong></p><p>구매 후 잔액 '+(state.coins-item[2])+' 코인</p><p>구매하면 바로 위치를 설정할 수 있어.</p><div style="display:flex;gap:10px"><button type="button" data-confirm="no">취소</button><button type="button" data-confirm="yes">구매하기</button></div>';
+  let settled=false;const finish=value=>{if(settled)return;settled=true;modal.close();modal.remove();resolve(value)};
+  modal.querySelector('[data-confirm=no]').onclick=()=>finish(false);
+  modal.querySelector('[data-confirm=yes]').onclick=()=>finish(true);
+  modal.addEventListener('cancel',e=>{e.preventDefault();finish(false)});
+  document.body.append(modal);modal.showModal();modal.querySelector('[data-confirm=no]').focus();
+ });
+}
+
+async function buyAquariaDecor(kind,category){
  const item=aquariaDecorCatalog[kind];aquariaDecorInit();
  if(!item||state.coins<item[2]||state.decorations.length>=80)return;
- if(!window.confirm(item[1]+'을(를) '+item[2]+' 코인에 구매할까?\n구매 후 잔액: '+(state.coins-item[2])+' 코인\n구매하면 바로 위치를 정할 수 있어.'))return;
+ if(aquariaDecorPurchasePending)return;
+ aquariaDecorPurchasePending=true;
+ let approved=false;
+ try{approved=await confirmAquariaDecorPurchase(item)}finally{aquariaDecorPurchasePending=false}
+ if(!approved)return;
+ if(state.coins<item[2]||state.decorations.length>=80){aquariaDecorToast('코인이나 장식 공간을 확인해줘.');return;}
+
  const i=state.decorations.length;
  state.coins-=item[2];state.decorations.push({kind,x:.12+(i*.61803398875)% .76,y:.87+(i%4)*.023});
  state.lastDecorPurchase={kind,index:i,at:Date.now(),price:item[2]};
