@@ -1015,7 +1015,11 @@ rect(x+shift,y,12+rand(i+13)*18,1,'rgba(189,236,250,.12)');
 
 // Moving sunlit ripples, light shafts and distant suspended particles.
 for(let i=0;i<68;i++){const x=rand(i+34)*W,y=rand(i+99)*33;rect(x+Math.sin(t*.0005+i)*2,y,3+(i%6)*2,1,i%3?'#a1e7ff':'#d8fbff')}
-for(let i=0;i<11;i++){const x=8+i*24+Math.sin(t*.0003+i)*3;polygon([[x,5],[x+4,5],[x+28,245],[x-24,245]],'rgba(206,199,255,.042)')}
+for(let i=0;i<11;i++){
+ const x=8+i*24+Math.sin(t*.0003+i)*3,end=260+(i%4)*18;
+ const shaft=ctx.createLinearGradient(0,5,0,end);shaft.addColorStop(0,'rgba(199,232,255,.065)');shaft.addColorStop(.55,'rgba(187,216,255,.035)');shaft.addColorStop(1,'rgba(187,216,255,0)');
+ polygon([[x,5],[x+4,5],[x+31,end],[x-27,end]],shaft);
+}
 for(let i=0;i<14;i++){const x=rand(i+920)*W,y=75+rand(i+101)*170;rect(x,y,1,1,'rgba(211,188,255,.26)')}
 // Half-unit glints now resolve as smaller, finer pixels on the 2x canvas.
 for(let i=0;i<52;i++){
@@ -1036,7 +1040,20 @@ ctx.fillStyle=light;ctx.fillRect(x-r,y-r,r*2,r*2);
 if(i%3===0)rect(x,y,1,1,i%2?'#b8ffe7':'#edc8ff');
 }
 // The bare seabed is free; every plant, coral and terrain object is owned.
-polygon([[0,310],[W,310],[W,H],[0,H]],'#394e72');
+// Soft, uneven seabed contours replace the straight rectangular floor.
+for(let layer=0;layer<3;layer++){
+ const base=299+layer*11,points=[[0,H],[0,base]];
+ for(let x=0;x<=W;x+=3)points.push([x,base+Math.sin(x*.033+layer*1.9)*4+Math.cos(x*.072-layer)*2]);
+ points.push([W,H]);
+ const sandGradient=ctx.createLinearGradient(0,base-8,0,H);
+ sandGradient.addColorStop(0,['#33436b','#3a5076','#425c7e'][layer]);sandGradient.addColorStop(1,'#344b6b');
+ polygon(points,sandGradient);
+}
+for(let i=0;i<160;i++){
+ const x=rand(i+4010)*W,y=312+rand(i+4210)*47;
+ rect(x,y,i%9===0?1:.45,.45,i%3?'rgba(173,201,212,.18)':'rgba(21,43,67,.25)');
+}
+const bedHaze=ctx.createLinearGradient(0,279,0,315);bedHaze.addColorStop(0,'rgba(58,72,115,0)');bedHaze.addColorStop(.6,'rgba(73,91,132,.16)');bedHaze.addColorStop(1,'rgba(58,72,115,0)');ctx.fillStyle=bedHaze;ctx.fillRect(0,279,W,36);
 function arch(x,y,w,h){
  rect(x,y,w,5,'#91a2bc');rect(x+3,y+5,5,h,'#697d9b');rect(x+w-8,y+5,5,h,'#697d9b');
 }
