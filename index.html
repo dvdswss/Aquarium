@@ -393,6 +393,29 @@ function openAquariaDecorShop(category='해조류'){
 
 
 
+
+function aquariaDecorLongPress(cancelInteractions){
+ let hold=null;
+ const clear=()=>{if(hold)clearTimeout(hold.timer);hold=null;};
+ return {handle(e,index){
+  if(e.type==='pointerdown'){
+   if(hold){clear();return;}
+   if(index===undefined||index<0)return;
+   hold={id:e.pointerId,x:e.clientX,y:e.clientY,fired:false,timer:null};
+   const current=hold;
+   current.timer=setTimeout(()=>{
+    if(hold!==current||aquariaDecorMoveIndex!==null)return;
+    current.fired=true;cancelInteractions();inspectAquariaDecor(index);
+   },650);
+  }else if(hold&&hold.id===e.pointerId){
+   if(e.type==='pointermove'&&Math.hypot(e.clientX-hold.x,e.clientY-hold.y)>9){clear();return;}
+   const fired=hold.fired;
+   if(e.type==='pointerup'||e.type==='pointercancel')clear();
+   if(fired){e.preventDefault();e.stopImmediatePropagation();}
+  }
+ },clear};
+}
+
 let aquariaDecorInspectIndex=null;
 function inspectAquariaDecor(index){
  const d=state.decorations[index];if(!d)return;
@@ -845,15 +868,22 @@ let fishPlay=null;
 
 
 let decorDrag2D=null;
+const decorHold2D=aquariaDecorLongPress(()=>{fishPlay=null;touch.mode='';});
 canvas.style.touchAction='none';
 for(const eventName of ['pointerdown','pointermove','pointerup','pointercancel']){
  canvas.addEventListener(eventName,e=>{
   const point=fishPlayCoords(e);
+  if(aquariaDecorMoveIndex===null){
+   let hit=-1,best=Infinity;
+   if(eventName==='pointerdown')aquariaDecorInit().forEach((d,i)=>{const size=aquariaDecorSize(d.kind),dx=point.x-d.x*W,dy=point.y-(d.y*H-size[1]*.42),score=dx*dx/Math.pow(size[0]*.48,2)+dy*dy/Math.pow(size[1]*.48,2);if(score<1&&score<best){best=score;hit=i}});
+   decorHold2D.handle(e,hit);return;
+  }
+  decorHold2D.clear();
   if(eventName==='pointerdown'){
    let hit=-1,best=Infinity;
    aquariaDecorInit().forEach((d,i)=>{const size=aquariaDecorSize(d.kind),dx=point.x-d.x*W,dy=point.y-(d.y*H-size[1]*.42),score=dx*dx/Math.pow(size[0]*.48,2)+dy*dy/Math.pow(size[1]*.48,2);if(score<1&&score<best){best=score;hit=i}});
    if(hit<0&&aquariaDecorMoveIndex===null)return;
-   if(hit>=0&&aquariaDecorMoveIndex===null){e.preventDefault();e.stopImmediatePropagation();inspectAquariaDecor(hit);return;}
+   
    const d=state.decorations[aquariaDecorMoveIndex];if(!d)return;
    decorDrag2D={id:e.pointerId,dx:hit===aquariaDecorMoveIndex?point.x-d.x*W:0,dy:hit===aquariaDecorMoveIndex?point.y-d.y*H:0};
    canvas.setPointerCapture(e.pointerId);
@@ -1737,17 +1767,25 @@ syncDecorations();window.addEventListener('aquaria-decor-sync',syncDecorations);
 
 
 let decorDrag3D=null;
+const decorHold3D=aquariaDecorLongPress(()=>{pointer.clear();fishPlay3D=null;lastDistance=0;});
 layer.style.touchAction='none';
 for(const eventName of ['pointerdown','pointermove','pointerup','pointercancel']){
  layer.addEventListener(eventName,e=>{
   const r=layer.getBoundingClientRect(),ray=new T.Raycaster();
   ray.setFromCamera(new T.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),camera);
   const point=new T.Vector3(),floorHit=ray.intersectObject(floor,false)[0],onFloor=!!floorHit;if(floorHit)point.copy(floorHit.point);
+  if(aquariaDecorMoveIndex===null){
+   let index=-1;
+   if(eventName==='pointerdown'){let root=ray.intersectObjects(decorRoot.children,true)[0]?.object;while(root&&root.parent!==decorRoot)root=root.parent;if(root)index=root.userData.decorationIndex;}
+   decorHold3D.handle(e,index);return;
+  }
+  decorHold3D.clear();
+
   if(eventName==='pointerdown'){
    const hit=ray.intersectObjects(decorRoot.children,true)[0];let root=hit?.object;
    while(root&&root.parent!==decorRoot)root=root.parent;
    if(!root&&aquariaDecorMoveIndex===null)return;
-   if(root&&aquariaDecorMoveIndex===null){e.preventDefault();e.stopImmediatePropagation();inspectAquariaDecor(root.userData.decorationIndex);return;}
+   
    const selected=decorRoot.children[aquariaDecorMoveIndex];if(!selected||!onFloor)return;
    decorDrag3D={id:e.pointerId,dx:root?.userData.decorationIndex===aquariaDecorMoveIndex?point.x-selected.position.x:0,dz:root?.userData.decorationIndex===aquariaDecorMoveIndex?point.z-selected.position.z:0};
    layer.setPointerCapture(e.pointerId);
