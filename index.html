@@ -1867,6 +1867,8 @@ function updateCamera(){
  orbit.radius=Math.max(5.5,Math.min(27,orbit.radius));
  camera.position.set(Math.sin(orbit.theta)*Math.sin(orbit.phi)*orbit.radius,orbit.targetY+Math.cos(orbit.phi)*orbit.radius,Math.cos(orbit.theta)*Math.sin(orbit.phi)*orbit.radius);
  camera.lookAt(0,orbit.targetY,0);
+ // Keep the near half clear even when the user zooms out.
+ scene.fog.near=orbit.radius+6;scene.fog.far=orbit.radius+22;
 }
 function resize(){const r=layer.getBoundingClientRect();if(!r.width||!r.height)return;camera.aspect=r.width/r.height;camera.updateProjectionMatrix();renderer.setSize(r.width,r.height,false)}
 let last=0;
