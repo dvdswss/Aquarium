@@ -1404,7 +1404,7 @@ function spawnFishHearts(f){
  heartLayer.append(el);
  floatingHearts.push({el,fish:f,born:performance.now(),offset:0,base:f.g.position.clone().add(new window.THREE.Vector3(0,.42,0)),heart:true});
 }
-let initialized=false,active=false,renderer,scene,camera,start3DFrame=null,fish=[],orbit={theta:0,phi:1.32,radius:14,targetY:3.8},pointer=new Map(),lastDistance=0;
+let initialized=false,active=false,renderer,scene,camera,start3DFrame=null,fish=[],orbit={theta:0,phi:1.32,radius:19,targetY:7},pointer=new Map(),lastDistance=0;
 const colors=[0xf17d35,0x256dce,0xf3d347,0xf2e5b0,0x9255bc,0xe8e5d8,0xb87565,0x1967b7,0xf7eddd,0x7443ac,0xeac34f,0xe5d8bd,0x30343e,0x1b3655];
 // Modern Three.js is an ES module; the old three.min.js URL no longer exists.
 async function load(){
@@ -1463,7 +1463,7 @@ groundGeometry.setAttribute('color',new T.Float32BufferAttribute(groundColors,3)
 const groundMaterial=sand.clone();groundMaterial.vertexColors=true;groundMaterial.color.set(0xffffff);
 const floor=mesh(groundGeometry,groundMaterial,scene);
 
-const glass=mesh(new T.CylinderGeometry(55,55,22,96,1,true),new T.MeshPhysicalMaterial({color:0x8adcf1,transparent:true,opacity:.045,roughness:.06,side:T.DoubleSide,depthWrite:false}),scene,0,8,0);
+const glass=mesh(new T.CylinderGeometry(55,55,52,96,1,true),new T.MeshPhysicalMaterial({color:0x8adcf1,transparent:true,opacity:.045,roughness:.06,side:T.DoubleSide,depthWrite:false}),scene,0,22,0);
 
 const kelps=[],anemoneArms=[];
 function branch(parent,origin,dir,length,width,depth,material,seed){
@@ -1555,16 +1555,16 @@ const auroraColors=[0x64dcd5,0xa98fe6,0x82bce8];
 const veils=[];
 for(let i=0;i<7;i++){
  const material=new T.MeshBasicMaterial({color:auroraColors[i%3],transparent:true,opacity:.055,side:T.DoubleSide,depthWrite:false,blending:T.AdditiveBlending});
- const plane=mesh(new T.PlaneGeometry(2.1+(i%3)*1.1,12),material,scene,
-  Math.cos(i*2.4)*5.5,6.5,Math.sin(i*2.4)*5.5);
+ const plane=mesh(new T.PlaneGeometry(2.1+(i%3)*1.1,28),material,scene,
+  Math.cos(i*2.4)*5.5,14,Math.sin(i*2.4)*5.5);
  plane.rotation.y=i*2.4;plane.rotation.z=(i%2?-.13:.13);
  veils.push({plane,phase:i*1.7});
 }
 const shafts=[];
 for(let i=0;i<6;i++){
  const m=new T.MeshBasicMaterial({color:i%2?0xa8e7fa:0xb5a0ff,transparent:true,opacity:.038,depthWrite:false,side:T.DoubleSide,blending:T.AdditiveBlending});
- const beam=mesh(new T.ConeGeometry(.85+(i%3)*.35,13,4,1,true),m,scene,
- Math.cos(i*2.39)*4.4,7.2,Math.sin(i*2.39)*4.4);
+ const beam=mesh(new T.ConeGeometry(.85+(i%3)*.35,30,4,1,true),m,scene,
+ Math.cos(i*2.39)*4.4,16,Math.sin(i*2.39)*4.4);
  beam.rotation.z=(i%2?-.12:.12);
  shafts.push({beam,phase:i*1.9});
 }
@@ -1830,7 +1830,7 @@ function createFish(k,i){
  g.scale.setScalar(size);
  const angle=i*2.399;
  const startRadius=2.1+seeded(i+240)*4.7;
- const startX=Math.cos(angle)*startRadius,startZ=Math.sin(angle)*startRadius,startY=1.6+seeded(i+340)*9.5;
+ const startX=Math.cos(angle)*startRadius,startZ=Math.sin(angle)*startRadius,startY=1.6+seeded(i+340)*20;
  const habitatStarts=[[-2.3,1.7,1.6],null,null,[4.6,2.3,-2.5],[-4.9,1.7,-2.2],[3.9,3,2.8],[4.7,1.7,1.8],[-4.5,1.2,-2.8],[-3.6,2.7,3.9],null,null,[-4.1,3,-2.7],[-2.3,1.7,1.6],[4.8,1.5,-2.2]];
  const home=habitatStarts[k];
  if(home)g.position.set(home[0]+Math.sin(i*2.399)*.35,home[1],home[2]+Math.cos(i*2.399)*.35);
@@ -1957,7 +1957,7 @@ for(const f of fish){
    // Tangs travel across open water in long, noncircular passes.
    const direction=Math.sin(cycle*1.1)>0?1:-1;
    tx=direction*6.6;tz=Math.sin(cycle*.49+phase)*4.2;
-   ty=6+Math.sin(cycle*.73+phase)*4.8;
+   ty=12+Math.sin(cycle*.73+phase)*10;
   }else if(mode==='graze'){
    // Short repeated visits to algae-covered reef surfaces.
    tx=Math.cos(theta*.41)*5.8;tz=Math.sin(theta*.41)*5.8;ty=1.5+Math.abs(Math.sin(theta))*.8;
@@ -1998,7 +1998,7 @@ for(const f of fish){
   }
   const planar=Math.hypot(tx,tz);
   if(planar>7.1){tx*=7.1/planar;tz*=7.1/planar;}
-  f.target.set(tx,Math.max(1.15,Math.min(11.8,ty)),tz);
+  f.target.set(tx,Math.max(1.15,Math.min(27.8,ty)),tz);
   f.nextTurn=t+(mode==='hover'?420:mode==='peck'?480:mode==='lunge'?800:mode==='cruise'?1800:950);
  }
  // Override wandering with pursuit of a visible, reachable food particle.
@@ -2037,7 +2037,7 @@ for(const f of fish){
  pos.addScaledVector(v,dt);
  const radial=Math.hypot(pos.x,pos.z);
  if(radial>7.2){pos.x*=7.2/radial;pos.z*=7.2/radial;v.x*=-.25;v.z*=-.25;f.nextTurn=0;}
- pos.y=Math.max(1.1,Math.min(11.9,pos.y));
+ pos.y=Math.max(1.1,Math.min(27.9,pos.y));
  const horizontal=Math.hypot(v.x,v.z);
  if(horizontal>.000012){
   const heading=Math.atan2(-v.z,v.x);
@@ -2101,7 +2101,7 @@ layer.addEventListener('pointermove',e=>{
 function end(e){if(fishPlay3D?.id===e.pointerId)fishPlay3D=null;pointer.delete(e.pointerId);lastDistance=0}
 layer.addEventListener('pointerup',end);layer.addEventListener('pointercancel',end);
 layer.addEventListener('wheel',e=>{e.preventDefault();orbit.radius*=e.deltaY>0?1.09:.91},{passive:false});
-layer.addEventListener('dblclick',()=>{orbit.theta=0;orbit.phi=1.32;orbit.radius=14;orbit.targetY=3.8});
+layer.addEventListener('dblclick',()=>{orbit.theta=0;orbit.phi=1.32;orbit.radius=19;orbit.targetY=7});
 initialized=true;resize();updateCamera();
 }
 const viewPreferenceKey='aquaria-preferred-view';
