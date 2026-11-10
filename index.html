@@ -1987,25 +1987,83 @@ for(let i=0;i<12;i++){
  glimmers.push({sprite,phase:i*1.31,baseY:sprite.position.y});
 }
 const jellies=[];
+// Moon-jelly anatomy: double bell, scalloped margin, radial canals and four oral arms.
 for(let i=0;i<5;i++){
- const group=new T.Group();scene.add(group);
- const c=[0xb6a2ff,0x8ce8df,0xf5b7db][i%3];
- const jellyMat=new T.MeshPhysicalMaterial({color:c,emissive:c,emissiveIntensity:.24,transparent:true,opacity:.58,roughness:.2,side:T.DoubleSide,depthWrite:false});
- const bell=mesh(new T.SphereGeometry(.35,18,10,0,Math.PI*2,0,Math.PI/2),jellyMat,group,0,0,0);
- bell.scale.set(1,.62,1);
- const inner=mesh(new T.SphereGeometry(.17,12,8),mat(0xf5e9ff,.5,true,.42),group,0,-.025,0);
- for(let j=0;j<8;j++){
-  const p=j*Math.PI/4;
-  const pts=[];
-  for(let n=0;n<7;n++)pts.push(new T.Vector3(Math.cos(p)*(.23+.03*Math.sin(n)), -.08-n*.115, Math.sin(p)*(.23+.03*Math.sin(n))));
-  const curve=new T.CatmullRomCurve3(pts);
-  const strand=mesh(new T.TubeGeometry(curve,9,.007,4,false),jellyMat,group);
+ const group=new T.Group(),c=[0xc8e8f3,0xa5e3dc,0xe5c6d9][i%3];scene.add(group);
+ const bellRoot=new T.Group();group.add(bellRoot);
+ const skin=new T.MeshPhysicalMaterial({color:c,emissive:c,emissiveIntensity:.10,transparent:true,opacity:.30,roughness:.16,metalness:0,clearcoat:.8,clearcoatRoughness:.2,side:T.DoubleSide,depthWrite:false});
+ const lining=new T.MeshStandardMaterial({color:0xe4f8fa,emissive:c,emissiveIntensity:.15,transparent:true,opacity:.18,roughness:.5,side:T.DoubleSide,depthWrite:false});
+ const points=[];
+ for(let n=0;n<=24;n++){
+  const a=n/24*Math.PI/2;
+  points.push(new T.Vector2(Math.sin(a)*.43,.27*Math.cos(a)));
  }
- const halo=new T.Sprite(new T.SpriteMaterial({map:glowTexture,color:c,transparent:true,opacity:.22,depthWrite:false,blending:T.AdditiveBlending}));
- halo.scale.set(1.7,1.7,1);group.add(halo);
+ const bell=mesh(new T.LatheGeometry(points,48),skin,bellRoot);
+ const inner=mesh(new T.LatheGeometry(points.map(p=>new T.Vector2(p.x*.93,p.y*.88-.016)),48),lining,bellRoot);
+ const fine=new T.LineBasicMaterial({color:c,transparent:true,opacity:.35,depthWrite:false});
+ const rimPoints=[];
+ for(let n=0;n<=144;n++){
+  const a=n/144*Math.PI*2,r=.427+.009*Math.cos(a*24);
+  rimPoints.push(new T.Vector3(Math.cos(a)*r,-.008+.009*Math.sin(a*24),Math.sin(a)*r));
+ }
+ bellRoot.add(new T.Line(new T.BufferGeometry().setFromPoints(rimPoints),fine));
+ for(let v=0;v<16;v++){
+  const a=v*Math.PI/8,canal=[];
+  for(let n=0;n<=18;n++){
+   const u=n/18*.98,r=.43*u,angle=a+.025*Math.sin(u*8);
+   canal.push(new T.Vector3(Math.cos(angle)*r,.27*Math.sqrt(1-u*u)+.002,Math.sin(angle)*r));
+  }
+  bellRoot.add(new T.Line(new T.BufferGeometry().setFromPoints(canal),fine));
+ }
+ // Four translucent horseshoe-shaped gonads show through the bell.
+ const organMat=new T.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.22,transparent:true,opacity:.60,roughness:.55,depthWrite:false});
+ for(let n=0;n<4;n++){
+  const a=n*Math.PI/2+.35,curvePoints=[];
+  for(let k=0;k<=22;k++){
+   const u=k/22*Math.PI*1.65;
+   curvePoints.push(new T.Vector3(Math.cos(a)*.12+Math.cos(u)*.064,.10+Math.sin(u)*.013,Math.sin(a)*.12+Math.sin(u)*.052));
+  }
+  mesh(new T.TubeGeometry(new T.CatmullRomCurve3(curvePoints),22,.009,5,false),organMat,bellRoot);
+ }
+ // All marginal tentacles share one animated mesh to keep phone rendering light.
+ const vertices=[],indices=[];
+ for(let strand=0;strand<28;strand++){
+  const a=strand/28*Math.PI*2,length=.52+.42*(.5+.5*Math.sin(strand*2.39+i)),offset=vertices.length/3;
+  for(let n=0;n<=16;n++){
+   const u=n/16,r=.418+.04*Math.sin(u*5+strand)*u;
+   const x=Math.cos(a)*r+.045*Math.sin(u*7+strand)*u,z=Math.sin(a)*r+.04*Math.cos(u*6+strand)*u,y=-.015-u*length;
+   const thickness=.0038*(1-u*.85);
+   for(let side=0;side<4;side++){const b=side*Math.PI/2;vertices.push(x+Math.cos(b)*thickness,y,z+Math.sin(b)*thickness);}
+   if(n<16)for(let side=0;side<4;side++){
+    const p=offset+n*4+side,q=offset+n*4+(side+1)%4;
+    indices.push(p,p+4,q,q,p+4,q+4);
+   }
+  }
+ }
+ const tentacleGeo=new T.BufferGeometry();tentacleGeo.setAttribute('position',new T.Float32BufferAttribute(vertices,3));tentacleGeo.setIndex(indices);tentacleGeo.computeVertexNormals();
+ const tentacles=mesh(tentacleGeo,new T.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.20,transparent:true,opacity:.57,roughness:.6,side:T.DoubleSide,depthWrite:false}),group);
+ const armVertices=[],armIndices=[];
+ for(let arm=0;arm<4;arm++){
+  const angle=arm*Math.PI/2+.4,offset=armVertices.length/3;
+  for(let n=0;n<=28;n++){
+   const u=n/28,width=.038*Math.sin(Math.PI*(u*.9+.07))*(1-u*.65);
+   for(let side=0;side<2;side++){
+    const edge=side?1:-1,fold=Math.sin(u*48+arm)*.018*u;
+    armVertices.push(Math.cos(angle)*(.06+.06*u)+Math.cos(angle+Math.PI/2)*width*edge+Math.sin(u*8+arm)*.035*u,
+     -.035-u*(.67+arm*.045)+fold*edge,
+     Math.sin(angle)*(.06+.06*u)+Math.sin(angle+Math.PI/2)*width*edge+Math.cos(u*7+arm)*.03*u);
+   }
+   if(n<28){const p=offset+n*2;armIndices.push(p,p+2,p+1,p+1,p+2,p+3);}
+  }
+ }
+ const armGeo=new T.BufferGeometry();armGeo.setAttribute('position',new T.Float32BufferAttribute(armVertices,3));armGeo.setIndex(armIndices);armGeo.computeVertexNormals();
+ const arms=mesh(armGeo,new T.MeshStandardMaterial({color:0xe5eff1,emissive:c,emissiveIntensity:.12,transparent:true,opacity:.48,roughness:.65,side:T.DoubleSide,depthWrite:false}),group);
+ const halo=new T.Sprite(new T.SpriteMaterial({map:glowTexture,color:c,transparent:true,opacity:.065,depthWrite:false,blending:T.AdditiveBlending}));
+ halo.scale.set(1.2,1.2,1);halo.position.y=.08;group.add(halo);
  group.position.set(Math.cos(i*2.3)*3.9,2.8+(i%3)*1.15,Math.sin(i*2.3)*3.9);
- group.scale.setScalar(.7+(i%3)*.12);
- jellies.push({group,phase:i*2.1,baseY:group.position.y});
+ const size=.76+(i%3)*.12;group.scale.setScalar(size);
+ jellies.push({group,bellRoot,phase:i*2.1,baseY:group.position.y,baseX:group.position.x,baseZ:group.position.z,size,
+  strands:[{geo:tentacleGeo,base:Float32Array.from(vertices)},{geo:armGeo,base:Float32Array.from(armVertices)}]});
 }
 // Particles and bubbles give the water depth and movement.
 const bubbles=[];
@@ -2290,10 +2348,18 @@ function frame(t){
   g.sprite.material.opacity=.06+.13*(.5+.5*Math.sin(t*.0012+g.phase));
  }
  for(const j of jellies){
-  j.group.position.y=j.baseY+Math.sin(t*.00065+j.phase)*.28;
-  j.group.rotation.y=t*.00018+j.phase;
-  const pulse=1+.045*Math.sin(t*.002+j.phase);
-  j.group.scale.setScalar((.7+(Math.round(j.phase/2.1)%3)*.12)*pulse);
+  const cycle=t*.00165+j.phase,stroke=Math.pow((Math.sin(cycle)+1)*.5,3);
+  j.group.position.set(j.baseX+Math.sin(t*.00019+j.phase)*.18,j.baseY+Math.sin(cycle-.55)*.12+Math.sin(t*.00021+j.phase)*.18,j.baseZ+Math.cos(t*.00017+j.phase)*.13);
+  j.group.rotation.set(Math.sin(t*.00031+j.phase)*.07,t*.000045+j.phase,Math.sin(t*.00027+j.phase)*.09);
+  j.bellRoot.scale.set(1-stroke*.13,1+stroke*.20,1-stroke*.13);
+  for(const strand of j.strands){
+   const pos=strand.geo.attributes.position,base=strand.base;
+   for(let n=0;n<pos.count;n++){
+    const k=n*3,depth=Math.max(0,-base[k+1]),lag=cycle-depth*3.5;
+    pos.setXYZ(n,base[k]+Math.sin(lag+base[k+2]*3)*depth*.095,base[k+1]+stroke*depth*.06,base[k+2]+Math.cos(lag*.87+base[k]*3)*depth*.075);
+   }
+   pos.needsUpdate=true;
+  }
  }
  // Species-inspired simplified behavior: clownfish defend an anemone-sized home,
 // tangs cruise open water, butterflyfish inspect reef, cardinalfish hover in groups,
