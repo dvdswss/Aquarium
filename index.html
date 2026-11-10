@@ -2396,25 +2396,25 @@ syncFish();
 // Real 3D food particles. Fish steer toward nearby pellets and peck when they reach them.
 const foodParticles=[];
 const foodMaterials=[0xffcc78,0xa9d879,0xffab80,0xe8b87b,0xffd6a0].map(c=>new T.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.32,roughness:.78,fog:false}));
-// Shared camera-facing star texture, with independent twinkle per pellet.
-const foodStarCanvas=document.createElement('canvas');foodStarCanvas.width=foodStarCanvas.height=64;
-const foodStarCtx=foodStarCanvas.getContext('2d');
-const foodStarGlow=foodStarCtx.createRadialGradient(32,32,0,32,32,30);
-foodStarGlow.addColorStop(0,'rgba(255,255,235,1)');foodStarGlow.addColorStop(.14,'rgba(255,234,170,.85)');foodStarGlow.addColorStop(1,'rgba(255,220,130,0)');
-foodStarCtx.fillStyle=foodStarGlow;foodStarCtx.fillRect(0,0,64,64);
-foodStarCtx.fillStyle='#fffce7';foodStarCtx.beginPath();
-for(let j=0;j<8;j++){const a=j*Math.PI/4-Math.PI/2,r=j%2?3:27;const x=32+Math.cos(a)*r,y=32+Math.sin(a)*r;j?foodStarCtx.lineTo(x,y):foodStarCtx.moveTo(x,y);}
-foodStarCtx.closePath();foodStarCtx.fill();
-const foodStarTexture=new T.CanvasTexture(foodStarCanvas);
+// Soft round dust glow, with steady brightness and no star rays.
+const foodDustCanvas=document.createElement('canvas');foodDustCanvas.width=foodDustCanvas.height=64;
+const foodDustCtx=foodDustCanvas.getContext('2d');
+const foodDustGlow=foodDustCtx.createRadialGradient(32,32,0,32,32,30);
+foodDustGlow.addColorStop(0,'rgba(255,251,225,.9)');
+foodDustGlow.addColorStop(.18,'rgba(255,241,200,.7)');
+foodDustGlow.addColorStop(.45,'rgba(255,233,180,.22)');
+foodDustGlow.addColorStop(1,'rgba(255,233,180,0)');
+foodDustCtx.fillStyle=foodDustGlow;foodDustCtx.fillRect(0,0,64,64);
+const foodDustTexture=new T.CanvasTexture(foodDustCanvas);
 window.addEventListener('aquaria-feed',event=>{
  if(!active||!scene)return;
  const food=event.detail?.food??0;
  const count=food===0?10:food===1?13:food===2?16:food===3?18:21;
  for(let i=0;i<count;i++){
   const x=(Math.random()-.5)*4.6,z=(Math.random()-.5)*3.5;
-  const pellet=new T.Mesh(new T.IcosahedronGeometry(.025+(i%3)*.005,1),foodMaterials[food]||foodMaterials[0]);
-  const sparkle=new T.Sprite(new T.SpriteMaterial({map:foodStarTexture,color:0xffedb5,transparent:true,opacity:.8,blending:T.AdditiveBlending,depthWrite:false,fog:false}));
-  sparkle.scale.setScalar(.19);pellet.add(sparkle);
+  const pellet=new T.Mesh(new T.IcosahedronGeometry(.009+(i%3)*.002,1),foodMaterials[food]||foodMaterials[0]);
+  const sparkle=new T.Sprite(new T.SpriteMaterial({map:foodDustTexture,color:0xfff2ce,transparent:true,opacity:.58,blending:T.AdditiveBlending,depthWrite:false,fog:false}));
+  sparkle.scale.setScalar(.06+Math.random()*.025);pellet.add(sparkle);
   pellet.position.set(x,6.6+Math.random()*.45,z);pellet.rotation.set(Math.random()*3,Math.random()*3,0);scene.add(pellet);
   foodParticles.push({mesh:pellet,life:performance.now()+22000,lastUpdate:performance.now(),food,phase:Math.random()*6.28,sparkle,eaten:false});
  }
@@ -2499,10 +2499,7 @@ for(let i=foodParticles.length-1;i>=0;i--){
  pellet.mesh.position.y-=foodDt*.00032;
  pellet.mesh.position.x+=Math.sin(t*.001+pellet.phase)*foodDt*.00005;
  pellet.mesh.rotation.x+=foodDt*.0007;pellet.mesh.rotation.z+=foodDt*.00045;
- const twinkle=Math.pow(.5+.5*Math.sin(t*.007+pellet.phase),3);
- pellet.sparkle.material.opacity=.22+twinkle*.78;
- pellet.sparkle.scale.setScalar(.11+twinkle*.13);
- pellet.sparkle.material.rotation=t*.0005+pellet.phase;
+ // Keep the dust softly lit without blinking or changing size.
 }
 for(const f of fish){
  const dt=Math.min(45,Math.max(0,t-(f.lastSwim||t-16)));f.lastSwim=t;
