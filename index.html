@@ -105,11 +105,41 @@ main,#game,#game section:first-child{position:fixed!important;inset:0!important;
 <div class="drawer-actions"><button onclick="openAquariaMissions()">📜 <span>오늘의 미션 <small>코인 보상</small></span></button><button onclick="openAquariaShop('fish')">🐠 <span>물고기 종류 <small>선택해서 구매</small></span></button><button onclick="openAquariaDecorShop()">🪸 <span>수족관 꾸미기 <small>해조류 · 산호 · 지형</small></span></button><button onclick="cleanGame()">🫧 <span>수족관 청소 <small>+3 XP</small></span></button><button onclick="collectBonus()">🎁 <span>일일 보상 <small>+15 코인</small></span></button></div>
 </div></details>
 <p id="notice" class="muted">바닷속 친구들과 함께 푸른 세계를 탐험해 봐!</p>
-</div></section></div></main><script>const key='aquaria-v1';let state;try{state=JSON.parse(localStorage.getItem(key))||{name:'25큐브',temp:'',fish:[],logs:[],coins:20,virtual:2,plants:0}}catch(e){state={name:'25큐브',temp:'',fish:[],logs:[],coins:20,virtual:2,plants:0}}function aquariaInitLives(){
- if(Array.isArray(state.fishLives))return;
+</div></section></div></main><script>const key='aquaria-v1';let state;try{state=JSON.parse(localStorage.getItem(key))||{name:'25큐브',temp:'',fish:[],logs:[],coins:20,virtual:2,plants:0}}catch(e){state={name:'25큐브',temp:'',fish:[],logs:[],coins:20,virtual:2,plants:0}}const aquariaHeartDuration=20000,aquariaGrowthDuration=30*60*1000;
+function aquariaGrowth(f,now=Date.now()){
+ if(!f||!f.offspring)return 1;
+ return Math.max(0,Math.min(1,(now-f.born)/aquariaGrowthDuration));
+}
+function aquariaGrowthScale(f,now=Date.now()){
+ const age=aquariaGrowth(f,now),smooth=age*age*(3-2*age);
+ return .32+.68*smooth;
+}
+function aquariaGrowthLabel(f,now=Date.now()){
+ const progress=aquariaGrowth(f,now);
+ return progress>=1?'성체':progress<.25?'새끼 · 성장 '+Math.floor(progress*100)+'%':'어린 물고기 · 성장 '+Math.floor(progress*100)+'%';
+}
+function aquariaTryBreed(parent,now=Date.now()){
+ if(state.fishLives.length>=38||aquariaGrowth(parent,now)<1||parent.stress>=60||(parent.breedCooldownUntil||0)>now)return null;
+ const mate=state.fishLives.find(f=>f!==parent&&f.kind===parent.kind&&aquariaGrowth(f,now)>=1&&(f.heartUntil||0)>now&&f.loveReady&&!(f.stress>=60)&&!(f.breedCooldownUntil>now));
+ if(!mate)return null;
+ // Consume this pair's opportunity even on a failed roll; hearts stay visible.
+ parent.loveReady=false;mate.loveReady=false;
+ parent.breedCooldownUntil=mate.breedCooldownUntil=now+30000;
+ if(Math.random()>=.30)return null;
+ parent.breedCooldownUntil=mate.breedCooldownUntil=now+10*60*1000;
+ const baby={kind:parent.kind,born:now,offspring:true,parents:[parent.id,mate.id],id:crypto.randomUUID(),lifeDays:21+Math.floor(Math.random()*15),satiety:100,satietyAt:now,stress:0,stressAt:now};
+ state.fishLives.push(baby);state.virtual=state.fishLives.length;state.aquariaSpecies=state.fishLives.map(f=>f.kind);
+ const message='새끼 물고기 +1 🐣';window.aquariaLifeNotice=message;
+ const notice=document.getElementById('notice');if(notice)notice.textContent=message;
+ if(typeof aquariaDecorToast==='function')aquariaDecorToast(message);
+ return baby;
+}
+
+function aquariaInitLives(){
+ if(Array.isArray(state.fishLives)){for(const f of state.fishLives)if(!f.id)f.id=crypto.randomUUID();return;}
  const n=Math.min(38,Math.max(0,Number(state.virtual)||0));
  const purchased=Array.isArray(state.aquariaSpecies)?state.aquariaSpecies:[];
- state.fishLives=Array.from({length:n},(_,i)=>({kind:i>=n-purchased.length?(purchased[i-(n-purchased.length)]??i%14):i%14,born:Date.now(),lifeDays:21+Math.floor(Math.random()*15)}));
+ state.fishLives=Array.from({length:n},(_,i)=>({kind:i>=n-purchased.length?(purchased[i-(n-purchased.length)]??i%14):i%14,born:Date.now(),id:crypto.randomUUID(),lifeDays:21+Math.floor(Math.random()*15)}));
  state.lifeCheckedAt=Date.now();
 }
 function aquariaLifeStep(){
@@ -129,11 +159,7 @@ function aquariaLifeStep(){
    return tick-f.born<(f.lifeDays||28)*(1-penalty)*86400000;
   });
   deaths+=before-state.fishLives.length;
-  if(state.fishLives.length>=2&&state.fishLives.length<38&&(state.cleanliness??100)>=55&&Math.random()<.12){
-   const parent=state.fishLives[Math.floor(Math.random()*state.fishLives.length)];
-   state.fishLives.push({kind:parent.kind,born:tick,lifeDays:21+Math.floor(Math.random()*15)});
-   births++;
-  }
+
  }
  state.lifeCheckedAt+=elapsed*period;
  state.virtual=state.fishLives.length;
@@ -273,8 +299,11 @@ window.aquariaFishTouched=function(index){
   reward=roll<.02?25:roll<.10?10:roll<.35?3:0;
   if(reward)state.coins=(Number(state.coins)||0)+reward;
  }
+ fish.heartUntil=stressed?0:now+aquariaHeartDuration;
+ fish.loveReady=!stressed&&aquariaGrowth(fish,now)>=1;
+ const baby=stressed?null:aquariaTryBreed(fish,now);
  save();
- return {reward,stressed};
+ return {reward,stressed,baby,heartMs:stressed?0:aquariaHeartDuration};
 };
 const aquariaFishCatalog=[['흰동가리',20],['블루탱',40],['옐로탱',65],['나비고기',100],['로열 그라마',150],['카디널피시',230],['라이언피시',350],['만다린피시',420],['파이어고비',460],['퍼플탱',500],['폭스페이스',540],['파자마 카디널',580],['블랙클라운',620],['네온고비',660]];
 // Food groups: omnivore, algae grazer, plankton picker and carnivore.
@@ -642,11 +671,11 @@ function aquariaUpdateFishDetails(){
  const penalty=stress>=75?.45:stress>=50?.2:0,remaining=Math.max(0,(f.lifeDays||28)*(1-penalty)-age);
  const hunger=aquariaHungerStatus(f,now);
  document.getElementById('aquariaFishDetailsTitle').textContent=f.name||(aquariaFishCatalog[kind]?.[0]||'물고기')+' #'+(index+1);
- document.getElementById('aquariaFishDetailsSpecies').textContent=(aquariaFishCatalog[kind]?.[0]||'물고기')+' · 개체 #'+(index+1);
+ document.getElementById('aquariaFishDetailsSpecies').textContent=(aquariaFishCatalog[kind]?.[0]||'물고기')+' · '+aquariaGrowthLabel(f,now)+' · #'+(index+1);
  document.getElementById('aquariaFishDetailsBrief').textContent='🍤 '+Math.round(hunger.value)+'% · 스트레스 '+Math.round(stress)+'%';
  document.getElementById('aquariaFishDetailsDescription').textContent=aquariaSpeciesDescriptions[kind]||'수조 안을 유영하는 물고기야.';
  const stats=document.getElementById('aquariaFishDetailsStats');stats.replaceChildren();
- for(const label of ['포만감 '+Math.round(hunger.value)+'% · '+aquariaHungerLabel(hunger.value),'스트레스 '+Math.round(stress)+'% · '+(stress>=75?'높음':stress>=40?'주의':'안정'),'나이 '+age.toFixed(1)+'일 · 예상 남은 수명 '+remaining.toFixed(1)+'일','수조 청결도 '+(state.cleanliness??100)+'%']){
+ for(const label of ['포만감 '+Math.round(hunger.value)+'% · '+aquariaHungerLabel(hunger.value),'스트레스 '+Math.round(stress)+'% · '+(stress>=75?'높음':stress>=40?'주의':'안정'),'나이 '+age.toFixed(1)+'일 · 예상 남은 수명 '+remaining.toFixed(1)+'일','성장 단계 '+aquariaGrowthLabel(f,now),'수조 청결도 '+(state.cleanliness??100)+'%']){
   const row=document.createElement('p');row.style.margin='5px 0';row.textContent=label;stats.append(row);
  }
 }
@@ -1038,6 +1067,7 @@ function touchFishAt(clientX,clientY){
  target.ty=Math.max(80,Math.min(306,target.y-12-Math.random()*22));
  target.swimRate=2.2;target.waitUntil=0;
  const result=window.aquariaFishTouched?.(fish.indexOf(target))||{};
+ target.touchUntil=result.stressed?0:performance.now()+(result.heartMs||aquariaHeartDuration);
  if(result.stressed){target.rewardText='스트레스 ↑';target.rewardUntil=performance.now()+1150;target.swimRate=3.2;target.touchUntil=0;}
  else if(result.reward){target.rewardText='+'+result.reward+'coin';target.rewardUntil=performance.now()+1150;}
 }
@@ -1099,10 +1129,18 @@ window.addEventListener('aquaria-feed',event=>{
  }
 });
 function sync(){
+aquariaInitLives();
 const count=Math.min(38,Math.max(0,Number(state.virtual)||0));
-while(fish.length<count){const i=fish.length;fish.push({x:30+rand(i+12)*180,y:95+rand(i+44)*155,z:.55+rand(i+7)*.65,dir:i%2?1:-1,speed:.48+rand(i+23)*.30,phase:i*2.4,color:palette[i%palette.length],kind:(state.fishLives?.[i]?.kind??i%14)})}
-fish.length=count;
+const previous=new Map(fish.map(f=>[f.life,f]));const next=[];
+for(let i=0;i<count;i++){
+ const life=state.fishLives[i],existing=previous.get(life);
+ if(existing){next.push(existing);continue;}
+ const parent=fish.find(f=>life.parents?.includes(f.life?.id));
+ next.push({life,x:parent?parent.x+4:30+rand(i+12)*180,y:parent?parent.y+3:95+rand(i+44)*155,z:.55+rand(i+7)*.65,dir:i%2?1:-1,speed:.48+rand(i+23)*.30,phase:i*2.4,color:palette[i%palette.length],kind:life?.kind??i%14});
 }
+fish.splice(0,fish.length,...next);
+}
+
 window.addEventListener('aquaria-dev-sync',()=>{fish.length=0;sync()});
 window.syncAquarium3D=sync;sync();
 function rect(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(Math.round(x*4)/4,Math.round(y*4)/4,Math.max(.25,Math.round(w*4)/4),Math.max(.25,Math.round(h*4)/4))}
@@ -1186,7 +1224,7 @@ function drawReefFish(f,t,k){
  const sizes=[.91,1.17,1.05,1.04,.79,.83,1.18,.78,.77,1.08,1.03,.82,.91,.73];
  const rest=(f.waitUntil||0)>t&&!(f.playUntil>t);
  const pose=aquariaSwimPose(f,k,f.poseTime?Math.min(64,t-f.poseTime):32,(f.motionSpeed||0)/.8,rest);f.poseTime=t;
- const z=(f.z||1)*.43*sizes[k],beat=pose.beat*(rest?.15:.4+Math.min(1,f.motionSpeed||0));
+ const z=(f.z||1)*.43*sizes[k]*aquariaGrowthScale(f.life),beat=pose.beat*(rest?.15:.4+Math.min(1,f.motionSpeed||0));
  const bob=Math.sin(t*.0017+phase)*([5,11,8].includes(k)?.18:k===7?.08:.35),turn=Math.max(.15,Math.abs(f.turnEase??f.dir));
  C.save();C.translate(f.x,f.y+bob);C.rotate((f.swimPitch||0)+(typeof fishPosture==='function'?fishPosture(f,t):0));
  C.scale(dir*z*turn,z);
@@ -1513,8 +1551,9 @@ if(aquariaFishFollow?.view==='2d'&&state.fishLives[i]===aquariaFishFollow.life){
 if(f.rewardUntil>t){
  ctx.fillStyle='#ffe3a2';ctx.font='bold 9px sans-serif';ctx.fillText(f.rewardText,f.x+8,f.y-12-(1-(f.rewardUntil-t)/1150)*7);
 }
-if(f.touchUntil>t){
- const pulse=(f.touchUntil-t)/1100;
+if((f.life?.heartUntil||0)>Date.now()){
+ f.touchUntil=t+Math.max(0,f.life.heartUntil-Date.now());
+ const pulse=Math.min(1,(f.touchUntil-t)/1000);
  ctx.fillStyle='rgba(255,207,232,'+(pulse*.85)+')';
  ctx.font='8px sans-serif';ctx.fillText('♥',f.x-3,f.y-11-(1-pulse)*9);
 }
@@ -1720,7 +1759,9 @@ const heartLayer=document.createElement('div');
 heartLayer.className='aquaria-heart-layer';layer.append(heartLayer);
 function spawnFishHearts(f){
  if(!f||!camera||!renderer)return;
- // One tiny matte heart, not a burst of emoji or oversized glowing stickers.
+ const previous=floatingHearts.find(h=>h.heart&&h.fish===f);
+ if(previous){previous.born=performance.now();return;}
+ // A small persistent heart follows this fish for the full courtship window.
  const el=document.createElement('span');
  el.className='aquaria-floating-heart aquaria-heart-shape';
  el.innerHTML='<svg viewBox="0 0 24 23" aria-hidden="true"><path d="M12 20.5 4.3 13.4C-1.3 7.9 6.1 1.1 12 7.2 17.9 1.1 25.3 7.9 19.7 13.4Z" fill="#f3b9ca" stroke="#ffe3eb" stroke-width=".65"/></svg>';
@@ -2402,7 +2443,7 @@ function createFish(k,i){
    if(n<9)sculptFin(g,[[x,y],[x-.18,tip],[x+.13*p.l-.10,tip-.20],[x+.13*p.l,y]],finMat,finColors[k]);
   }
  }
- g.scale.setScalar(size);
+ g.scale.setScalar(size*aquariaGrowthScale(state.fishLives[i]));
  const angle=i*2.399;
  const startRadius=2.1+seeded(i+240)*4.7;
  const startX=Math.cos(angle)*startRadius,startZ=Math.sin(angle)*startRadius,startY=1.6+seeded(i+340)*20;
@@ -2410,7 +2451,9 @@ function createFish(k,i){
  const home=habitatStarts[k];
  if(home)g.position.set(home[0]+Math.sin(i*2.399)*.35,home[1],home[2]+Math.cos(i*2.399)*.35);
  else g.position.set(startX,startY,startZ);
- fish.push({g,body:swimmingBody,bodyBase:swimmingBase,bodyLength:p.l,tail:tailPivot,fin:finPivot,oppositeFin,k,phase:i*1.6,
+ const parent=fish.find(f=>state.fishLives[i]?.parents?.includes(f.life?.id));
+ if(parent)g.position.copy(parent.g.position).add(new T.Vector3(.15,.1,.1));
+ fish.push({g,life:state.fishLives[i],adultScale:size,body:swimmingBody,bodyBase:swimmingBase,bodyLength:p.l,tail:tailPivot,fin:finPivot,oppositeFin,k,phase:i*1.6,
   velocity:new T.Vector3(Math.cos(angle+1),.06,Math.sin(angle+1)).multiplyScalar(.0006),
   target:g.position.clone(),nextTurn:0,
   swimSpeed:([.00078,.00115,.00102,.00076,.00094,.00048,.00043,.00085,.0011,.00095,.0009,.0007,.0008,.0012][k]||.0008),
@@ -2419,9 +2462,16 @@ function createFish(k,i){
 window.addEventListener('aquaria-dev-sync',()=>{syncDecorations();for(const f of fish){scene.remove(f.g);f.body.geometry.dispose()}fish.length=0;syncFish()});
 function syncFish(){
  const count=Math.min(38,Math.max(0,Number(state.virtual)));
- while(fish.length<count){const roster=JSON.parse(localStorage.getItem('aquaria-v1')||'{}').aquariaSpecies||[];const i=fish.length;const start=Math.max(0,count-roster.length);const k=JSON.parse(localStorage.getItem('aquaria-v1')||'{}').fishLives?.[i]?.kind??(i>=start?roster[i-start]:i%14);createFish(Number.isInteger(k)&&k>=0&&k<14?k:i%14,i);}
- while(fish.length>count){const f=fish.pop();scene.remove(f.g);f.body.geometry.dispose()}
+ if(fish.length===count&&fish.every((f,i)=>f.life===state.fishLives[i]))return;
+ const previous=fish.splice(0),byLife=new Map(previous.map(f=>[f.life,f]));
+ for(let i=0;i<count;i++){
+  const life=state.fishLives[i],existing=byLife.get(life);
+  if(existing){fish.push(existing);byLife.delete(life);continue;}
+  const kind=Number.isInteger(life?.kind)?life.kind:0;createFish(Math.max(0,Math.min(13,kind)),i);
+ }
+ for(const f of byLife.values()){scene.remove(f.g);f.body.geometry.dispose();}
 }
+
 syncFish();
 // Real 3D food particles. Fish steer toward nearby pellets and peck when they reach them.
 const foodParticles=[];
@@ -2481,17 +2531,21 @@ function frame(t){
  requestAnimationFrame(frame);
  if(t-last<30)return;last=t;
  resize();syncFish();updateCamera();
+ for(const f of fish)if((f.life?.heartUntil||0)>Date.now()&&!floatingHearts.some(h=>h.heart&&h.fish===f)){
+  spawnFishHearts(f);const h=floatingHearts.find(h=>h.heart&&h.fish===f);
+  if(h)h.born=performance.now()-(aquariaHeartDuration-(f.life.heartUntil-Date.now()));
+ }
  const bounds=layer.getBoundingClientRect();
  for(let i=floatingHearts.length-1;i>=0;i--){
-  const h=floatingHearts[i],age=(t-h.born)/(h.heart?950:1250);
-  if(age>=1){h.el.remove();floatingHearts.splice(i,1);continue;}
+  const h=floatingHearts[i],age=(t-h.born)/(h.heart?aquariaHeartDuration:1250);
+  if(age>=1||(h.heart&&(!fish.includes(h.fish)||!(h.fish.life?.heartUntil>Date.now())))){h.el.remove();floatingHearts.splice(i,1);continue;}
   const p=h.heart&&h.fish?.g?h.fish.g.position.clone().add(new window.THREE.Vector3(0,.42+age*.38,0)):h.coin&&h.fish?.g?h.fish.g.position.clone().add(new window.THREE.Vector3(.85,.42+age*.38,0)):h.base.clone().add(new window.THREE.Vector3(h.offset*.24,age*.85,0));
   p.project(camera);
   if(p.z>1||p.z< -1){h.el.style.display='none';continue;}
   h.el.style.display='block';
   h.el.style.left=((p.x+1)*.5*bounds.width)+'px';
   h.el.style.top=((-p.y+1)*.5*bounds.height)+'px';
-  h.el.style.opacity=String(h.heart?Math.min(1,age*9)*Math.min(1,(1-age)*3):Math.min(1,age*5)*(1-age));
+  h.el.style.opacity=String(h.heart?Math.min(1,age*80)*Math.min(1,(1-age)*20):Math.min(1,age*5)*(1-age));
   h.el.style.transform='translate(-50%,-50%) scale('+(h.heart?(0.8+Math.sin(age*Math.PI)*.25):(0.75+age*.55))+')';
  }
  for(const k of kelps)k.g.rotation.z=Math.sin(t*.0008+k.phase)*.08;
@@ -2534,6 +2588,7 @@ for(let i=foodParticles.length-1;i>=0;i--){
 for(const f of fish){
  const dt=Math.min(45,Math.max(0,t-(f.lastSwim||t-16)));f.lastSwim=t;
  const pos=f.g.position,k=f.k,phase=f.phase;
+ f.g.scale.setScalar(f.adultScale*aquariaGrowthScale(f.life));
  // Fixed habitat anchors occupy both the inner reef and its outer edges.
  const homes=[[-2.3,1.7,1.6],[0,4.8,0],[0,3.5,0],[4.6,2.3,-2.5],[-4.9,1.7,-2.2],[3.9,3,2.8],[4.7,1.7,1.8],[-4.5,1.2,-2.8],[-3.6,2.7,3.9],[0,4.2,0],[0,3.8,0],[-4.1,3,-2.7],[-2.3,1.7,1.6],[4.8,1.5,-2.2]];
  let [hx,hy,hz]=homes[k];
@@ -2966,3 +3021,4 @@ window.addEventListener('aquaria-dev-sync',aquariaRenderHunger);
 #game .aquaria-quick #aquariaHunger>summary>progress::-moz-progress-bar{background:#8cdec1;border-radius:4px}
 html body #aquariaFishDetails{bottom:calc(env(safe-area-inset-bottom,0px) + 120px)!important}
 </style>
+
