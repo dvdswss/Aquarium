@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#071725"><title>AQUARIA</title><script>
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#252747"><title>AQUARIA</title><script>
 try{if(localStorage.getItem('aquaria-preferred-view')==='3d')document.documentElement.classList.add('aquaria-restoring-3d')}catch(e){}
 </script><style id="aquaria-view-restore-guard">
 html.aquaria-restoring-3d #game #scene>canvas{visibility:hidden!important}
@@ -997,12 +997,12 @@ window.aquariaFishPreview=function(kind){
 };
 function draw(t){
 const grad=ctx.createLinearGradient(0,0,0,H);
-grad.addColorStop(0,'#80d8e8');grad.addColorStop(.16,'#438db8');grad.addColorStop(.43,'#344e92');grad.addColorStop(.72,'#332f76');grad.addColorStop(1,'#191e50');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+grad.addColorStop(0,'#739fb9');grad.addColorStop(.16,'#4f789f');grad.addColorStop(.43,'#414e83');grad.addColorStop(.72,'#39345f');grad.addColorStop(1,'#24243f');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
 // Dreamlike submerged aurora: translucent lavender and turquoise halos.
 for(let i=0;i<5;i++){
 const x=35+i*49+Math.sin(t*.00015+i)*8,y=75+i%3*62;
 const glow=ctx.createRadialGradient(x,y,2,x,y,64+i%2*24);
-glow.addColorStop(0,i%2?'rgba(195,133,237,.17)':'rgba(100,233,226,.18)');
+glow.addColorStop(0,i%2?'rgba(208,153,223,.20)':'rgba(137,226,216,.17)');
 glow.addColorStop(1,'rgba(30,35,100,0)');
 ctx.fillStyle=glow;ctx.fillRect(x-95,y-95,190,190);
 }
@@ -1442,14 +1442,14 @@ async function load(){
 }
 function build(){
 const T=window.THREE;
-scene=new T.Scene();scene.background=new T.Color(0x344b70);scene.fog=new T.Fog(0x344b70,20,36);
+scene=new T.Scene();scene.background=new T.Color(0x252747);scene.fog=new T.Fog(0x252747,20,36);
 camera=new T.PerspectiveCamera(54,1,.1,90);
 renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'default'});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));renderer.outputColorSpace=T.SRGBColorSpace;
 layer.insertBefore(renderer.domElement,hint);
-scene.add(new T.HemisphereLight(0x9deeea,0x291b56,1.8));
-const light=new T.DirectionalLight(0xb5eafc,1.7);light.position.set(-4,13,5);scene.add(light);
-const glow=new T.PointLight(0xb88dff,42,21);glow.position.set(2,4,-2);scene.add(glow);
+scene.add(new T.HemisphereLight(0xb7d6ef,0x38264f,1.65));
+const light=new T.DirectionalLight(0xd8d8ff,1.55);light.position.set(-4,13,5);scene.add(light);
+const glow=new T.PointLight(0xb296ee,30,21);glow.position.set(2,4,-2);scene.add(glow);
 const mat=(c,rough=.8,transparent=false,opacity=1)=>new T.MeshStandardMaterial({color:c,roughness:rough,metalness:.04,transparent,opacity,side:T.DoubleSide});
 
 const sand=mat(0x394b72),rock=mat(0x60728d),stone=mat(0x8798b5),algae=mat(0x46ac9d),coral=[mat(0xe89cbb),mat(0xc2a0e5),mat(0x85ded5),mat(0xf1bca7)];
@@ -1606,7 +1606,8 @@ for(let i=0;i<3;i++){
     }
     float alpha=(1.0-exp(-total*.15))*lightStrength;
     if(alpha<.002)discard;
-    gl_FragColor=vec4(.72,.89,1.0,alpha);
+    vec3 tint=mix(vec3(.65,.9,.92),vec3(.84,.73,1.0),.5+.5*sin(lightTime*.12));
+    gl_FragColor=vec4(tint,alpha);
    }
   `
  });
@@ -1615,7 +1616,7 @@ for(let i=0;i<3;i++){
  veils.push({plane,phase:i*2.3,baseTilt:plane.rotation.z,baseX:plane.position.x,baseY:plane.position.y,swaySpeed:.00015+i*.000035});
 }
 const motes=[];
-const moteColors=[0x8ef7e8,0xd7b7ff,0xf9d5bc];
+const moteColors=[0xa1eedb,0xcbb6f3,0xf5c2dd];
 for(let i=0;i<24;i++){
  const a=seeded(i+700)*Math.PI*2,r=Math.sqrt(seeded(i+710))*7.7;
  const material=new T.MeshBasicMaterial({color:moteColors[i%3],transparent:true,opacity:.17,depthWrite:false,blending:T.AdditiveBlending});
