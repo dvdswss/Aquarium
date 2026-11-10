@@ -1404,7 +1404,7 @@ function spawnFishHearts(f){
  heartLayer.append(el);
  floatingHearts.push({el,fish:f,born:performance.now(),offset:0,base:f.g.position.clone().add(new window.THREE.Vector3(0,.42,0)),heart:true});
 }
-let initialized=false,active=false,renderer,scene,camera,start3DFrame=null,fish=[],orbit={theta:0,phi:1.32,radius:14,targetY:2.8},pointer=new Map(),lastDistance=0;
+let initialized=false,active=false,renderer,scene,camera,start3DFrame=null,fish=[],orbit={theta:0,phi:.82,radius:14,targetY:2.8},pointer=new Map(),lastDistance=0;
 const colors=[0xf17d35,0x256dce,0xf3d347,0xf2e5b0,0x9255bc,0xe8e5d8,0xb87565,0x1967b7,0xf7eddd,0x7443ac,0xeac34f,0xe5d8bd,0x30343e,0x1b3655];
 // Modern Three.js is an ES module; the old three.min.js URL no longer exists.
 async function load(){
@@ -1463,7 +1463,7 @@ groundGeometry.setAttribute('color',new T.Float32BufferAttribute(groundColors,3)
 const groundMaterial=sand.clone();groundMaterial.vertexColors=true;groundMaterial.color.set(0xffffff);
 const floor=mesh(groundGeometry,groundMaterial,scene);
 
-const glass=mesh(new T.CylinderGeometry(55,55,14,96,1,true),new T.MeshPhysicalMaterial({color:0x8adcf1,transparent:true,opacity:.045,roughness:.06,side:T.DoubleSide,depthWrite:false}),scene,0,4.05,0);
+// Keep the outer tank wall outside the visible underwater view.
 
 const kelps=[],anemoneArms=[];
 function branch(parent,origin,dir,length,width,depth,material,seed){
@@ -1863,7 +1863,7 @@ window.addEventListener('aquaria-feed',event=>{
  }
 });
 function updateCamera(){
- orbit.phi=Math.max(.18,Math.min(Math.PI-.18,orbit.phi));
+ orbit.phi=Math.max(.4,Math.min(.94,orbit.phi));
  orbit.radius=Math.max(5.5,Math.min(27,orbit.radius));
  camera.position.set(Math.sin(orbit.theta)*Math.sin(orbit.phi)*orbit.radius,orbit.targetY+Math.cos(orbit.phi)*orbit.radius,Math.cos(orbit.theta)*Math.sin(orbit.phi)*orbit.radius);
  camera.lookAt(0,orbit.targetY,0);
@@ -2099,7 +2099,7 @@ layer.addEventListener('pointermove',e=>{
 function end(e){if(fishPlay3D?.id===e.pointerId)fishPlay3D=null;pointer.delete(e.pointerId);lastDistance=0}
 layer.addEventListener('pointerup',end);layer.addEventListener('pointercancel',end);
 layer.addEventListener('wheel',e=>{e.preventDefault();orbit.radius*=e.deltaY>0?1.09:.91},{passive:false});
-layer.addEventListener('dblclick',()=>{orbit.theta=0;orbit.phi=1.32;orbit.radius=14;orbit.targetY=2.8});
+layer.addEventListener('dblclick',()=>{orbit.theta=0;orbit.phi=.82;orbit.radius=14;orbit.targetY=2.8});
 initialized=true;resize();updateCamera();
 }
 const viewPreferenceKey='aquaria-preferred-view';
