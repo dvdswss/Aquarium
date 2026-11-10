@@ -1578,10 +1578,10 @@ for(let y=0;y<256;y++)for(let x=0;x<128;x++){
 }
 daylightCtx.putImageData(daylightImage,0,0);
 const daylightTexture=new T.CanvasTexture(daylightCanvas);
-for(let i=0;i<2;i++){
+for(let i=0;i<3;i++){
  const material=new T.MeshBasicMaterial({map:daylightTexture,color:0xe1f5ff,transparent:true,opacity:.28,side:T.DoubleSide,depthWrite:false,blending:T.AdditiveBlending});
- const plane=mesh(new T.PlaneGeometry(8+i*3,26),material,scene,i===0?-4.7:5.3,13,-5-i*2);
- plane.rotation.y=i===0?.25:-.3;plane.rotation.z=i===0?-.16:.1;
+ const plane=mesh(new T.PlaneGeometry([8,11,7][i],26),material,scene,[-4.7,5.3,.8][i],13,[-5,-7,-3.5][i]);
+ plane.rotation.y=[.25,-.3,.08][i];plane.rotation.z=[-.16,.1,-.06][i];
  veils.push({plane,phase:i*2.3,baseTilt:plane.rotation.z});
 }
 const motes=[];
