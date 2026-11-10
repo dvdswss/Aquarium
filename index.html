@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#18384b"><title>AQUARIA</title><script>
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#071f2d"><title>AQUARIA</title><script>
 try{if(localStorage.getItem('aquaria-preferred-view')==='3d')document.documentElement.classList.add('aquaria-restoring-3d')}catch(e){}
 </script><style id="aquaria-view-restore-guard">
 html.aquaria-restoring-3d #game #scene>canvas{visibility:hidden!important}
@@ -81,7 +81,7 @@ main,#game,#game section:first-child{position:fixed!important;inset:0!important;
 #game section:first-child>p:not(#notice){top:calc(env(safe-area-inset-top,0px) + 126px)!important}
 #game .gameBar{top:calc(env(safe-area-inset-top,0px) + 154px)!important}
 @media(max-width:520px){#game .gameStats{top:calc(env(safe-area-inset-top,0px) + 46px)!important}#game section:first-child>p:not(#notice){top:calc(env(safe-area-inset-top,0px) + 109px)!important}#game .gameBar{top:calc(env(safe-area-inset-top,0px) + 136px)!important}}
-</style><header><h1>🐠 AQUARIA</h1><span>VIRTUAL AQUARIUM</span></header><main><div id="real" class="hidden" aria-hidden="true"><section><h2>🪸 어항 선택</h2><div class="row"><select id="tankSelect" onchange="switchTank(this.value)"></select><input id="newTank" placeholder="새 어항 이름"><button onclick="createTank()">＋ 추가</button></div><button onclick="renameTank()">선택 어항 이름 변경</button></section>
+</style><header><h1><span class="ocean-brand-mark"><svg class="ocean-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9c3-5 5 5 8 0s5 5 8 0M2 15c3-5 5 5 8 0s5 5 8 0"/></svg></span><span class="ocean-brand-copy">AQUARIA<small>나만의 작은 바다</small></span></h1><span>VIRTUAL AQUARIUM</span></header><main><div id="real" class="hidden" aria-hidden="true"><section><h2>🪸 어항 선택</h2><div class="row"><select id="tankSelect" onchange="switchTank(this.value)"></select><input id="newTank" placeholder="새 어항 이름"><button onclick="createTank()">＋ 추가</button></div><button onclick="renameTank()">선택 어항 이름 변경</button></section>
 <section><h2>🐟 개체별 관리</h2><p class="muted">기존에 등록한 물고기는 아래 목록에 그대로 남아 있어.</p><div class="row"><input id="petName" placeholder="이름"><input id="petSpecies" placeholder="종류"><select id="petSex"><option value="미상">성별 미상</option><option>암컷</option><option>수컷</option></select><input id="petDate" type="date"></div><button onclick="addPet()">개체 등록</button><ul id="petsList"></ul></section>
 <section><h2>📅 관리 일정</h2><div class="row"><select id="taskType"><option>환수</option><option>먹이</option><option>여과기 청소</option><option>수질 검사</option><option>기타</option></select><input id="taskDays" type="number" min="1" value="7" placeholder="주기(일)"><button onclick="addTask()">일정 추가</button></div><ul id="tasksList"></ul><p class="muted">앱을 열면 예정일을 확인할 수 있어. 푸시 알림은 아직 지원하지 않아.</p></section>
 <section><h2>📈 수온 및 관리 기록</h2><p class="muted">수온은 어항 저장 버튼을 누를 때마다 기록돼.</p><svg id="tempGraph" viewBox="0 0 320 145" style="width:100%;background:#092235;border-radius:8px" role="img" aria-label="최근 수온 변화 그래프"></svg><p id="graphInfo" class="muted"></p><div id="logSummary"></div></section>
@@ -91,18 +91,18 @@ main,#game,#game section:first-child{position:fixed!important;inset:0!important;
 <div class="pixel-controls">
 <div class="oceanHud">
 <div class="gameStats">
-<div><span>🪙 코인</span><strong id="coins"></strong></div>
-<div><span>🐟 물고기</span><strong id="population"></strong></div>
-<div><span>⭐ 레벨</span><strong id="level"></strong></div>
+<div><span><svg class="ocean-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0ZM10 6v8m2-7H9a2 2 0 0 0 0 3h2a2 2 0 0 1 0 3H8"/></svg> 코인</span><strong id="coins"></strong></div>
+<div><span><svg class="ocean-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11C8 4 14 4 18 11c-4 7-10 7-14 0ZM4 11l-3-3v6l3-3m9-1h.01"/></svg> 물고기</span><strong id="population"></strong></div>
+<div><span><svg class="ocean-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 2 2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9L7.5 7 10 2Z"/></svg> 레벨</span><strong id="level"></strong></div>
 </div>
 <div class="oceanHudBottom">
 <div class="oceanLevel"><span>EXP <span id="xpText"></span></span><span class="oceanClean">✨ <strong id="cleanliness"></strong>% · 🪸 <strong id="plantCount"></strong></span></div>
 <div class="gameBar"><span id="xpBar"></span></div>
 </div></div>
-<div id="aquariaMissions" class="aquaria-shop" hidden><div class="aquaria-shop-head"><strong>📜 오늘의 미션</strong><button onclick="document.getElementById('aquariaMissions').hidden=true">✕</button></div><div id="aquariaMissionList" class="aquaria-shop-list"></div></div><div id="aquariaShop" class="aquaria-shop" hidden><div class="aquaria-shop-head"><strong id="aquariaShopTitle">상점</strong><button onclick="closeAquariaShop()">✕</button></div><div id="aquariaShopList" class="aquaria-shop-list"></div></div><div class="aquaria-quick"><button onclick="openAquariaShop('food')" aria-label="먹이 종류 선택">🍤 <span>먹이 주기</span></button><details id="aquariaHunger"><summary><span class="hunger-summary">🍤 포만감 100%</span><progress max="100" value="100" aria-label="전체 물고기 평균 포만감"></progress><span class="hunger-warning" role="status" aria-live="polite"></span></summary><div class="hunger-content"><p>게임 기준 · 24시간이면 포만감 100% → 0%. 이후 12시간 동안 먹이를 안 주면 굶어 죽어. 앱을 꺼 둔 시간도 포함돼.</p><div class="hunger-fish-list"></div><p class="hunger-loss"></p></div></details></div>
+<div id="aquariaMissions" class="aquaria-shop" hidden><div class="aquaria-shop-head"><strong>📜 오늘의 미션</strong><button onclick="document.getElementById('aquariaMissions').hidden=true">✕</button></div><div id="aquariaMissionList" class="aquaria-shop-list"></div></div><div id="aquariaShop" class="aquaria-shop" hidden><div class="aquaria-shop-head"><strong id="aquariaShopTitle">상점</strong><button onclick="closeAquariaShop()">✕</button></div><div id="aquariaShopList" class="aquaria-shop-list"></div></div><div class="aquaria-quick"><button onclick="openAquariaShop('food')" aria-label="먹이 종류 선택"><svg class="ocean-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h12l-1 10H5L4 8ZM7 4l1 2m5-2-1 2M3 8h14"/></svg> <span>먹이 주기</span></button><details id="aquariaHunger"><summary><span class="hunger-summary">🍤 포만감 100%</span><progress max="100" value="100" aria-label="전체 물고기 평균 포만감"></progress><span class="hunger-warning" role="status" aria-live="polite"></span></summary><div class="hunger-content"><p>게임 기준 · 24시간이면 포만감 100% → 0%. 이후 12시간 동안 먹이를 안 주면 굶어 죽어. 앱을 꺼 둔 시간도 포함돼.</p><div class="hunger-fish-list"></div><p class="hunger-loss"></p></div></details></div>
 <details class="aquaria-drawer" id="aquariaDrawer"><summary aria-label="수족관 관리 메뉴 열기"><span class="drawer-icon">☰</span><span>관리 메뉴</span><span class="drawer-chevron">⌃</span></summary>
 <div class="aquaria-drawer-content"><div class="drawer-title">AQUARIA <small>OCEAN CARE</small></div>
-<div class="drawer-actions"><button onclick="openAquariaMissions()">📜 <span>오늘의 미션 <small>코인 보상</small></span></button><button onclick="openAquariaShop('fish')">🐠 <span>물고기 종류 <small>선택해서 구매</small></span></button><button onclick="openAquariaDecorShop()">🪸 <span>수족관 꾸미기 <small>해조류 · 산호 · 지형</small></span></button><button onclick="cleanGame()">🫧 <span>수족관 청소 <small>+3 XP</small></span></button><button onclick="collectBonus()">🎁 <span>일일 보상 <small>+15 코인</small></span></button></div>
+<div class="drawer-actions"><button onclick="openAquariaMissions()"><svg class="ocean-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 5h11M6 10h11M6 15h11M2 5h.01M2 10h.01M2 15h.01"/></svg> <span>오늘의 미션 <small>코인 보상</small></span></button><button onclick="openAquariaShop('fish')"><svg class="ocean-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11C8 4 14 4 18 11c-4 7-10 7-14 0ZM4 11l-3-3v6l3-3m9-1h.01"/></svg> <span>물고기 종류 <small>선택해서 구매</small></span></button><button onclick="openAquariaDecorShop()"><svg class="ocean-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 19V5m0 8-5-3V5m5 11 5-4V7m-5 1 4-3V2M5 8 2 6"/></svg> <span>수족관 꾸미기 <small>해조류 · 산호 · 지형</small></span></button><button onclick="cleanGame()"><svg class="ocean-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c0 4-6 6-6 10a5 5 0 0 0 10 0c0-3-2-5-4-10ZM3 3v4M1 5h4"/></svg> <span>수족관 청소 <small>+3 XP</small></span></button><button onclick="collectBonus()"><svg class="ocean-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9h14v9H3V9ZM2 6h16v3H2V6Zm8 0v12M10 6C3 6 5 0 8 3l2 3Zm0 0c7 0 5-6 2-3l-2 3Z"/></svg> <span>일일 보상 <small>+15 코인</small></span></button></div>
 </div></details>
 <p id="notice" class="muted">바닷속 친구들과 함께 푸른 세계를 탐험해 봐!</p>
 </div></section></div></main><script>const key='aquaria-v1';let state;try{state=JSON.parse(localStorage.getItem(key))||{name:'25큐브',temp:'',fish:[],logs:[],coins:20,virtual:2,plants:0}}catch(e){state={name:'25큐브',temp:'',fish:[],logs:[],coins:20,virtual:2,plants:0}}const aquariaHeartDuration=20000,aquariaGrowthDuration=30*60*1000;
@@ -3022,3 +3022,75 @@ window.addEventListener('aquaria-dev-sync',aquariaRenderHunger);
 html body #aquariaFishDetails{bottom:calc(env(safe-area-inset-bottom,0px) + 120px)!important}
 </style>
 
+
+
+<style id="aquaria-ocean-ui-v1">
+:root{--ocean-ink:#071f2d;--ocean-glass:rgba(8,29,43,.82);--ocean-line:rgba(175,221,224,.17);--ocean-accent:#a3e0cd;--ocean-muted:#9cbac4;--ocean-text:#ecf5f3}
+html body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ocean-text);-webkit-font-smoothing:antialiased}
+html body button,html body input,html body select{font-family:inherit;border-width:1px;border-radius:12px;box-shadow:none;letter-spacing:0}
+html body button:active{transform:scale(.97);box-shadow:none}
+html body button:focus-visible,html body summary:focus-visible,html body input:focus-visible{outline:2px solid var(--ocean-accent);outline-offset:4px}
+.ocean-icon{width:19px;height:19px;display:inline-block;vertical-align:middle;flex:none}
+html body header{padding:20px 22px 38px;background:linear-gradient(180deg,rgba(3,18,30,.65),transparent);z-index:30}
+html body header h1{display:flex;align-items:center;gap:10px;margin:0;color:#e6f5ef;letter-spacing:3.2px;text-shadow:none;font:500 17px/1.2 -apple-system,BlinkMacSystemFont,sans-serif}
+html body header h1 span{display:block;text-align:left;color:inherit}
+html body header .ocean-brand-mark{display:grid;place-items:center;width:33px;height:33px;border:1px solid #a6dacc3b;border-radius:50%;color:#b5e4d3;background:#112e3940}
+html body header .ocean-brand-mark .ocean-icon{width:20px;height:20px}
+html body header .ocean-brand-copy{font-size:17px;letter-spacing:3.2px}
+html body header h1 small{display:block;margin-top:5px;font-size:9px;font-weight:400;letter-spacing:1.2px;color:#b2c7c9}
+html body #scene .view-switch{top:calc(env(safe-area-inset-top,0px) + 22px)!important;right:20px!important;min-height:34px!important;padding:7px 13px!important;border:1px solid var(--ocean-line)!important;border-radius:30px!important;background:rgba(7,27,42,.58)!important;color:#d4e4e7!important;font:500 10px/1.2 -apple-system,BlinkMacSystemFont,sans-serif!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important}
+html body #game .pixel-controls::before{content:"";position:fixed;inset:auto 0 0;height:155px;background:linear-gradient(transparent,rgba(3,18,28,.56));z-index:19;pointer-events:none}
+html body #game .pixel-controls>.oceanHud{bottom:calc(env(safe-area-inset-bottom,0px) + 78px)!important;padding:8px 13px!important;gap:12px!important;border:1px solid #b4ddd71c!important;border-radius:17px!important;background:rgba(7,27,39,.56)!important;box-shadow:none!important;backdrop-filter:blur(18px)!important;-webkit-backdrop-filter:blur(18px)!important}
+html body #game .pixel-controls .oceanHud>.gameStats{gap:12px!important}
+html body #game .pixel-controls .oceanHud>.gameStats>div{padding:0 10px 0 0!important;min-width:40px!important;border-right:1px solid #b4ddd71f!important;text-align:left!important;line-height:1.2!important}
+html body #game .pixel-controls .oceanHud>.gameStats>div:last-child{padding-right:0!important;border:0!important}
+html body #game .pixel-controls .oceanHud .gameStats span{display:flex;align-items:center;gap:4px;font-size:8px!important;font-weight:400;color:#9cbac4!important}
+html body #game .pixel-controls .oceanHud .gameStats .ocean-icon{width:11px;height:11px}
+html body #game .pixel-controls .oceanHud .gameStats strong{display:block;margin-top:4px;font-size:14px!important;font-weight:500!important;color:#ebf7ef!important;font-variant-numeric:tabular-nums}
+html body #game .pixel-controls .oceanHud>.oceanHudBottom{width:96px!important;border-left:1px solid #b4ddd71f!important;padding-left:12px!important}
+html body #game .pixel-controls .oceanHudBottom .oceanLevel{font-size:8px!important;color:#9cbac4}
+html body #game .pixel-controls .oceanHudBottom .oceanClean{color:#a5bdc2;font-size:8px!important}
+html body #game .pixel-controls .oceanHudBottom .gameBar{height:3px!important;background:#bfd5d51a!important;margin-top:6px!important}
+html body #game .gameBar span{background:linear-gradient(90deg,#638e9b,#a4d8c6)!important;border-radius:5px}
+html body #game .pixel-controls .aquaria-quick,html body #game .pixel-controls .aquaria-drawer{bottom:calc(env(safe-area-inset-bottom,0px) + 17px)!important}
+html body #game .pixel-controls .aquaria-quick{left:18px!important;gap:8px!important}
+html body #game .pixel-controls .aquaria-drawer{right:18px!important;width:min(340px,calc(100vw - 36px))!important;pointer-events:none!important}
+html body #game .pixel-controls .aquaria-drawer>summary,html body #game .aquaria-drawer-content{pointer-events:auto!important}
+html body #game .pixel-controls .aquaria-quick>button{display:flex;align-items:center;gap:6px;min-height:43px!important;padding:0 15px!important;border:1px solid #b0e5cf66!important;border-radius:15px!important;background:linear-gradient(150deg,#9ad4be,#7eb9ac)!important;box-shadow:0 5px 22px #031c2833!important;color:#0b302f!important;font-size:11px!important;font-weight:600!important}
+html body #game .pixel-controls .aquaria-drawer>summary{min-height:43px!important;padding:0 14px!important;border:1px solid var(--ocean-line)!important;border-radius:15px!important;background:rgba(7,27,42,.76)!important;color:#dfebec!important;font-size:11px!important;box-shadow:none!important;gap:8px!important}
+html body #game .drawer-icon{font-size:14px;color:#a7c4c7}
+html body #game .drawer-chevron{font-size:12px;color:#819fa9}
+html body #game .aquaria-quick #aquariaHunger{width:73px!important;border:1px solid var(--ocean-line)!important;border-radius:14px!important;background:rgba(7,27,42,.72)!important;box-shadow:none!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+html body #game .aquaria-quick #aquariaHunger>summary{min-height:43px!important;padding:8px 9px!important;gap:5px!important}
+html body #game .aquaria-quick #aquariaHunger .hunger-summary{font-size:9px!important;font-weight:400!important;line-height:12px!important;color:#c5d8db!important}
+html body #game .aquaria-quick #aquariaHunger>summary>progress{height:3px!important}
+html body #game .aquaria-quick #aquariaHunger[open]>.hunger-content{left:-138px!important;width:min(280px,calc(100vw - 36px))!important;bottom:calc(100% + 13px)!important;padding:15px!important;border:1px solid var(--ocean-line)!important;border-radius:20px!important;background:rgba(7,27,42,.95)!important;box-shadow:0 16px 50px #020e2455!important;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+html body #game .aquaria-drawer-content{bottom:calc(100% + 14px)!important;padding:20px 14px 14px!important;border:1px solid var(--ocean-line)!important;border-radius:24px!important;background:linear-gradient(145deg,rgba(18,46,59,.97),rgba(6,25,39,.97))!important;box-shadow:0 20px 65px #010d2055!important;max-height:70dvh;overflow-y:auto}
+html body #game .drawer-title{font:500 14px/1.3 -apple-system,BlinkMacSystemFont,sans-serif!important;letter-spacing:3px!important;color:#e4f3ee!important;padding:0 7px 17px!important}
+html body #game .drawer-title small{font-size:8px!important;color:#8cabb4!important;letter-spacing:1.5px!important}
+html body #game .drawer-actions{gap:8px!important}
+html body #game .drawer-actions button{min-height:76px!important;gap:10px!important;padding:13px 10px!important;border:1px solid #b4ddd714!important;border-radius:16px!important;background:#d1f2e906!important;font-size:11px!important;font-weight:500!important;box-shadow:none!important;color:#e3efed!important}
+html body #game .drawer-actions button>.ocean-icon{width:20px;height:20px;color:#a0c5bc}
+html body #game .drawer-actions button small{font-size:9px!important;color:#8dabb5!important;font-weight:400}
+html body #game .aquaria-shop{width:min(430px,calc(100vw - 28px))!important;bottom:calc(env(safe-area-inset-bottom,0px) + 76px)!important;max-height:min(70dvh,660px)!important;border:1px solid var(--ocean-line)!important;border-radius:25px!important;background:linear-gradient(145deg,rgba(16,43,56,.97),rgba(6,25,40,.97))!important;box-shadow:0 24px 90px #010d2055!important;backdrop-filter:blur(24px)!important;-webkit-backdrop-filter:blur(24px)!important}
+html body #game .aquaria-shop-head{padding:19px 19px 16px!important;border-color:#b4ddd717!important}
+html body #game .aquaria-shop-head strong{font-size:15px!important;font-weight:500!important;color:#e4f2ed!important;letter-spacing:.2px}
+html body #game .aquaria-shop-head button{border:1px solid #d4e7e314!important;background:#cde9df08!important;color:#aec7ca!important;border-radius:12px!important;min-height:32px!important;width:32px!important}
+html body #game .aquaria-shop-list{padding:10px 13px 17px!important;scrollbar-width:thin;scrollbar-color:#46606a transparent}
+html body #game .aquaria-shop-item{min-height:69px!important;padding:13px!important;gap:12px!important;margin:7px 0!important;border:1px solid #b4ddd717!important;border-radius:16px!important;background:#cde9df06!important;box-shadow:none!important;color:#deeeeb!important;font-size:12px!important;font-weight:400!important}
+html body #game .aquaria-shop-item strong{font-size:11px!important;font-weight:500!important;color:#d5c49d!important}
+html body #game .aquaria-shop-item small{color:#91adb7!important;font-size:10px!important}
+html body #game .aquaria-shop-item img{border-radius:12px!important;background:#071b2b44!important;object-fit:contain}
+html body #aquariaFishDetails{background:rgba(6,29,43,.52)!important;border:1px solid #c6e5df24!important;border-radius:17px!important;padding:11px 12px!important;box-shadow:none!important;color:#e4f1ed!important}
+html body #aquariaFishDetailsTitle{font-weight:500!important;color:#ecf6ef!important}
+html body #aquariaFishDetails .fish-detail-head button{border:1px solid #b4ddd71c!important;border-radius:9px!important;background:#d1f2e90a!important;color:#b4d2d1!important;box-shadow:none!important}
+html body #aquariaFishDetailsBrief{color:#a9c8ca!important;font-size:10px!important}
+html body #aquariaFishExtra summary{color:#91afb8!important}
+html body #aquariaFishDetails input{background:#061b2a88!important;border-color:#c3dfd32b!important;border-radius:10px!important}
+html body #aquariaDecorToast{padding:9px 15px!important;max-width:calc(100vw - 40px)!important;border:1px solid #b4ddd72b!important;border-radius:30px!important;background:rgba(9,34,47,.92)!important;color:#d5e8e1!important;font:500 11px/1.5 -apple-system,BlinkMacSystemFont,sans-serif!important;box-shadow:0 8px 28px #03192633!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+html body #notice{bottom:calc(env(safe-area-inset-bottom,0px) + 134px)!important;background:transparent!important;border:0!important;box-shadow:none!important;font:400 10px/1.5 -apple-system,BlinkMacSystemFont,sans-serif!important;color:#b3cbce!important;letter-spacing:.15px!important;max-width:80vw!important;text-shadow:0 1px 8px #031b2a;padding:0!important}
+html body dialog{border:1px solid #b4ddd733!important;border-radius:23px!important;background:#102c3b!important;color:#e4f2ed!important;box-shadow:0 20px 80px #020d2255!important;font-family:inherit!important}
+html body dialog::backdrop{background:#020e1c66;backdrop-filter:blur(4px)}
+@media(max-width:360px){html body header{padding-left:15px}html body #game .pixel-controls .aquaria-quick{left:10px!important;gap:5px!important}html body #game .pixel-controls .aquaria-drawer{right:10px!important}html body #game .pixel-controls .aquaria-quick>button{padding:0 10px!important}html body #game .pixel-controls .aquaria-drawer>summary{padding:0 10px!important}html body #game .pixel-controls>.oceanHud{gap:7px!important;padding:7px 10px!important}html body #game .pixel-controls .oceanHud>.gameStats{gap:7px!important}html body #game .pixel-controls .oceanHud>.oceanHudBottom{width:78px!important;padding-left:7px!important}}
+@media(max-height:520px){html body #game .aquaria-shop{max-height:70dvh!important}html body #game .pixel-controls>.oceanHud{bottom:calc(env(safe-area-inset-bottom,0px) + 72px)!important}html body #notice{display:none!important}}
+</style>
