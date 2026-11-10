@@ -102,7 +102,7 @@ main,#game,#game section:first-child{position:fixed!important;inset:0!important;
 <div id="aquariaMissions" class="aquaria-shop" hidden><div class="aquaria-shop-head"><strong>📜 오늘의 미션</strong><button onclick="document.getElementById('aquariaMissions').hidden=true">✕</button></div><div id="aquariaMissionList" class="aquaria-shop-list"></div></div><div id="aquariaShop" class="aquaria-shop" hidden><div class="aquaria-shop-head"><strong id="aquariaShopTitle">상점</strong><button onclick="closeAquariaShop()">✕</button></div><div id="aquariaShopList" class="aquaria-shop-list"></div></div><div class="aquaria-quick"><button onclick="openAquariaShop('food')" aria-label="먹이 종류 선택">🍤 <span>먹이 주기</span></button></div>
 <details class="aquaria-drawer" id="aquariaDrawer"><summary aria-label="수족관 관리 메뉴 열기"><span class="drawer-icon">☰</span><span>관리 메뉴</span><span class="drawer-chevron">⌃</span></summary>
 <div class="aquaria-drawer-content"><div class="drawer-title">AQUARIA <small>OCEAN CARE</small></div>
-<div class="drawer-actions"><button onclick="openAquariaMissions()">📜 <span>오늘의 미션 <small>코인 보상</small></span></button><button onclick="openAquariaShop('fish')">🐠 <span>물고기 종류 <small>선택해서 구매</small></span></button><button onclick="buyPlant()">🪸 <span>산호 구매 <small>10 코인</small></span></button><button onclick="cleanGame()">🫧 <span>수족관 청소 <small>+3 XP</small></span></button><button onclick="collectBonus()">🎁 <span>일일 보상 <small>+15 코인</small></span></button></div>
+<div class="drawer-actions"><button onclick="openAquariaMissions()">📜 <span>오늘의 미션 <small>코인 보상</small></span></button><button onclick="openAquariaShop('fish')">🐠 <span>물고기 종류 <small>선택해서 구매</small></span></button><button onclick="openAquariaDecorShop()">🪸 <span>수족관 꾸미기 <small>해조류 · 산호 · 지형</small></span></button><button onclick="cleanGame()">🫧 <span>수족관 청소 <small>+3 XP</small></span></button><button onclick="collectBonus()">🎁 <span>일일 보상 <small>+15 코인</small></span></button></div>
 </div></details>
 <p id="notice" class="muted">바닷속 친구들과 함께 푸른 세계를 탐험해 봐!</p>
 </div></section></div></main><script>const key='aquaria-v1';let state;try{state=JSON.parse(localStorage.getItem(key))||{name:'25큐브',temp:'',fish:[],logs:[],coins:20,virtual:2,plants:0}}catch(e){state={name:'25큐브',temp:'',fish:[],logs:[],coins:20,virtual:2,plants:0}}function aquariaInitLives(){
@@ -267,6 +267,49 @@ function loadAquariaFishPhoto(i,img){
  };
  requestAnimationFrame(render);
 }
+
+const aquariaDecorCatalog=[["해조류","초록 켈프",10,0,"#58bca3"],["해조류","붉은 해조",14,1,"#d47799"],["해조류","바다 포도",18,2,"#8acb80"],["해조류","부채 해조",20,3,"#b7a669"],["해조류","깃털 해조",24,4,"#80c3ac"],["해조류","갈색 켈프",16,5,"#ba996b"],["해조류","청록 해초",22,0,"#63cecc"],["해조류","보랏빛 해조",28,1,"#b296d8"],["산호","핑크 가지산호",20,0,"#f1a1c5"],["산호","보라 가지산호",25,1,"#b99ade"],["산호","민트 산호",30,2,"#83d7cb"],["산호","오렌지 산호",28,3,"#f2b18a"],["산호","둥근 산호",35,4,"#dfa0bc"],["산호","테이블 산호",42,5,"#b3a0e1"],["산호","부채 산호",48,6,"#d88fae"],["산호","말미잘",38,7,"#f2a6be"],["지형","조약돌 무리",15,0,"#8195af"],["지형","큰 암석",25,1,"#718ca5"],["지형","바위 동굴",45,2,"#7086a1"],["지형","낮은 돌기둥",35,3,"#8ba4b9"],["지형","고대 아치",65,4,"#90a2ba"],["지형","무너진 유적",55,5,"#778fa9"],["지형","계단식 암초",50,6,"#6d9e9c"],["지형","수정 군락",75,7,"#bba6e2"]];
+function aquariaDecorInit(){
+ if(!Array.isArray(state.decorations)){
+  state.decorations=Array.from({length:Math.min(24,Math.max(0,Number(state.plants)||0))},(_,i)=>({kind:8,x:.08+(i*.618)% .84,y:.76+(i%4)*.045}));
+  localStorage.setItem(key,JSON.stringify(state));
+ }
+ return state.decorations;
+}
+function aquariaDecorIcon(item){
+ const c=item[4],type=item[0],k=item[3];
+ const shape=type==='해조류'?'<path d="M30 50Q12 32 22 12M30 50Q49 30 38 7M30 50V16" fill="none" stroke="'+c+'" stroke-width="5"/>':type==='산호'?'<path d="M30 52V22M30 37L14 27V15M30 31L46 20V10M14 27L6 20M46 20L54 16" fill="none" stroke="'+c+'" stroke-width="5"/>':k===4?'<path d="M8 51V12H52V51H42V23H18V51Z" fill="'+c+'"/>':'<path d="M6 50L9 29L22 18L42 21L54 39L51 51Z" fill="'+c+'"/>';
+ return '<svg width="58" height="58" viewBox="0 0 60 60" aria-hidden="true">'+shape+'</svg>';
+}
+function openAquariaDecorShop(category='해조류'){
+ aquariaDecorInit();
+ const panel=document.getElementById('aquariaShop'),list=document.getElementById('aquariaShopList');
+ document.getElementById('aquariaShopTitle').textContent='수족관 꾸미기 · '+state.coins+' 코인';
+ list.replaceChildren();
+ const tabs=document.createElement('div');tabs.style.cssText='display:flex;gap:6px;padding-bottom:12px';
+ for(const group of ['해조류','산호','지형']){const b=document.createElement('button');b.textContent=group;b.style.opacity=group===category?'1':'.55';b.onclick=()=>openAquariaDecorShop(group);tabs.append(b)}list.append(tabs);
+ aquariaDecorCatalog.forEach((item,kind)=>{
+  if(item[0]!==category)return;
+  const owned=state.decorations.filter(d=>d.kind===kind).length;
+  const b=document.createElement('button');b.className='aquaria-shop-item';b.style.cssText='display:flex;align-items:center;gap:10px;width:100%;margin-bottom:8px';
+  b.innerHTML=aquariaDecorIcon(item)+'<span style="flex:1;text-align:left">'+item[1]+'<small style="display:block">보유 '+owned+'개 · 구매하면 수조에 배치</small></span><strong>'+item[2]+' 🪙</strong>';
+  b.disabled=state.coins<item[2]||state.decorations.length>=80;
+  b.onclick=()=>buyAquariaDecor(kind,category);list.append(b);
+ });
+ const note=document.createElement('p');note.textContent='장식 '+state.decorations.length+'/80 · 구매 내역은 2D·3D에 함께 적용돼.';list.append(note);
+ list.style.maxHeight='min(62vh,520px)';list.style.overflowY='auto';
+ panel.hidden=false;document.getElementById('aquariaMissions').hidden=true;document.getElementById('aquariaDrawer').open=false;
+}
+function buyAquariaDecor(kind,category){
+ const item=aquariaDecorCatalog[kind];aquariaDecorInit();
+ if(!item||state.coins<item[2]||state.decorations.length>=80)return;
+ const i=state.decorations.length;
+ state.coins-=item[2];state.decorations.push({kind,x:.08+(i*.61803398875)% .84,y:.76+(i%5)*.035});
+ state.plants=state.decorations.filter(d=>aquariaDecorCatalog[d.kind]?.[0]!=='지형').length;
+ gainXP(3);save();window.dispatchEvent(new Event('aquaria-decor-sync'));openAquariaDecorShop(category);
+}
+aquariaDecorInit();
+
 let aquariaShopMode='fish';
 function openAquariaShop(mode){
  aquariaShopMode=mode;
@@ -314,7 +357,7 @@ function purchaseAquariaItem(i){
  }
  save();if(aquariaShopMode==='food')window.dispatchEvent(new CustomEvent('aquaria-feed',{detail:{food:i,group:item[3]}}));closeAquariaShop();
 }
-function feed(){state.coins+=5;gainXP(2);state.cleanliness=Math.max(0,(state.cleanliness??100)-3);document.getElementById('notice').textContent='냠냠! 물고기들이 맛있게 먹었어 🫧';save()}function buyFish(){if(state.coins<20)return alert('코인이 부족해');aquariaInitLives();state.coins-=20;state.virtual++;state.fishLives.push({kind:0,born:Date.now(),lifeDays:21+Math.floor(Math.random()*15)});gainXP(10);save()}function buyPlant(){if(state.coins<10)return alert('코인이 부족해');state.coins-=10;state.plants++;gainXP(5);save()}function render(){document.getElementById('tankInfo').textContent=state.name+' · '+(state.temp?state.temp+'°C':'수온 미기록');document.getElementById('tankName').value=state.name;let w=state.water||{};for(let id of ['ph','ammonia','nitrite'])document.getElementById(id).value=w[id]??'';document.getElementById('waterInfo').textContent=w.date?'최근 수질 ('+w.date+'): pH '+(w.ph||'—')+' · 암모니아 '+(w.ammonia||'—')+' mg/L · 아질산염 '+(w.nitrite||'—')+' mg/L':'수질 미기록';document.getElementById('waterHistory').textContent='수질 측정 횟수: '+(state.waterHistory||[]).length;document.getElementById('temp').value=state.temp;document.getElementById('fishList').replaceChildren(...state.fish.map((f,i)=>{let li=document.createElement('li');li.textContent=f.n+' × '+f.c+' ';let b=document.createElement('button');b.textContent='삭제';b.onclick=()=>{state.fish.splice(i,1);save()};li.append(b);return li}));let change=state.logs.find(x=>x.type==='환수');document.getElementById('waterChange').textContent=change?'마지막 환수: '+change.date+' ('+Math.max(0,Math.floor((Date.now()-new Date(change.timestamp||change.date).getTime())/86400000)||0)+'일 전)':'아직 환수 기록이 없어';document.getElementById('logs').replaceChildren(...state.logs.map(x=>{let li=document.createElement('li');li.textContent=x.date+' · '+x.type+' '+x.memo;return li}));document.getElementById('coins').textContent=state.coins;document.getElementById('population').textContent=state.virtual;let xp=state.xp||0,lv=Math.floor(xp/50)+1;document.getElementById('level').textContent=lv;document.getElementById('xpText').textContent=(xp%50)+'/50';document.getElementById('xpBar').style.width=(xp%50)*2+'%';document.getElementById('cleanliness').textContent=state.cleanliness??100;document.getElementById('plantCount').textContent=state.plants;if(window.syncAquarium3D){window.syncAquarium3D()}else{const scene=document.getElementById('scene');scene.querySelectorAll('.fish,.extraPlant,.bubble,.pixel-fish,.pixel-plant,.pixel-rock').forEach(x=>x.remove());for(let i=0;i<Math.min(state.virtual,35);i++){let f=document.createElement('span');f.className='pixel-fish';f.innerHTML=pixelFish(i);f.style.top=(12+(i*23)%63)+'%';f.style.setProperty('--duration',(7+i%6*1.3)+'s');f.style.setProperty('--delay',(-i*1.7)+'s');scene.append(f)}for(let i=0;i<Math.min(state.plants+2,24);i++){let p=document.createElement('span');p.className='pixel-plant';p.innerHTML=pixelPlant(i);p.style.left=(4+(i*17)%89)+'%';scene.append(p)}for(let i=0;i<3;i++){let r=document.createElement('span');r.className='pixel-rock';r.style.left=(10+i*33)+'%';r.innerHTML='<svg viewBox="0 0 60 40"><path fill="#496f79" d="M6 34V22h8V12h12V6h18v8h10v20z"/><path fill="#77999a" d="M14 24V16h12V10h12v6H26v8z"/><path fill="#284d5c" d="M42 18h8v16H26v-6h16z"/></svg>';scene.append(r)}for(let i=0;i<9;i++){let b=document.createElement('span');b.className='bubble';b.textContent='◦';b.style.left=(5+i*11)+'%';b.style.animationDelay=(-i*.65)+'s';scene.append(b)}}}render();
+function feed(){state.coins+=5;gainXP(2);state.cleanliness=Math.max(0,(state.cleanliness??100)-3);document.getElementById('notice').textContent='냠냠! 물고기들이 맛있게 먹었어 🫧';save()}function buyFish(){if(state.coins<20)return alert('코인이 부족해');aquariaInitLives();state.coins-=20;state.virtual++;state.fishLives.push({kind:0,born:Date.now(),lifeDays:21+Math.floor(Math.random()*15)});gainXP(10);save()}function buyPlant(){openAquariaDecorShop('산호')}function render(){document.getElementById('tankInfo').textContent=state.name+' · '+(state.temp?state.temp+'°C':'수온 미기록');document.getElementById('tankName').value=state.name;let w=state.water||{};for(let id of ['ph','ammonia','nitrite'])document.getElementById(id).value=w[id]??'';document.getElementById('waterInfo').textContent=w.date?'최근 수질 ('+w.date+'): pH '+(w.ph||'—')+' · 암모니아 '+(w.ammonia||'—')+' mg/L · 아질산염 '+(w.nitrite||'—')+' mg/L':'수질 미기록';document.getElementById('waterHistory').textContent='수질 측정 횟수: '+(state.waterHistory||[]).length;document.getElementById('temp').value=state.temp;document.getElementById('fishList').replaceChildren(...state.fish.map((f,i)=>{let li=document.createElement('li');li.textContent=f.n+' × '+f.c+' ';let b=document.createElement('button');b.textContent='삭제';b.onclick=()=>{state.fish.splice(i,1);save()};li.append(b);return li}));let change=state.logs.find(x=>x.type==='환수');document.getElementById('waterChange').textContent=change?'마지막 환수: '+change.date+' ('+Math.max(0,Math.floor((Date.now()-new Date(change.timestamp||change.date).getTime())/86400000)||0)+'일 전)':'아직 환수 기록이 없어';document.getElementById('logs').replaceChildren(...state.logs.map(x=>{let li=document.createElement('li');li.textContent=x.date+' · '+x.type+' '+x.memo;return li}));document.getElementById('coins').textContent=state.coins;document.getElementById('population').textContent=state.virtual;let xp=state.xp||0,lv=Math.floor(xp/50)+1;document.getElementById('level').textContent=lv;document.getElementById('xpText').textContent=(xp%50)+'/50';document.getElementById('xpBar').style.width=(xp%50)*2+'%';document.getElementById('cleanliness').textContent=state.cleanliness??100;document.getElementById('plantCount').textContent=state.plants;if(window.syncAquarium3D){window.syncAquarium3D()}else{const scene=document.getElementById('scene');scene.querySelectorAll('.fish,.extraPlant,.bubble,.pixel-fish,.pixel-plant,.pixel-rock').forEach(x=>x.remove());for(let i=0;i<Math.min(state.virtual,35);i++){let f=document.createElement('span');f.className='pixel-fish';f.innerHTML=pixelFish(i);f.style.top=(12+(i*23)%63)+'%';f.style.setProperty('--duration',(7+i%6*1.3)+'s');f.style.setProperty('--delay',(-i*1.7)+'s');scene.append(f)}for(let i=0;i<Math.min(state.plants+2,24);i++){let p=document.createElement('span');p.className='pixel-plant';p.innerHTML=pixelPlant(i);p.style.left=(4+(i*17)%89)+'%';scene.append(p)}for(let i=0;i<3;i++){let r=document.createElement('span');r.className='pixel-rock';r.style.left=(10+i*33)+'%';r.innerHTML='<svg viewBox="0 0 60 40"><path fill="#496f79" d="M6 34V22h8V12h12V6h18v8h10v20z"/><path fill="#77999a" d="M14 24V16h12V10h12v6H26v8z"/><path fill="#284d5c" d="M42 18h8v16H26v-6h16z"/></svg>';scene.append(r)}for(let i=0;i<9;i++){let b=document.createElement('span');b.className='bubble';b.textContent='◦';b.style.left=(5+i*11)+'%';b.style.animationDelay=(-i*.65)+'s';scene.append(b)}}}render();
 const extraKey='aquaria-real-v2';
 let extra;
 try{extra=JSON.parse(localStorage.getItem(extraKey))}catch(e){}
@@ -875,99 +918,27 @@ light.addColorStop(1,'rgba(180,190,255,0)');
 ctx.fillStyle=light;ctx.fillRect(x-r,y-r,r*2,r*2);
 if(i%3===0)rect(x,y,1,1,i%2?'#b8ffe7':'#edc8ff');
 }
-// Ruins behind coral reefs, with shadowed archways.
+// The bare seabed is free; every plant, coral and terrain object is owned.
+polygon([[0,310],[W,310],[W,H],[0,H]],'#394e72');
 function arch(x,y,w,h){
-rect(x,y,w,5,'#657d9f');rect(x+3,y-5,w-6,3,'#91a2c2');
-rect(x+3,y+5,5,h,'#52688f');rect(x+w-8,y+5,5,h,'#52688f');
-rect(x+8,y+7,w-16,h-7,'#204a76');
-for(let k=0;k<3;k++){rect(x+3,y+10+k*9,5,1,'#8ea6b6');rect(x+w-8,y+10+k*9,5,1,'#8ea6b6')}
+ rect(x,y,w,5,'#91a2bc');rect(x+3,y+5,5,h,'#697d9b');rect(x+w-8,y+5,5,h,'#697d9b');
 }
-arch(28,122,54,85);arch(91,182,38,55);arch(191,92,36,91);
-for(let layer=0;layer<3;layer++){
-const base=236+layer*40;
-const pts=[[0,H],[0,base]];
-for(let x=0;x<=W;x+=6)pts.push([x,base+Math.sin(x*.03+layer*2)*13+Math.cos(x*.075+layer)*6]);
-pts.push([W,H]);polygon(pts,['#2d4276','#3b557f','#496784'][layer]);
-}
-// Fine masonry joints and pale mineral glints on submerged ruins.
-for(const ruin of [[28,122,54,85],[91,182,38,55],[191,92,36,91]]){
-const [rx,ry,rw,rh]=ruin;
-for(let j=0;j<Math.floor(rh/7);j++){
-const yy=ry+8+j*7;
-for(const xx of [rx+4,rx+rw-7]){
-rect(xx,yy,3,.5,'rgba(208,217,236,.45)');
-rect(xx+1,yy+2,.5,2,'rgba(25,45,85,.6)');
-}
-}
-for(let j=0;j<8;j++){
-const xx=rx+rand(j+rx)*rw,yy=ry+rand(j+ry)*5;
-rect(xx,yy,1,.5,'rgba(214,236,240,.5)');
-}
-}
-// Varied rock shelves and bright highlight edges.
-for(let i=0;i<44;i++){
-const x=rand(i+201)*W,y=250+rand(i+305)*104,r=5+rand(i+411)*17;
-polygon([[x-r,y],[x-r*.7,y-r*.7],[x+r*.35,y-r],[x+r,y-r*.25],[x+r*.7,y+5],[x-r*.7,y+5]],i%3?'#4d6389':'#60769a');
-polygon([[x-r*.7,y-r*.7],[x+r*.35,y-r],[x+r*.2,y-r*.5]],'#7b9eb2');
-}
-// Layered rock seams, sea-glass shards and encrusting algae.
-for(let i=0;i<34;i++){
-const x=rand(i+2230)*W,y=278+rand(i+2290)*73;
-const width=2+rand(i+2310)*7;
-polygon([[x,y],[x+width,y-1],[x+width-2,y+1],[x+1,y+2]],i%3?'rgba(26,49,91,.47)':'rgba(170,195,210,.42)');
-rect(x+1,y-.5,width*.35,.5,'rgba(195,222,224,.38)');
-}
-for(let i=0;i<13;i++){
-const x=rand(i+2410)*W,y=309+rand(i+2440)*39;
-polygon([[x,y],[x+2,y-4],[x+4,y],[x+2,y+1]],i%2?'rgba(105,214,208,.65)':'rgba(191,160,238,.7)');
-rect(x+2,y-3,.5,1,'rgba(246,255,255,.85)');
-}
-// Tiny stone facets, sand grains and pearly mineral specks.
-for(let i=0;i<190;i++){
-const x=rand(i+1510)*W,y=271+rand(i+1650)*87;
-const c=i%5===0?'rgba(197,210,222,.53)':i%3===0?'rgba(112,156,188,.6)':'rgba(30,57,99,.55)';
-rect(x,y,i%14===0?1:.5,i%9===0?1:.5,c);
-}
-// Tiny shells and star-shaped sea life hidden along the seabed.
-for(let i=0;i<11;i++){
-const x=rand(i+2510)*W,y=324+rand(i+2560)*29;
-ctx.fillStyle=i%2?'#d3b6cd':'#d9c6a7';
-ctx.beginPath();ctx.ellipse(x,y,2.5,1.3,-.3,0,Math.PI*2);ctx.fill();
-for(let k=0;k<3;k++)rect(x-1.5+k,y-1,.25,1,'rgba(255,247,231,.7)');
-}
-// Five intentional plant clusters tucked beside rocks; open middle channel.
-const seaPlantSites=[
-[17,317,29,0],[34,334,20,3],[67,312,24,1],
-[174,315,24,2],[213,322,34,4],[226,346,17,5]
-];
-for(let i=0;i<seaPlantSites.length;i++){
-const [x,y,h,type]=seaPlantSites[i];
-plant(x,y,h,type,t,false);
-}
-// Coral is similarly grouped on outcrops, rather than spread evenly across the floor.
-const coralSites=[[12,327,13],[47,343,12],[81,333,17],[154,340,12],[187,329,16],[223,348,13],[106,350,10]];
-for(let i=0;i<coralSites.length;i++){
-const [x,y,size]=coralSites[i];coral(x,y,size,i*3);
-}
-// Micro highlights on reef tips and scattered luminous sand.
-for(let i=0;i<55;i++){
-const x=rand(i+1930)*W,y=313+rand(i+2040)*42;
-rect(x,y,.5,.5,i%3===0?'rgba(255,203,225,.7)':'rgba(180,240,235,.5)');
-}
-// A few translucent jellyfish silhouettes in the middle distance.
-for(let i=0;i<3;i++){
-const x=42+i*78+Math.sin(t*.00037+i)*7;
-const y=91+i*45+Math.sin(t*.00061+i*2)*5;
-ctx.fillStyle='rgba(193,191,249,.16)';
-ctx.beginPath();ctx.ellipse(x,y,5+i%2*2,3.5,0,Math.PI,Math.PI*2);ctx.lineTo(x+5,y);ctx.lineTo(x-5,y);ctx.fill();
-rect(x-2,y-2,3,.5,'rgba(222,242,255,.35)');
-for(let j=-2;j<=2;j++)rect(x+j*2,y+1,.5,6+(j%2)*3,'rgba(201,203,255,.19)');
-}
-// Anemones, tube corals and glowing pearls in foreground.
-for(let i=0;i<21;i++){
-const x=rand(i+412)*W,y=306+rand(i+622)*47,col=['#c7a5e9','#f1a4b8','#ffcca2','#91b9f1'][i%4];
-for(let j=0;j<7;j++){const xx=x+(j-3)*2;rect(xx,y-6-(j%3)*3,2,9+(j%3)*3,col)}
-rect(x-8,y,17,3,'#6b7fa3');
+for(const d of aquariaDecorInit()){
+ const item=aquariaDecorCatalog[d.kind];if(!item)continue;
+ const x=d.x*W,y=d.y*H,k=item[3],color=item[4];
+ if(item[0]==='해조류'){plant(x,y,19+k*3,k,t,false);}
+ else if(item[0]==='산호'){
+  if(k<4||k===6)coral(x,y,k===6?22:13+k*2,k);
+  else if(k===4){ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y-7,12,9,0,0,Math.PI*2);ctx.fill();for(let j=0;j<9;j++)rect(x-8+j*2,y-10+(j%3)*2,1,2,'#ffe1e4');}
+  else if(k===5){rect(x-2,y-17,4,17,color);rect(x-18,y-20,36,5,color);}
+  else{for(let j=0;j<11;j++){const xx=x+(j-5)*1.5;rect(xx+Math.sin(t*.002+j),y-10-(j%3)*3,1.5,12+(j%3)*3,color)}rect(x-9,y,18,3,'#946e97');}
+ }else if(k===4)arch(x-18,y-43,36,39);
+ else if(k===3){rect(x-5,y-31,10,31,color);rect(x-8,y-34,16,4,'#b5c4d4');}
+ else if(k===5){rect(x-17,y-7,34,7,color);rect(x-13,y-20,8,20,color);rect(x+6,y-14,9,14,color);}
+ else if(k===7){for(let j=0;j<5;j++)polygon([[x-12+j*5,y],[x-14+j*5,y-15-(j%3)*7],[x-10+j*5,y-22-(j%2)*8],[x-7+j*5,y]],color);}
+ else if(k===2){polygon([[x-18,y],[x-16,y-20],[x-5,y-29],[x+12,y-25],[x+20,y]],color);rect(x-6,y-14,13,14,'#142e47');}
+ else if(k===6){for(let j=0;j<3;j++)rect(x-18+j*4,y-j*7,36-j*8,7,color);}
+ else{for(let j=0;j<(k===0?5:1);j++){const xx=x+(j-2)*(k===0?5:0),r=k===0?4:15;polygon([[xx-r,y],[xx-r*.7,y-r],[xx+r*.4,y-r*1.3],[xx+r,y-r*.4],[xx+r*.7,y]],color);}}
 }
 for(let i=0;i<125;i++){
 const x=rand(i+500)*W,y=rand(i+650)*H,yy=(y-t*(.002+rand(i+20)*.004)+H)%H;
@@ -1348,21 +1319,8 @@ function cylinderBetween(parent,a,b,r1,r2,material,sides=7){
 }
 const floor=mesh(new T.CylinderGeometry(8.1,8.1,.35,64),sand,scene,0,-.24,0);
 const glass=mesh(new T.CylinderGeometry(8.18,8.18,8.8,64,1,true),new T.MeshPhysicalMaterial({color:0x8adcf1,transparent:true,opacity:.045,roughness:.06,side:T.DoubleSide,depthWrite:false}),scene,0,4.05,0);
-// Irregular low-poly stone ruins with weathered caps and broken archways.
-const ruins=mat(0x8299aa),ruinDark=mat(0x536e85),moss=mat(0x4f9d91);
-for(let i=0;i<7;i++){
- const a=i*2.399,r=2.2+(i%3)*1.45,x=Math.cos(a)*r,z=Math.sin(a)*r,h=1.4+(i%4)*.35;
- mesh(new T.CylinderGeometry(.27,.4,h,6),i%3?ruins:ruinDark,scene,x,h/2,z);
- mesh(new T.CylinderGeometry(.41,.43,.15,6),stone,scene,x,h+.06,z);
- if(i%3===0){const cap=mesh(new T.BoxGeometry(1.8,.22,.53),ruins,scene,x,h+.21,z);cap.rotation.y=a*.25}
- if(i%2===0)mesh(new T.IcosahedronGeometry(.22,0),moss,scene,x,h+.14,z);
-}
-for(let i=0;i<75;i++){
- const a=i*2.399,r=.9+seeded(i+10)*6.6,x=Math.cos(a)*r,z=Math.sin(a)*r;
- const b=mesh(new T.IcosahedronGeometry(.1+seeded(i+30)*.35,0),i%5?rock:stone,scene,x,.03,z);
- b.scale.set(1.3,.42+seeded(i+60)*.5,1.1);b.rotation.y=a;
-}
-// Organic branching coral: tapered cylinders joined at naturally diverging angles.
+
+const kelps=[],anemoneArms=[];
 function branch(parent,origin,dir,length,width,depth,material,seed){
  const end=origin.clone().addScaledVector(dir,length);
  cylinderBetween(parent,origin,end,width,width*.62,material,7);
@@ -1373,101 +1331,44 @@ function branch(parent,origin,dir,length,width,depth,material,seed){
  branch(parent,end,v,length*(.58+seeded(seed+j+2)*.16),width*.68,depth-1,material,seed*2+j+1);
  }
 }
-for(let i=0;i<23;i++){
- const a=i*2.4,r=2.3+(i%6)*.85,x=Math.cos(a)*r,z=Math.sin(a)*r;
- const g=new T.Group();g.position.set(x,0,z);scene.add(g);
- const c=coral[i%coral.length];
- if(i%5===0){
-  const mound=mesh(new T.SphereGeometry(.45,12,8),c,g,0,.27,0);mound.scale.y=.6;
-  for(let j=0;j<9;j++){const p=j*2.4;mesh(new T.IcosahedronGeometry(.12+(j%3)*.04,0),coral[(i+j)%4],g,Math.cos(p)*.3,.45+seeded(j+i)*.13,Math.sin(p)*.3)}
- }else{
-  branch(g,new T.Vector3(0,.04,0),new T.Vector3(.08,1,.05).normalize(),.5+(i%3)*.1,.13,2,c,i+3);
- }
-}
-// Sparse swaying kelp leaves rather than hundreds of plastic cones.
-const kelps=[];
-for(let i=0;i<12;i++){
- const a=i*2.57,r=3+(i%4)*1.1,g=new T.Group();g.position.set(Math.cos(a)*r,0,Math.sin(a)*r);scene.add(g);
- const stem=mesh(new T.CylinderGeometry(.025,.055,1.25,6),algae,g,0,.64,0);
- for(let j=0;j<4;j++){
-  const leaf=mesh(new T.SphereGeometry(1,9,5),i%3===0?coral[2]:algae,g,(j%2?-.2:.2),.35+j*.27,0);
-  leaf.scale.set(.25,.07,.12);leaf.rotation.z=(j%2?-.55:.55);
- }
- kelps.push({g,phase:i*1.9});
-}
-// Clownfish host: dense, irregular bulb-tip anemone with a soft oral disc.
-// All geometry is polygonal; individual tentacles sway at different rates.
-const hostAnemone=new T.Group();hostAnemone.position.set(-2.3,0,1.6);scene.add(hostAnemone);
-const anemoneFoot=mat(0x8f667c,.92),anemoneRim=mat(0xc8849e,.78);
-const anemoneDisc=mat(0xf3aeb4,.85);
-const tentacleMats=[mat(0xf6a4ba,.7),mat(0xf7b8ac,.72),mat(0xdba0bb,.73),mat(0xffc5b3,.7),mat(0xe9a2ad,.72)];
-// Broad, fleshy base attached to rock and shallow cup-shaped oral disc.
-mesh(new T.CylinderGeometry(.53,.34,.31,12),anemoneFoot,hostAnemone,0,.18,0);
-mesh(new T.CylinderGeometry(.68,.51,.19,14),anemoneRim,hostAnemone,0,.41,0);
-const disc=mesh(new T.CylinderGeometry(.58,.64,.07,14),anemoneDisc,hostAnemone,0,.525,0);
-mesh(new T.CylinderGeometry(.10,.16,.012,8),anemoneFoot,hostAnemone,0,.566,0);
-// Tapered, bent tentacles arranged in staggered concentric whorls.
-const anemoneArms=[];
-const counts=[21,18,13,9];
-for(let ring=0;ring<counts.length;ring++){
- for(let j=0;j<counts[ring];j++){
-  const seed=seeded(950+ring*79+j*11);
-  const angle=(j+seed*.35)/counts[ring]*Math.PI*2+ring*.41;
-  const radius=[.55,.43,.29,.16][ring]*(.92+seed*.14);
-  const height=([.66,.85,.97,.76][ring])*(.77+seed*.45);
-  const spread=[.46,.30,.17,.11][ring]*( .8+seed*.5);
-  const root=new T.Group();
-  root.position.set(Math.cos(angle)*radius,.54+Math.sin(angle*3)*.012,Math.sin(angle)*radius);
-  hostAnemone.add(root);
-  const bendAngle=angle+(seed-.5)*.8;
-  const dx=Math.cos(bendAngle)*spread,dz=Math.sin(bendAngle)*spread;
-  const p0=new T.Vector3(0,0,0);
-  const p1=new T.Vector3(dx*.2,height*.31,dz*.2);
-  const p2=new T.Vector3(dx*.68,height*.71,dz*.68);
-  const p3=new T.Vector3(dx,height,dz);
-  const material=tentacleMats[(j+ring*2)%tentacleMats.length];
-  cylinderBetween(root,p0,p1,.061,.067,material,7);
-  cylinderBetween(root,p1,p2,.067,.054,material,7);
-  cylinderBetween(root,p2,p3,.054,.036,material,7);
-  const bulb=mesh(new T.IcosahedronGeometry(.068+seed*.017,1),material,root,p3.x,p3.y,p3.z);
-  bulb.scale.set(.92,1.16,.92);
-  anemoneArms.push({root,phase:seed*6.28+j*.3,amplitude:.055+seed*.05,speed:.0007+seed*.0005});
- }
-}
-// Sculpted seabed details: shell spirals, tiny anemones, pebble clusters and coral polyps.
-const shellMat=mat(0xe7c6a7),pearlMat=mat(0xf2d7c4),anemoneMat=[mat(0xf3a2b7),mat(0x9ecde0),mat(0xc6a2e9)];
-for(let i=0;i<55;i++){
- const a=i*2.399,r=1.1+seeded(i+400)*6.5,x=Math.cos(a)*r,z=Math.sin(a)*r;
- if(i%3===0){
-  const shell=mesh(new T.SphereGeometry(.13,12,8),shellMat,scene,x,.045,z);
-  shell.scale.set(1.5,.48,.95);shell.rotation.y=a;
-  for(let j=0;j<3;j++){
-   const ridge=mesh(new T.TorusGeometry(.08-j*.02,.008,4,12,Math.PI),pearlMat,scene,x,.07+j*.012,z);
-   ridge.rotation.x=Math.PI/2;ridge.rotation.z=a;
+
+const decorRoot=new T.Group();scene.add(decorRoot);
+let decorSignature='';
+function syncDecorations(){
+ const owned=aquariaDecorInit(),signature=JSON.stringify(owned);
+ if(signature===decorSignature)return;decorSignature=signature;
+ kelps.length=0;
+ while(decorRoot.children.length){const g=decorRoot.children[0],materials=new Set();decorRoot.remove(g);g.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)materials.add(o.material)});materials.forEach(m=>m.dispose())}
+ owned.forEach((d,i)=>{
+  const item=aquariaDecorCatalog[d.kind];if(!item)return;
+  const k=item[3],g=new T.Group(),angle=d.x*Math.PI*2,radius=1.7+(d.y-.76)/.14*5.1;
+  g.position.set(Math.cos(angle)*radius,0,Math.sin(angle)*radius);g.rotation.y=i*2.399;decorRoot.add(g);
+  const c=mat(item[4]);
+  if(item[0]==='해조류'){
+   const height=.85+k*.11;mesh(new T.CylinderGeometry(.025,.05,height,6),c,g,0,height/2,0);
+   for(let j=0;j<6;j++){
+    const leaf=mesh(new T.SphereGeometry(1,8,5),c,g,(j%2?-.2:.2),.2+j*height/7,0);
+    leaf.scale.set(k===2?.13:.25,k===2?.13:k===4?.035:.07,k===3?.22:.12);leaf.rotation.z=(j%2?-.55:.55);
+   }kelps.push({g,phase:i*1.9});
+  }else if(item[0]==='산호'){
+   if(k<4||k===6)branch(g,new T.Vector3(0,.04,0),new T.Vector3(.08,1,.05).normalize(),k===6?.8:.6,.10,k===6?3:2,c,i+3);
+   else if(k===4){const mound=mesh(new T.IcosahedronGeometry(.55,1),c,g,0,.34,0);mound.scale.y=.7;}
+   else if(k===5){mesh(new T.CylinderGeometry(.09,.13,.7,7),c,g,0,.35,0);mesh(new T.CylinderGeometry(.8,.65,.14,12),c,g,0,.74,0);}
+   else{mesh(new T.CylinderGeometry(.46,.30,.18,12),c,g,0,.15,0);for(let j=0;j<18;j++){const p=j*2.399,r=.16+(j%3)*.1;branch(g,new T.Vector3(Math.cos(p)*r,.2,Math.sin(p)*r),new T.Vector3(Math.cos(p)*.2,1,Math.sin(p)*.2).normalize(),.3+(j%4)*.08,.035,0,c,i+j);}}
+  }else{
+   const stone=c;
+   if(k===0){for(let j=0;j<6;j++){const p=j*2.4,o=mesh(new T.IcosahedronGeometry(.13+(j%3)*.04,0),stone,g,Math.cos(p)*.3,.08,Math.sin(p)*.3);o.scale.y=.5;}}
+   else if(k===1){const o=mesh(new T.IcosahedronGeometry(.75,0),stone,g,0,.4,0);o.scale.set(1.25,.75,1);}
+   else if(k===2){mesh(new T.BoxGeometry(1.6,.35,.9),stone,g,0,.95,0);mesh(new T.IcosahedronGeometry(.5,0),stone,g,-.65,.4,0);mesh(new T.IcosahedronGeometry(.5,0),stone,g,.65,.4,0);}
+   else if(k===3){mesh(new T.CylinderGeometry(.27,.36,1.7,7),stone,g,0,.85,0);mesh(new T.CylinderGeometry(.43,.43,.15,7),stone,g,0,1.77,0);}
+   else if(k===4){for(const x of [-.75,.75]){mesh(new T.BoxGeometry(.3,2.1,.4),stone,g,x,1.05,0);mesh(new T.BoxGeometry(.45,.16,.55),stone,g,x,2.1,0)}mesh(new T.BoxGeometry(2,.28,.6),stone,g,0,2.3,0);}
+   else if(k===5){mesh(new T.BoxGeometry(1.9,.25,.65),stone,g,0,.14,0);for(const x of [-.55,.6])mesh(new T.CylinderGeometry(.23,.27,x<0?1.1:.7,6),stone,g,x,x<0?.55:.35,0);}
+   else if(k===6){for(let j=0;j<3;j++)mesh(new T.CylinderGeometry(.95-j*.23,1-j*.23,.3,7),stone,g,0,.15+j*.3,0);}
+   else{for(let j=0;j<6;j++){const p=j*2.4,o=mesh(new T.ConeGeometry(.15,.65+(j%3)*.25,5),stone,g,Math.cos(p)*.35,.4,Math.sin(p)*.35);o.rotation.z=Math.cos(p)*.25;}}
   }
- }else if(i%3===1){
-  const g=new T.Group();g.position.set(x,0,z);scene.add(g);
-  const c=anemoneMat[i%anemoneMat.length];
-  mesh(new T.SphereGeometry(.17,9,7),c,g,0,.13,0);
-  for(let j=0;j<8;j++){
-   const p=j*Math.PI/4;
-   cylinderBetween(g,new T.Vector3(Math.cos(p)*.08,.2,Math.sin(p)*.08),new T.Vector3(Math.cos(p)*.28,.42+seeded(i+j)*.12,Math.sin(p)*.28),.024,.01,c,5);
-  }
- }else{
-  for(let j=0;j<4;j++){
-   const p=j*2.4,stoneObj=mesh(new T.IcosahedronGeometry(.05+seeded(i+j)*.06,0),j%2?stone:rock,scene,x+Math.cos(p)*.18,.035,z+Math.sin(p)*.18);
-   stoneObj.scale.y=.5;
-  }
- }
+ });
 }
-// Coral polyp tips catch highlights without adding costly dynamic lights.
-const polypMat=mat(0xffd8c5,.6);
-for(let i=0;i<23;i++){
- const a=i*2.4,r=2.3+(i%6)*.85,x=Math.cos(a)*r,z=Math.sin(a)*r;
- for(let j=0;j<4;j++){
-  const p=j*1.57,tip=mesh(new T.SphereGeometry(.035,6,5),polypMat,scene,x+Math.cos(p)*.21,.65+(j%2)*.16,z+Math.sin(p)*.21);
- }
-}
+syncDecorations();window.addEventListener('aquaria-decor-sync',syncDecorations);
 // Dreamlike underwater atmosphere: translucent aurora veils, moon shafts and luminous motes.
 const auroraColors=[0x64dcd5,0xa98fe6,0x82bce8];
 const veils=[];
@@ -1759,7 +1660,7 @@ function createFish(k,i){
   swimSpeed:([.00078,.00115,.00102,.00076,.00094,.00048,.00043,.00085,.0011,.00095,.0009,.0007,.0008,.0012][k]||.0008),
   lastSwim:0,behavior:'explore',behaviorUntil:0,burstUntil:0,seed:i*17.13});
 }
-window.addEventListener('aquaria-dev-sync',()=>{for(const f of fish)scene.remove(f.g);fish.length=0;syncFish()});
+window.addEventListener('aquaria-dev-sync',()=>{syncDecorations();for(const f of fish)scene.remove(f.g);fish.length=0;syncFish()});
 function syncFish(){
  const count=Math.min(38,Math.max(0,Number(state.virtual)));
  while(fish.length<count){const roster=JSON.parse(localStorage.getItem('aquaria-v1')||'{}').aquariaSpecies||[];const i=fish.length;const start=Math.max(0,count-roster.length);const k=JSON.parse(localStorage.getItem('aquaria-v1')||'{}').fishLives?.[i]?.kind??(i>=start?roster[i-start]:i%14);createFish(Number.isInteger(k)&&k>=0&&k<14?k:i%14,i);}
@@ -2102,7 +2003,7 @@ if(localStorage.getItem(viewPreferenceKey)==='3d'){
   }else if(action==='all'){let added=0;aquariaFishCatalog.forEach((_,i)=>{if(add(i))added++});message=added+'마리 추가 완료 · 최대 38마리';
   }else if(action==='stress'){state.fishLives.forEach(f=>{f.stress=0;f.stressAt=Date.now();f.touchHistory=[]});message='전체 물고기 스트레스 해제 완료';
   }else if(action==='clean'){state.cleanliness=100;
-  }else if(action==='plant'){state.plants=Math.min(24,(Number(state.plants)||0)+1);
+  }else if(action==='plant'){aquariaDecorInit();if(state.decorations.length<80){const i=state.decorations.length;state.decorations.push({kind:8,x:.08+(i*.61803398875)% .84,y:.76+(i%5)*.035});state.plants=state.decorations.filter(d=>aquariaDecorCatalog[d.kind]?.[0]!=='지형').length;}
   }else if(action==='restore'){if(!snapshot)return;state=JSON.parse(snapshot);message='개발자 모드를 열기 전 상태로 복원했어.';}
   state.virtual=state.fishLives.length;state.aquariaSpecies=state.fishLives.map(f=>f.kind);save();window.dispatchEvent(new Event('aquaria-dev-sync'));refresh();status.textContent=message;
  });
