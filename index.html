@@ -608,7 +608,7 @@ function aquariaStartFishFollow(index,view){
  let panel=document.getElementById('aquariaFishDetails');
  if(!panel){panel=document.createElement('aside');panel.id='aquariaFishDetails';panel.setAttribute('aria-label','선택한 물고기 정보');panel.style.cssText='position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 84px);left:50%;transform:translateX(-50%);z-index:90;width:min(390px,94vw);max-height:32dvh;overflow:auto;padding:15px 18px;border:1px solid #a2eadb88;border-radius:18px;background:#09283bf5;color:#eafbf8;box-shadow:0 8px 32px #0005;font:12px/1.55 system-ui';
  panel.innerHTML="<div class=\"fish-detail-head\"><strong id=\"aquariaFishDetailsTitle\"></strong><button type=\"button\" id=\"aquariaFishRename\" aria-label=\"물고기 이름 바꾸기\">✎</button><button type=\"button\" id=\"aquariaFishDetailsStop\" aria-label=\"추적 종료\">✕</button></div><div id=\"aquariaFishDetailsBrief\"></div><form id=\"aquariaFishNameForm\" hidden><label for=\"aquariaFishNameInput\">이름 <input id=\"aquariaFishNameInput\" maxlength=\"20\" placeholder=\"최대 20자\" autocomplete=\"off\"></label><button type=\"submit\">저장</button><button type=\"button\" id=\"aquariaFishNameCancel\">취소</button><small id=\"aquariaFishNameFeedback\" role=\"status\"></small></form><details id=\"aquariaFishExtra\"><summary>상세 정보</summary><small id=\"aquariaFishDetailsSpecies\"></small><p id=\"aquariaFishDetailsDescription\"></p><div id=\"aquariaFishDetailsStats\"></div></details>";
- document.body.append(panel);document.getElementById('aquariaFishDetailsStop').onclick=aquariaStopFishFollow;
+ document.body.append(panel);document.getElementById('aquariaFishDetailsStop').onclick=()=>aquariaStopFishFollow(true);
  document.getElementById('aquariaFishRename').onclick=()=>{const form=document.getElementById('aquariaFishNameForm');form.hidden=false;document.getElementById('aquariaFishNameInput').value=aquariaFishFollow?.life.name||'';document.getElementById('aquariaFishNameFeedback').textContent='';document.getElementById('aquariaFishNameInput').focus()};
  document.getElementById('aquariaFishNameCancel').onclick=()=>document.getElementById('aquariaFishNameForm').hidden=true;
  document.getElementById('aquariaFishNameForm').onsubmit=e=>{e.preventDefault();aquariaSaveFishName(document.getElementById('aquariaFishNameInput').value)};
@@ -630,9 +630,9 @@ function aquariaSaveFishName(value){
  document.getElementById('aquariaFishNameForm').hidden=true;aquariaUpdateFishDetails();aquariaRenderHunger();return true;
 }
 
-function aquariaStopFishFollow(){
+function aquariaStopFishFollow(overview=false){
  aquariaFishFollow=null;const panel=document.getElementById('aquariaFishDetails');if(panel)panel.hidden=true;
- window.dispatchEvent(new Event('aquaria-follow-stop'));
+ window.dispatchEvent(new CustomEvent('aquaria-follow-stop',{detail:{overview:overview===true}}));
 }
 function aquariaUpdateFishDetails(){
  if(!aquariaFishFollow)return;
@@ -1062,7 +1062,7 @@ aquariaBindFishDoubleTap(canvas,e=>{
  return nearest;
 },{indexOf:f=>fish.indexOf(f),view:'2d'},()=>{fishPlay=null;touch.mode=''});
 window.addEventListener('aquaria-follow-start',()=>{if(aquariaFishFollow?.view==='2d'&&!savedFollowCamera2D)savedFollowCamera2D={...camera}});
-window.addEventListener('aquaria-follow-stop',()=>{if(savedFollowCamera2D){Object.assign(camera,savedFollowCamera2D);savedFollowCamera2D=null}});
+window.addEventListener('aquaria-follow-stop',e=>{if(e.detail?.overview){Object.assign(camera,{zoom:1,x:W/2,y:H/2});fishPlay=null;touch.mode='';}else if(savedFollowCamera2D){Object.assign(camera,savedFollowCamera2D);}savedFollowCamera2D=null;});
 
 function fishPlayCoords(e){const r=canvas.getBoundingClientRect(),px=(e.clientX-r.left)*W/r.width,py=(e.clientY-r.top)*H/r.height;return {x:camera.x+(px-W/2)/camera.zoom,y:camera.y+(py-H/2)/camera.zoom};}
 canvas.addEventListener('pointerdown',e=>{const p=fishPlayCoords(e);let nearest=null,d=22;for(const f of fish){const n=Math.hypot(f.x-p.x,f.y-p.y);if(n<d){nearest=f;d=n;}}if(nearest){fishPlay={id:e.pointerId,fish:nearest,startX:e.clientX,startY:e.clientY,down:performance.now(),active:false,moved:false};canvas.setPointerCapture(e.pointerId);}});
@@ -2630,7 +2630,7 @@ let savedFollowOrbit3D=null;
 const followLook3D=new T.Vector3();
 aquariaBindFishDoubleTap(layer,nearestPlayFish,{indexOf:f=>fish.indexOf(f),view:'3d'},()=>{fishPlay3D=null;fishPointerStart=null;pointer.clear();lastDistance=0});
 window.addEventListener('aquaria-follow-start',()=>{if(aquariaFishFollow?.view==='3d'&&!savedFollowOrbit3D){savedFollowOrbit3D={...orbit};orbit.radius=3.8;orbit.phi=1.39;followLook3D.set(0,orbit.targetY,0)}});
-window.addEventListener('aquaria-follow-stop',()=>{if(savedFollowOrbit3D){Object.assign(orbit,savedFollowOrbit3D);savedFollowOrbit3D=null}});
+window.addEventListener('aquaria-follow-stop',e=>{if(e.detail?.overview){Object.assign(orbit,{theta:0,phi:1.32,radius:19,targetY:7});fishPlay3D=null;fishPointerStart=null;pointer.clear();lastDistance=0;}else if(savedFollowOrbit3D){Object.assign(orbit,savedFollowOrbit3D);}savedFollowOrbit3D=null;updateCamera();});
 
 function nearestPlayFish(e){if(!camera||!renderer)return null;const r=renderer.domElement.getBoundingClientRect();let nearest=null,dist=38;for(const f of fish){const p=f.g.position.clone().project(camera);if(p.z< -1||p.z>1)continue;const d=Math.hypot(e.clientX-(r.left+(p.x+1)*r.width/2),e.clientY-(r.top+(1-p.y)*r.height/2));if(d<dist){dist=d;nearest=f;}}return nearest;}
 function movePlayFish(e){if(!fishPlay3D)return;const r=renderer.domElement.getBoundingClientRect(),T=window.THREE;const ndc=new T.Vector3((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height*2-1),.5);ndc.unproject(camera);const direction=ndc.sub(camera.position).normalize();const depth=fishPlay3D.fish.g.position.z;const travel=(depth-camera.position.z)/direction.z;if(!Number.isFinite(travel)||travel<0)return;const p=camera.position.clone().addScaledVector(direction,travel);fishPlay3D.fish.playTarget=new T.Vector3(Math.max(-4.2,Math.min(4.2,p.x)),Math.max(1.1,Math.min(6.4,p.y)),Math.max(-3,Math.min(3,p.z)));fishPlay3D.fish.playUntil=performance.now()+280;}
