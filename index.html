@@ -302,7 +302,7 @@ function openAquariaDecorShop(category='해조류'){
  if(category==='보유 장식'){
   const heading=document.createElement('p');heading.textContent='개별 장식 위치 편집';list.append(heading);
   state.decorations.forEach((d,index)=>{
-   const b=document.createElement('button');b.className='aquaria-shop-item';b.textContent=(index+1)+'. '+aquariaDecorCatalog[d.kind][1]+' · 위치 바꾸기';b.onclick=()=>startAquariaDecorMove(index);list.append(b);
+   const b=document.createElement('button');b.className='aquaria-shop-item';b.textContent=(index+1)+'. '+aquariaDecorCatalog[d.kind][1]+' · 수조에서 확인';b.onclick=()=>inspectAquariaDecor(index);list.append(b);
   });
  }
  const note=document.createElement('p');note.textContent='장식 '+state.decorations.length+'/80 · 구매 내역은 2D·3D에 함께 적용돼.';list.append(note);
@@ -311,9 +311,26 @@ function openAquariaDecorShop(category='해조류'){
 }
 
 
+
+let aquariaDecorInspectIndex=null;
+function inspectAquariaDecor(index){
+ const d=state.decorations[index];if(!d)return;
+ aquariaDecorInspectIndex=index;
+ document.getElementById('aquariaShop').hidden=true;
+ let popup=document.getElementById('aquariaDecorInspect');
+ if(!popup){popup=document.createElement('div');popup.id='aquariaDecorInspect';popup.setAttribute('role','dialog');popup.setAttribute('aria-label','선택한 장식');popup.style.cssText='position:fixed;top:calc(env(safe-area-inset-top,0px) + 62px);left:50%;transform:translateX(-50%);z-index:9997;padding:14px 20px;border:1px solid #9fffe0;border-radius:16px;background:#092b3bf5;color:#d8fff2;text-align:center;min-width:220px;font:13px system-ui';
+ popup.innerHTML='<p id="aquariaDecorInspectName"></p><button id="aquariaDecorInspectMove" type="button">옮기기</button> <button id="aquariaDecorInspectClose" type="button">닫기</button>';document.body.append(popup);
+ document.getElementById('aquariaDecorInspectMove').onclick=()=>{const selected=aquariaDecorInspectIndex;popup.hidden=true;aquariaDecorInspectIndex=null;startAquariaDecorMove(selected)};
+ document.getElementById('aquariaDecorInspectClose').onclick=()=>{popup.hidden=true;aquariaDecorInspectIndex=null;window.dispatchEvent(new Event('aquaria-decor-sync'))};
+ }
+ document.getElementById('aquariaDecorInspectName').textContent=aquariaDecorCatalog[d.kind][1]+' · 장식 #'+(index+1);
+ popup.hidden=false;window.dispatchEvent(new Event('aquaria-decor-sync'));
+}
+
 let aquariaDecorMoveIndex=null,aquariaDecorMoveOriginal=null;
 function startAquariaDecorMove(index,newPurchase=false){
  const d=aquariaDecorInit()[index];if(!d)return;
+ const inspector=document.getElementById('aquariaDecorInspect');if(inspector)inspector.hidden=true;aquariaDecorInspectIndex=null;
  aquariaDecorMoveIndex=index;aquariaDecorMoveOriginal=JSON.parse(JSON.stringify(d));
  document.getElementById('aquariaShop').hidden=true;
  let bar=document.getElementById('aquariaDecorMoveBar');
@@ -755,7 +772,7 @@ for(const eventName of ['pointerdown','pointermove','pointerup','pointercancel']
    let hit=-1,best=Infinity;
    aquariaDecorInit().forEach((d,i)=>{const dx=point.x-d.x*W,dy=point.y-(d.y*H-12),score=dx*dx/400+dy*dy/625;if(score<1&&score<best){best=score;hit=i}});
    if(hit<0&&aquariaDecorMoveIndex===null)return;
-   if(hit>=0&&aquariaDecorMoveIndex===null)startAquariaDecorMove(hit);
+   if(hit>=0&&aquariaDecorMoveIndex===null){e.preventDefault();e.stopImmediatePropagation();inspectAquariaDecor(hit);return;}
    const d=state.decorations[aquariaDecorMoveIndex];if(!d)return;
    decorDrag2D={id:e.pointerId,dx:hit===aquariaDecorMoveIndex?point.x-d.x*W:0,dy:hit===aquariaDecorMoveIndex?point.y-d.y*H:0};
    canvas.setPointerCapture(e.pointerId);
@@ -1026,12 +1043,12 @@ function arch(x,y,w,h){
 for(const d of aquariaDecorInit()){
  const item=aquariaDecorCatalog[d.kind];if(!item)continue;
  const x=d.x*W,y=d.y*H,k=item[3],color=item[4];
- if(aquariaDecorMoveIndex===state.decorations.indexOf(d)||(state.lastDecorPurchase?.index===state.decorations.indexOf(d)&&Date.now()-state.lastDecorPurchase.at<5500)){
+ if(aquariaDecorInspectIndex===state.decorations.indexOf(d)||aquariaDecorMoveIndex===state.decorations.indexOf(d)||(state.lastDecorPurchase?.index===state.decorations.indexOf(d)&&Date.now()-state.lastDecorPurchase.at<5500)){
   const selected=aquariaDecorMoveIndex===state.decorations.indexOf(d),fresh=state.lastDecorPurchase?.index===state.decorations.indexOf(d);
   ctx.save();ctx.strokeStyle='#a8ffe3';ctx.lineWidth=1.3;ctx.shadowColor='#65ffd1';ctx.shadowBlur=8;
   ctx.setLineDash([3,2]);ctx.strokeRect(x-23,y-42,46,47);ctx.setLineDash([]);
   ctx.beginPath();ctx.ellipse(x,y+1,23,5,0,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0;
-  const label=(fresh?'NEW · ':'')+item[1]+(selected?' · 이동 중':'');
+  const label=(fresh?'NEW · ':'')+item[1]+' #'+(state.decorations.indexOf(d)+1)+(selected?' · 이동 중':' · 선택됨');
   ctx.font='bold 7px sans-serif';ctx.textAlign='center';const width=ctx.measureText(label).width+10;
   const labelX=Math.max(width/2+2,Math.min(W-width/2-2,x));ctx.fillStyle='#092b3bf2';ctx.fillRect(labelX-width/2,y-55,width,12);
   ctx.fillStyle='#baffdf';ctx.fillText(label,labelX,y-46);ctx.restore();
@@ -1447,18 +1464,18 @@ const decorMoveLabel=document.createElement('div');decorMoveLabel.style.cssText=
 let decorSignature='';
 function syncDecorations(){
  const owned=aquariaDecorInit(),signature=JSON.stringify(owned);
- if(signature+'|'+aquariaDecorMoveIndex===decorSignature)return;decorSignature=signature+'|'+aquariaDecorMoveIndex;
+ if(signature+'|'+aquariaDecorMoveIndex+'|'+aquariaDecorInspectIndex===decorSignature)return;decorSignature=signature+'|'+aquariaDecorMoveIndex;
  kelps.length=0;
  while(decorRoot.children.length){const g=decorRoot.children[0],materials=new Set();decorRoot.remove(g);g.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)materials.add(o.material)});materials.forEach(m=>m.dispose())}
  owned.forEach((d,i)=>{
   const item=aquariaDecorCatalog[d.kind];if(!item)return;
   const k=item[3],g=new T.Group(),angle=d.x*Math.PI*2,radius=1.7+(d.y-.76)/.14*5.1;
   g.position.set(Number.isFinite(d.worldX)?d.worldX:(d.x-.5)*13,0,Number.isFinite(d.worldZ)?d.worldZ:1.3+Math.max(0,Math.min(1,(d.y-.87)/.069))*3.5);g.scale.setScalar(1.35);g.rotation.y=i*2.399;g.userData.decorationIndex=i;decorRoot.add(g);
-  if(aquariaDecorMoveIndex===i||(state.lastDecorPurchase?.index===i&&Date.now()-state.lastDecorPurchase.at<5500)){
+  if(aquariaDecorInspectIndex===i||aquariaDecorMoveIndex===i||(state.lastDecorPurchase?.index===i&&Date.now()-state.lastDecorPurchase.at<5500)){
    const highlight=new T.MeshBasicMaterial({color:0xadffe2,depthTest:false,transparent:true,opacity:.95});
    const ring=mesh(new T.TorusGeometry(.85,.035,5,40),highlight,g,0,.06,0);ring.rotation.x=Math.PI/2;ring.renderOrder=1000;
    const frame= new T.LineSegments(new T.EdgesGeometry(new T.BoxGeometry(1.8,2.7,1.8)),new T.LineBasicMaterial({color:0xafffe3,depthTest:false,transparent:true,opacity:.85}));frame.position.y=1.35;frame.renderOrder=1000;g.add(frame);
-   if(aquariaDecorMoveIndex!==i)setTimeout(()=>{ring.visible=false;frame.visible=false},5500);
+   if(aquariaDecorMoveIndex!==i&&aquariaDecorInspectIndex!==i)setTimeout(()=>{ring.visible=false;frame.visible=false},5500);
   }
   const c=mat(item[4]);
   if(item[0]==='해조류'){
@@ -1499,7 +1516,7 @@ for(const eventName of ['pointerdown','pointermove','pointerup','pointercancel']
    const hit=ray.intersectObjects(decorRoot.children,true)[0];let root=hit?.object;
    while(root&&root.parent!==decorRoot)root=root.parent;
    if(!root&&aquariaDecorMoveIndex===null)return;
-   if(root&&aquariaDecorMoveIndex===null)startAquariaDecorMove(root.userData.decorationIndex);
+   if(root&&aquariaDecorMoveIndex===null){e.preventDefault();e.stopImmediatePropagation();inspectAquariaDecor(root.userData.decorationIndex);return;}
    const selected=decorRoot.children[aquariaDecorMoveIndex];if(!selected||!onFloor)return;
    decorDrag3D={id:e.pointerId,dx:root?.userData.decorationIndex===aquariaDecorMoveIndex?point.x-selected.position.x:0,dz:root?.userData.decorationIndex===aquariaDecorMoveIndex?point.z-selected.position.z:0};
    layer.setPointerCapture(e.pointerId);
@@ -2016,10 +2033,10 @@ for(const f of fish){
  f.oppositeFin.rotation.x=-Math.sin(beat*1.3+1.1)*.34;
 }
  decorMoveLabel.hidden=true;
- const labelIndex=aquariaDecorMoveIndex!==null?aquariaDecorMoveIndex:Date.now()-(state.lastDecorPurchase?.at||0)<5500?state.lastDecorPurchase.index:null;
+ const labelIndex=aquariaDecorMoveIndex!==null?aquariaDecorMoveIndex:aquariaDecorInspectIndex!==null?aquariaDecorInspectIndex:Date.now()-(state.lastDecorPurchase?.at||0)<5500?state.lastDecorPurchase.index:null;
  if(labelIndex!==null&&decorRoot.children[labelIndex]){
   const d=state.decorations[labelIndex],g=decorRoot.children[labelIndex],p=g.position.clone();p.y+=3.8;p.project(camera);
-  if(p.z>-1&&p.z<1){const bounds=layer.getBoundingClientRect();decorMoveLabel.hidden=false;decorMoveLabel.textContent=(state.lastDecorPurchase?.index===labelIndex?'NEW · ':'')+aquariaDecorCatalog[d.kind][1]+(aquariaDecorMoveIndex!==null?' · 이동 중':'');decorMoveLabel.style.left=Math.max(90,Math.min(bounds.width-90,(p.x+1)*bounds.width/2))+'px';decorMoveLabel.style.top=Math.max(48,Math.min(bounds.height-20,(1-p.y)*bounds.height/2))+'px';}
+  if(p.z>-1&&p.z<1){const bounds=layer.getBoundingClientRect();decorMoveLabel.hidden=false;decorMoveLabel.textContent=(state.lastDecorPurchase?.index===labelIndex?'NEW · ':'')+aquariaDecorCatalog[d.kind][1]+' #'+(labelIndex+1)+(aquariaDecorMoveIndex!==null?' · 이동 중':' · 선택됨');decorMoveLabel.style.left=Math.max(90,Math.min(bounds.width-90,(p.x+1)*bounds.width/2))+'px';decorMoveLabel.style.top=Math.max(48,Math.min(bounds.height-20,(1-p.y)*bounds.height/2))+'px';}
  }
  renderer.render(scene,camera);
 }
