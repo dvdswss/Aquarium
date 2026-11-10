@@ -583,6 +583,71 @@ async function buyAquariaDecor(kind,category){
 }
 aquariaDecorInit();
 
+
+let aquariaFishFollow=null;
+const aquariaSpeciesDescriptions=[
+ '말미잘 주변을 생활권으로 삼고 짧게 왕복하는 물고기야.',
+ '중상층의 넓은 공간을 활발하게 순찰하는 물고기야.',
+ '암초 표면의 먹이를 탐색하며 이동과 휴식을 번갈아 해.',
+ '산호 주변을 천천히 살피며 작은 먹이를 찾는 물고기야.',
+ '바위 틈 가까이 머물며 짧게 나왔다 돌아가는 물고기야.',
+ '같은 종 주변에서 천천히 떠 있거나 짧게 이동해.',
+ '지느러미를 펼치고 느리게 접근하다 짧게 돌진해.',
+ '바닥과 암초 가까이에서 작은 먹이를 탐색해.',
+ '은신처 위에서 떠 있다가 놀라면 빠르게 돌아가.',
+ '넓은 중층 공간을 순찰하다 암초 주변을 살펴.',
+ '해조류가 있는 암초 주변과 열린 공간을 오가.',
+ '같은 종끼리 모여 산호 근처에서 느리게 움직여.',
+ '말미잘 주변의 좁은 생활권을 지키며 활동해.',
+ '바위에 머물다가 가까이 온 물고기에 접근해.'
+];
+function aquariaStartFishFollow(index,view){
+ const life=state.fishLives?.[index];if(!life)return;
+ if(aquariaFishFollow&&aquariaFishFollow.view!==view)aquariaStopFishFollow();
+ aquariaFishFollow={life,view};
+ let panel=document.getElementById('aquariaFishDetails');
+ if(!panel){panel=document.createElement('aside');panel.id='aquariaFishDetails';panel.setAttribute('aria-label','선택한 물고기 정보');panel.style.cssText='position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 84px);left:50%;transform:translateX(-50%);z-index:90;width:min(390px,94vw);max-height:32dvh;overflow:auto;padding:15px 18px;border:1px solid #a2eadb88;border-radius:18px;background:#09283bf5;color:#eafbf8;box-shadow:0 8px 32px #0005;font:12px/1.55 system-ui';
+ panel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><strong id="aquariaFishDetailsTitle"></strong><button type="button" id="aquariaFishDetailsStop" style="min-height:36px;padding:6px 10px">추적 종료 ✕</button></div><p id="aquariaFishDetailsDescription"></p><div id="aquariaFishDetailsStats"></div><small style="color:#a8c6d3">게임 내 개체 상태 · 다른 물고기도 두 번 터치하면 전환돼</small>';
+ document.body.append(panel);document.getElementById('aquariaFishDetailsStop').onclick=aquariaStopFishFollow;
+ }
+ panel.hidden=false;document.getElementById('aquariaShop').hidden=true;document.getElementById('aquariaDrawer').open=false;
+ window.dispatchEvent(new Event('aquaria-follow-start'));aquariaUpdateFishDetails();
+}
+function aquariaStopFishFollow(){
+ aquariaFishFollow=null;const panel=document.getElementById('aquariaFishDetails');if(panel)panel.hidden=true;
+ window.dispatchEvent(new Event('aquaria-follow-stop'));
+}
+function aquariaUpdateFishDetails(){
+ if(!aquariaFishFollow)return;
+ const f=aquariaFishFollow.life,index=state.fishLives?.indexOf(f)??-1;
+ if(index<0){aquariaStopFishFollow();if(typeof aquariaDecorToast==='function')aquariaDecorToast('이 개체는 현재 수조에 없어.');return;}
+ const kind=f.kind||0,now=Date.now(),age=Math.max(0,(now-(f.born||now))/86400000),stress=Math.max(0,Math.min(100,Number(f.stress)||0));
+ const penalty=stress>=75?.45:stress>=50?.2:0,remaining=Math.max(0,(f.lifeDays||28)*(1-penalty)-age);
+ const hunger=aquariaHungerStatus(f,now);
+ document.getElementById('aquariaFishDetailsTitle').textContent=(aquariaFishCatalog[kind]?.[0]||'물고기')+' · 개체 #'+(index+1);
+ document.getElementById('aquariaFishDetailsDescription').textContent=aquariaSpeciesDescriptions[kind]||'수조 안을 유영하는 물고기야.';
+ const stats=document.getElementById('aquariaFishDetailsStats');stats.replaceChildren();
+ for(const label of ['포만감 '+Math.round(hunger.value)+'% · '+aquariaHungerLabel(hunger.value),'스트레스 '+Math.round(stress)+'% · '+(stress>=75?'높음':stress>=40?'주의':'안정'),'나이 '+age.toFixed(1)+'일 · 예상 남은 수명 '+remaining.toFixed(1)+'일','수조 청결도 '+(state.cleanliness??100)+'%']){
+  const row=document.createElement('p');row.style.margin='5px 0';row.textContent=label;stats.append(row);
+ }
+}
+setInterval(aquariaUpdateFishDetails,800);
+function aquariaBindFishDoubleTap(target,pick,begin,clearGesture){
+ let down=null,last=null;
+ target.addEventListener('pointerdown',e=>{if(e.isPrimary===false){down=null;last=null;return;}down={id:e.pointerId,x:e.clientX,y:e.clientY,at:performance.now(),fish:pick(e)};},{capture:true});
+ target.addEventListener('pointermove',e=>{if(down&&down.id===e.pointerId&&Math.hypot(e.clientX-down.x,e.clientY-down.y)>10)down=null;},{capture:true});
+ target.addEventListener('pointercancel',()=>{down=null;last=null;},{capture:true});
+ target.addEventListener('pointerup',e=>{
+  const tap=down;down=null;const now=performance.now();
+  if(!tap||tap.id!==e.pointerId||!tap.fish||now-tap.at>280)return;
+  const index=begin.indexOf(tap.fish),life=state.fishLives?.[index];if(!life)return;
+  if(last&&last.life===life&&now-last.at<360){
+   last=null;window.aquariaSuppressTapUntil=now+650;clearGesture();aquariaStartFishFollow(index,begin.view);e.preventDefault();e.stopImmediatePropagation();
+  }else last={life,at:now};
+ },{capture:true,passive:false});
+ target.addEventListener('dblclick',e=>{if(aquariaFishFollow){e.preventDefault();e.stopImmediatePropagation();}},{capture:true});
+}
+
 let aquariaShopMode='fish';
 function openAquariaShop(mode){
  aquariaShopMode=mode;
@@ -969,6 +1034,16 @@ for(const eventName of ['pointerdown','pointermove','pointerup','pointercancel']
   if(eventName==='pointerup'||eventName==='pointercancel'){if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);decorDrag2D=null;}
  },{capture:true,passive:false});
 }
+
+
+let savedFollowCamera2D=null;
+aquariaBindFishDoubleTap(canvas,e=>{
+ const p=fishPlayCoords(e);let nearest=null,d=13/camera.zoom+3;
+ for(const f of fish){const distance=Math.hypot(f.x-p.x,f.y-p.y);if(distance<d){d=distance;nearest=f}}
+ return nearest;
+},{indexOf:f=>fish.indexOf(f),view:'2d'},()=>{fishPlay=null;touch.mode=''});
+window.addEventListener('aquaria-follow-start',()=>{if(aquariaFishFollow?.view==='2d'&&!savedFollowCamera2D)savedFollowCamera2D={...camera}});
+window.addEventListener('aquaria-follow-stop',()=>{if(savedFollowCamera2D){Object.assign(camera,savedFollowCamera2D);savedFollowCamera2D=null}});
 
 function fishPlayCoords(e){const r=canvas.getBoundingClientRect(),px=(e.clientX-r.left)*W/r.width,py=(e.clientY-r.top)*H/r.height;return {x:camera.x+(px-W/2)/camera.zoom,y:camera.y+(py-H/2)/camera.zoom};}
 canvas.addEventListener('pointerdown',e=>{const p=fishPlayCoords(e);let nearest=null,d=22;for(const f of fish){const n=Math.hypot(f.x-p.x,f.y-p.y);if(n<d){nearest=f;d=n;}}if(nearest){fishPlay={id:e.pointerId,fish:nearest,startX:e.clientX,startY:e.clientY,down:performance.now(),active:false,moved:false};canvas.setPointerCapture(e.pointerId);}});
@@ -1386,6 +1461,7 @@ f.dir=newDir;
 }
 f.x=clamp(f.x,17,W-17);f.y=clamp(f.y,75,311);
 fishDraw(f,t);
+if(aquariaFishFollow?.view==='2d'&&state.fishLives[i]===aquariaFishFollow.life){ctx.save();ctx.strokeStyle='#b4ffe5';ctx.lineWidth=.6;ctx.beginPath();ctx.ellipse(f.x,f.y,11,8,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
 if(f.rewardUntil>t){
  ctx.fillStyle='#ffe3a2';ctx.font='bold 9px sans-serif';ctx.fillText(f.rewardText,f.x+8,f.y-12-(1-(f.rewardUntil-t)/1150)*7);
 }
@@ -1396,7 +1472,9 @@ if(f.touchUntil>t){
 }
 });
 }
-let last=0;function frame(t){requestAnimationFrame(frame);if(document.hidden||t-last<32)return;last=t;resizeScene();ctx.save();
+let last=0;function frame(t){requestAnimationFrame(frame);if(document.hidden||t-last<32)return;last=t;resizeScene();
+if(aquariaFishFollow?.view==='2d'){const index=state.fishLives.indexOf(aquariaFishFollow.life),f=fish[index];if(f){camera.zoom+=(3.2-camera.zoom)*.10;camera.x+=(f.x-camera.x)*.14;camera.y+=(f.y-camera.y)*.14;clampCamera()}else aquariaStopFishFollow();}
+ctx.save();
 // Keep the canvas backing transform fixed on iOS; zoom only logical world coordinates.
 ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);
 ctx.translate(W/2,H/2);ctx.scale(camera.zoom,camera.zoom);ctx.translate(-camera.x,-camera.y);
@@ -2310,6 +2388,14 @@ window.addEventListener('aquaria-feed',event=>{
  }
 });
 function updateCamera(){
+ if(aquariaFishFollow?.view==='3d'){
+  const index=state.fishLives.indexOf(aquariaFishFollow.life),f=fish[index];
+  if(f){const focus=f.g.position.clone().add(new T.Vector3(0,.1,0)),distance=3.8;
+   const desired=focus.clone().add(new T.Vector3(Math.sin(orbit.theta)*distance,.7,Math.cos(orbit.theta)*distance));
+   camera.position.lerp(desired,.10);followLook3D.lerp(focus,.16);camera.lookAt(followLook3D);scene.fog.near=12;scene.fog.far=38;return;
+  }aquariaStopFishFollow();
+ }
+
  orbit.phi=Math.max(.18,Math.min(Math.PI-.18,orbit.phi));
  orbit.radius=Math.max(5.5,Math.min(27,orbit.radius));
  camera.position.set(Math.sin(orbit.theta)*Math.sin(orbit.phi)*orbit.radius,orbit.targetY+Math.cos(orbit.phi)*orbit.radius,Math.cos(orbit.theta)*Math.sin(orbit.phi)*orbit.radius);
@@ -2519,6 +2605,13 @@ for(const f of fish){
 }
 start3DFrame=()=>requestAnimationFrame(frame);
 let fishPlay3D=null;
+
+let savedFollowOrbit3D=null;
+const followLook3D=new T.Vector3();
+aquariaBindFishDoubleTap(layer,nearestPlayFish,{indexOf:f=>fish.indexOf(f),view:'3d'},()=>{fishPlay3D=null;fishPointerStart=null;pointer.clear();lastDistance=0});
+window.addEventListener('aquaria-follow-start',()=>{if(aquariaFishFollow?.view==='3d'&&!savedFollowOrbit3D){savedFollowOrbit3D={...orbit};followLook3D.set(0,orbit.targetY,0)}});
+window.addEventListener('aquaria-follow-stop',()=>{if(savedFollowOrbit3D){Object.assign(orbit,savedFollowOrbit3D);savedFollowOrbit3D=null}});
+
 function nearestPlayFish(e){if(!camera||!renderer)return null;const r=renderer.domElement.getBoundingClientRect();let nearest=null,dist=38;for(const f of fish){const p=f.g.position.clone().project(camera);if(p.z< -1||p.z>1)continue;const d=Math.hypot(e.clientX-(r.left+(p.x+1)*r.width/2),e.clientY-(r.top+(1-p.y)*r.height/2));if(d<dist){dist=d;nearest=f;}}return nearest;}
 function movePlayFish(e){if(!fishPlay3D)return;const r=renderer.domElement.getBoundingClientRect(),T=window.THREE;const ndc=new T.Vector3((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height*2-1),.5);ndc.unproject(camera);const direction=ndc.sub(camera.position).normalize();const depth=fishPlay3D.fish.g.position.z;const travel=(depth-camera.position.z)/direction.z;if(!Number.isFinite(travel)||travel<0)return;const p=camera.position.clone().addScaledVector(direction,travel);fishPlay3D.fish.playTarget=new T.Vector3(Math.max(-4.2,Math.min(4.2,p.x)),Math.max(1.1,Math.min(6.4,p.y)),Math.max(-3,Math.min(3,p.z)));fishPlay3D.fish.playUntil=performance.now()+280;}
 let fishPointerStart=null;
@@ -2563,6 +2656,7 @@ initialized=true;resize();updateCamera();
 }
 const viewPreferenceKey='aquaria-preferred-view';
 async function setAquaria3D(){
+ if(aquariaFishFollow)aquariaStopFishFollow();
  if(active)return true;
  button.textContent='3D 불러오는 중…';button.disabled=true;
  try{
@@ -2580,6 +2674,7 @@ async function setAquaria3D(){
 }
 button.addEventListener('click',async()=>{
  if(active){
+  if(aquariaFishFollow)aquariaStopFishFollow();
   active=false;host.classList.remove('is-3d');document.documentElement.classList.remove('aquaria-restoring-3d');
   button.textContent='◈ 3D 보기';
   localStorage.setItem(viewPreferenceKey,'2d');
