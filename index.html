@@ -2061,7 +2061,7 @@ if(localStorage.getItem(viewPreferenceKey)==='3d'){
 <div class="dev-head"><h3 id="aquariaDevTitle">⌘ 개발자 모드</h3><button type="button" id="aquariaDevClose" aria-label="개발자 모드 닫기">✕</button></div>
 <p>이 기기의 수족관 저장 데이터에 바로 적용돼. 모드를 열 때 복원 지점을 만들어.</p>
 <div class="dev-values"><label>코인<input id="devCoins" type="number" min="0" max="9999999" step="1"></label><label>경험치 XP<input id="devXP" type="number" min="0" max="499999" step="1"></label></div>
-<button type="button" data-dev="values">코인 · XP 적용</button>
+<button type="button" data-dev="values">변경사항 저장 · 코인 / XP</button><p style="color:#a8c8d0;font-size:12px">숫자를 바꾼 뒤 저장을 눌러줘. 물고기·산호 추가는 누르는 즉시 저장돼.</p>
 <label for="devSpecies">추가할 물고기</label><select id="devSpecies"></select>
 <div class="dev-grid"><button type="button" data-dev="fish">선택한 물고기 +1</button><button type="button" data-dev="all">모든 종류 +1</button><button type="button" data-dev="stress">전체 스트레스 0</button><button type="button" data-dev="clean">청결도 100%</button><button type="button" data-dev="plant">산호 +1</button><button type="button" data-dev="restore">열기 전 상태 복원</button></div>
 <p id="aquariaDevSummary"></p><p id="aquariaDevStatus" role="status" aria-live="polite"></p>
@@ -2094,14 +2094,15 @@ if(localStorage.getItem(viewPreferenceKey)==='3d'){
   }catch{window.alert('인증 서버에 연결할 수 없어.');return}
  }
  aquariaInitLives();snapshot=JSON.stringify(state);opener=button;panel.hidden=false;document.getElementById('aquariaDrawer').open=false;status.textContent='복원 지점 저장 완료';refresh();document.getElementById('aquariaDevClose').focus()};
- function close(){panel.hidden=true;document.getElementById('aquariaDrawer').open=true;opener?.focus()}
+ function close(){const dirty=Number(document.getElementById('devCoins').value)!==Number(state.coins||0)||Number(document.getElementById('devXP').value)!==Number(state.xp||0);if(dirty){status.textContent='아직 저장하지 않은 숫자가 있어. 변경사항 저장을 먼저 눌러줘.';document.querySelector('#aquariaDev [data-dev="values"]').focus();return}panel.hidden=true;document.getElementById('aquariaDrawer').open=true;opener?.focus()}
  document.getElementById('aquariaDevClose').onclick=close;
  document.addEventListener('keydown',e=>{if(!panel.hidden&&e.key==='Escape')close()});
  function add(kind){if(state.fishLives.length>=38)return false;state.fishLives.push({kind,born:Date.now(),lifeDays:28,stress:0,stressAt:Date.now()});return true}
  panel.addEventListener('click',async e=>{
   const action=e.target.closest('[data-dev]')?.dataset.dev;if(!action)return;
   if(!await authenticated()){panel.hidden=true;window.alert('인증이 만료됐어. 다시 비밀번호를 입력해.');return}
-  let message='적용 완료';
+  let message='저장 완료';
+  aquariaInitLives();
   if(action==='values'){
    const coins=Number(document.getElementById('devCoins').value),xp=Number(document.getElementById('devXP').value);
    if(!document.getElementById('devCoins').value||!document.getElementById('devXP').value||!Number.isInteger(coins)||coins<0||coins>9999999||!Number.isInteger(xp)||xp<0||xp>499999){status.textContent='코인은 0~9,999,999, XP는 0~499,999 정수로 입력해.';return}
@@ -2112,7 +2113,16 @@ if(localStorage.getItem(viewPreferenceKey)==='3d'){
   }else if(action==='clean'){state.cleanliness=100;
   }else if(action==='plant'){aquariaDecorInit();if(state.decorations.length<80){const i=state.decorations.length;state.decorations.push({kind:8,x:.08+(i*.61803398875)% .84,y:.76+(i%5)*.035});state.plants=state.decorations.filter(d=>aquariaDecorCatalog[d.kind]?.[0]!=='지형').length;}
   }else if(action==='restore'){if(!snapshot)return;state=JSON.parse(snapshot);message='개발자 모드를 열기 전 상태로 복원했어.';}
-  state.virtual=state.fishLives.length;state.aquariaSpecies=state.fishLives.map(f=>f.kind);save();window.dispatchEvent(new Event('aquaria-dev-sync'));refresh();status.textContent=message;
+  state.virtual=state.fishLives.length;state.aquariaSpecies=state.fishLives.map(f=>f.kind);
+  try{
+   const serialized=JSON.stringify(state);localStorage.setItem(key,serialized);
+   if(localStorage.getItem(key)!==serialized)throw new Error('저장 확인 실패');
+   try{render()}catch(error){console.error('Developer view refresh failed',error)}
+   window.dispatchEvent(new Event('aquaria-dev-sync'));window.dispatchEvent(new Event('aquaria-decor-sync'));
+   refresh();status.textContent='✓ '+message+' · 이 브라우저에 저장했어.';
+   if(typeof aquariaDecorToast==='function')aquariaDecorToast('✓ 개발자 변경사항 저장 완료');
+  }catch(error){console.error('Developer save failed',error);status.textContent='저장 실패: 브라우저 저장 공간이나 개인정보 보호 설정을 확인해줘.';}
+
  });
 })();
 </script>
