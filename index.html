@@ -1071,16 +1071,6 @@ canvas.addEventListener('pointerup',e=>{if(fishPlay?.id===e.pointerId){const mov
 canvas.addEventListener('pointercancel',()=>{fishPlay=null;});
 canvas.addEventListener('click',e=>{if(performance.now()<(window.aquariaSuppressTapUntil||0))return;touchFishAt(e.clientX,e.clientY)});
 const visibleFood=[];
-// Shared camera-facing star texture, with independent twinkle per pellet.
-const foodStarCanvas=document.createElement('canvas');foodStarCanvas.width=foodStarCanvas.height=64;
-const foodStarCtx=foodStarCanvas.getContext('2d');
-const foodStarGlow=foodStarCtx.createRadialGradient(32,32,0,32,32,30);
-foodStarGlow.addColorStop(0,'rgba(255,255,235,1)');foodStarGlow.addColorStop(.14,'rgba(255,234,170,.85)');foodStarGlow.addColorStop(1,'rgba(255,220,130,0)');
-foodStarCtx.fillStyle=foodStarGlow;foodStarCtx.fillRect(0,0,64,64);
-foodStarCtx.fillStyle='#fffce7';foodStarCtx.beginPath();
-for(let j=0;j<8;j++){const a=j*Math.PI/4-Math.PI/2,r=j%2?3:27;const x=32+Math.cos(a)*r,y=32+Math.sin(a)*r;j?foodStarCtx.lineTo(x,y):foodStarCtx.moveTo(x,y);}
-foodStarCtx.closePath();foodStarCtx.fill();
-const foodStarTexture=new T.CanvasTexture(foodStarCanvas);
 window.addEventListener('aquaria-feed',event=>{
  const kind=event.detail?.food??0;
  const colors=['#f5dfab','#a9d58b','#f3a68c','#e8bd99','#ffe3bd'];
@@ -2406,6 +2396,16 @@ syncFish();
 // Real 3D food particles. Fish steer toward nearby pellets and peck when they reach them.
 const foodParticles=[];
 const foodMaterials=[0xffcc78,0xa9d879,0xffab80,0xe8b87b,0xffd6a0].map(c=>new T.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.32,roughness:.78,fog:false}));
+// Shared camera-facing star texture, with independent twinkle per pellet.
+const foodStarCanvas=document.createElement('canvas');foodStarCanvas.width=foodStarCanvas.height=64;
+const foodStarCtx=foodStarCanvas.getContext('2d');
+const foodStarGlow=foodStarCtx.createRadialGradient(32,32,0,32,32,30);
+foodStarGlow.addColorStop(0,'rgba(255,255,235,1)');foodStarGlow.addColorStop(.14,'rgba(255,234,170,.85)');foodStarGlow.addColorStop(1,'rgba(255,220,130,0)');
+foodStarCtx.fillStyle=foodStarGlow;foodStarCtx.fillRect(0,0,64,64);
+foodStarCtx.fillStyle='#fffce7';foodStarCtx.beginPath();
+for(let j=0;j<8;j++){const a=j*Math.PI/4-Math.PI/2,r=j%2?3:27;const x=32+Math.cos(a)*r,y=32+Math.sin(a)*r;j?foodStarCtx.lineTo(x,y):foodStarCtx.moveTo(x,y);}
+foodStarCtx.closePath();foodStarCtx.fill();
+const foodStarTexture=new T.CanvasTexture(foodStarCanvas);
 window.addEventListener('aquaria-feed',event=>{
  if(!active||!scene)return;
  const food=event.detail?.food??0;
