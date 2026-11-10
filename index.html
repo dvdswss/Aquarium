@@ -1055,14 +1055,14 @@ for(const eventName of ['pointerdown','pointermove','pointerup','pointercancel']
 }
 
 
-let savedFollowCamera2D=null;
+let savedFollowCamera2D=null,zoomOut2D=null;
 aquariaBindFishDoubleTap(canvas,e=>{
  const p=fishPlayCoords(e);let nearest=null,d=13/camera.zoom+3;
  for(const f of fish){const distance=Math.hypot(f.x-p.x,f.y-p.y);if(distance<d){d=distance;nearest=f}}
  return nearest;
 },{indexOf:f=>fish.indexOf(f),view:'2d'},()=>{fishPlay=null;touch.mode=''});
-window.addEventListener('aquaria-follow-start',()=>{if(aquariaFishFollow?.view==='2d'&&!savedFollowCamera2D)savedFollowCamera2D={...camera}});
-window.addEventListener('aquaria-follow-stop',e=>{if(e.detail?.overview){Object.assign(camera,{zoom:1,x:W/2,y:H/2});fishPlay=null;touch.mode='';}else if(savedFollowCamera2D){Object.assign(camera,savedFollowCamera2D);}savedFollowCamera2D=null;});
+window.addEventListener('aquaria-follow-start',()=>{if(aquariaFishFollow?.view==='2d'){zoomOut2D=null;if(!savedFollowCamera2D)savedFollowCamera2D={...camera}}});
+window.addEventListener('aquaria-follow-stop',e=>{if(e.detail?.overview){zoomOut2D={start:performance.now(),from:{...camera}};fishPlay=null;touch.mode='';}else if(savedFollowCamera2D){Object.assign(camera,savedFollowCamera2D);}savedFollowCamera2D=null;});
 
 function fishPlayCoords(e){const r=canvas.getBoundingClientRect(),px=(e.clientX-r.left)*W/r.width,py=(e.clientY-r.top)*H/r.height;return {x:camera.x+(px-W/2)/camera.zoom,y:camera.y+(py-H/2)/camera.zoom};}
 canvas.addEventListener('pointerdown',e=>{const p=fishPlayCoords(e);let nearest=null,d=22;for(const f of fish){const n=Math.hypot(f.x-p.x,f.y-p.y);if(n<d){nearest=f;d=n;}}if(nearest){fishPlay={id:e.pointerId,fish:nearest,startX:e.clientX,startY:e.clientY,down:performance.now(),active:false,moved:false};canvas.setPointerCapture(e.pointerId);}});
@@ -1492,6 +1492,7 @@ if(f.touchUntil>t){
 });
 }
 let last=0;function frame(t){requestAnimationFrame(frame);if(document.hidden||t-last<32)return;last=t;resizeScene();
+if(zoomOut2D){const p=Math.min(1,Math.max(0,(performance.now()-zoomOut2D.start)/950)),s=p*p*(3-2*p),from=zoomOut2D.from;camera.zoom=from.zoom+(1-from.zoom)*s;camera.x=from.x+(W/2-from.x)*s;camera.y=from.y+(H/2-from.y)*s;if(p===1)zoomOut2D=null;}
 if(aquariaFishFollow?.view==='2d'){const index=state.fishLives.indexOf(aquariaFishFollow.life),f=fish[index];if(f){camera.zoom+=(3.2-camera.zoom)*.10;camera.x+=(f.x-camera.x)*.14;camera.y+=(f.y-camera.y)*.14;clampCamera()}else aquariaStopFishFollow();}
 ctx.save();
 // Keep the canvas backing transform fixed on iOS; zoom only logical world coordinates.
@@ -2407,6 +2408,14 @@ window.addEventListener('aquaria-feed',event=>{
  }
 });
 function updateCamera(){
+ if(zoomOut3D){
+  const p=Math.min(1,Math.max(0,(performance.now()-zoomOut3D.start)/950)),s=p*p*(3-2*p);
+  const destination=new T.Vector3(Math.sin(orbit.theta)*Math.sin(orbit.phi)*orbit.radius,orbit.targetY+Math.cos(orbit.phi)*orbit.radius,Math.cos(orbit.theta)*Math.sin(orbit.phi)*orbit.radius);
+  camera.position.copy(zoomOut3D.position).lerp(destination,s);
+  camera.lookAt(zoomOut3D.look.clone().lerp(new T.Vector3(0,orbit.targetY,0),s));
+  scene.fog.near=zoomOut3D.near+(orbit.radius+6-zoomOut3D.near)*s;scene.fog.far=zoomOut3D.far+(orbit.radius+22-zoomOut3D.far)*s;
+  if(p===1)zoomOut3D=null;return;
+ }
  if(aquariaFishFollow?.view==='3d'){
   const index=state.fishLives.indexOf(aquariaFishFollow.life),f=fish[index];
   if(f){orbit.phi=Math.max(.04,Math.min(Math.PI-.04,orbit.phi));orbit.radius=Math.max(1.6,Math.min(8,orbit.radius));
@@ -2626,11 +2635,11 @@ for(const f of fish){
 start3DFrame=()=>requestAnimationFrame(frame);
 let fishPlay3D=null;
 
-let savedFollowOrbit3D=null;
+let savedFollowOrbit3D=null,zoomOut3D=null;
 const followLook3D=new T.Vector3();
 aquariaBindFishDoubleTap(layer,nearestPlayFish,{indexOf:f=>fish.indexOf(f),view:'3d'},()=>{fishPlay3D=null;fishPointerStart=null;pointer.clear();lastDistance=0});
-window.addEventListener('aquaria-follow-start',()=>{if(aquariaFishFollow?.view==='3d'&&!savedFollowOrbit3D){savedFollowOrbit3D={...orbit};orbit.radius=3.8;orbit.phi=1.39;followLook3D.set(0,orbit.targetY,0)}});
-window.addEventListener('aquaria-follow-stop',e=>{if(e.detail?.overview){Object.assign(orbit,{theta:0,phi:1.32,radius:19,targetY:7});fishPlay3D=null;fishPointerStart=null;pointer.clear();lastDistance=0;}else if(savedFollowOrbit3D){Object.assign(orbit,savedFollowOrbit3D);}savedFollowOrbit3D=null;updateCamera();});
+window.addEventListener('aquaria-follow-start',()=>{if(aquariaFishFollow?.view==='3d'&&!savedFollowOrbit3D){zoomOut3D=null;savedFollowOrbit3D={...orbit};orbit.radius=3.8;orbit.phi=1.39;followLook3D.set(0,orbit.targetY,0)}});
+window.addEventListener('aquaria-follow-stop',e=>{if(e.detail?.overview){zoomOut3D={start:performance.now(),position:camera.position.clone(),look:followLook3D.clone(),near:scene.fog.near,far:scene.fog.far};Object.assign(orbit,{theta:0,phi:1.32,radius:19,targetY:7});fishPlay3D=null;fishPointerStart=null;pointer.clear();lastDistance=0;}else if(savedFollowOrbit3D){Object.assign(orbit,savedFollowOrbit3D);}savedFollowOrbit3D=null;updateCamera();});
 
 function nearestPlayFish(e){if(!camera||!renderer)return null;const r=renderer.domElement.getBoundingClientRect();let nearest=null,dist=38;for(const f of fish){const p=f.g.position.clone().project(camera);if(p.z< -1||p.z>1)continue;const d=Math.hypot(e.clientX-(r.left+(p.x+1)*r.width/2),e.clientY-(r.top+(1-p.y)*r.height/2));if(d<dist){dist=d;nearest=f;}}return nearest;}
 function movePlayFish(e){if(!fishPlay3D)return;const r=renderer.domElement.getBoundingClientRect(),T=window.THREE;const ndc=new T.Vector3((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height*2-1),.5);ndc.unproject(camera);const direction=ndc.sub(camera.position).normalize();const depth=fishPlay3D.fish.g.position.z;const travel=(depth-camera.position.z)/direction.z;if(!Number.isFinite(travel)||travel<0)return;const p=camera.position.clone().addScaledVector(direction,travel);fishPlay3D.fish.playTarget=new T.Vector3(Math.max(-4.2,Math.min(4.2,p.x)),Math.max(1.1,Math.min(6.4,p.y)),Math.max(-3,Math.min(3,p.z)));fishPlay3D.fish.playUntil=performance.now()+280;}
