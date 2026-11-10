@@ -1557,17 +1557,46 @@ const floor=mesh(groundGeometry,groundMaterial,scene);
 const glass=mesh(new T.CylinderGeometry(55,55,52,96,1,true),new T.MeshPhysicalMaterial({color:0x8adcf1,transparent:true,opacity:.045,roughness:.06,side:T.DoubleSide,depthWrite:false}),scene,0,22,0);
 
 const kelps=[],anemoneArms=[];
+
+function organicStem(parent,points,radius,tipRadius,material,segments=10){
+ const curve=new T.CatmullRomCurve3(points),geometry=new T.TubeGeometry(curve,segments,radius,8,false);
+ const positions=geometry.attributes.position,ringSize=9;
+ for(let j=0;j<=segments;j++){
+  const center=curve.getPointAt(j/segments),ratio=(radius+(tipRadius-radius)*Math.pow(j/segments,.8))/radius;
+  for(let k=0;k<ringSize;k++){const index=j*ringSize+k;const p=new T.Vector3().fromBufferAttribute(positions,index).sub(center).multiplyScalar(ratio).add(center);positions.setXYZ(index,p.x,p.y,p.z);}
+ }
+ geometry.computeVertexNormals();const stem=new T.Mesh(geometry,material);parent.add(stem);return stem;
+}
+function sculptLeaf(parent,length,width,material,phase){
+ const vertices=[],colors=[],indices=[],rows=14,columns=6;
+ for(let j=0;j<=rows;j++){
+  const u=j/rows,shape=Math.pow(Math.sin(Math.PI*u),.72);
+  for(let k=0;k<=columns;k++){
+   const v=k/columns*2-1,x=v*width*shape;
+   const y=u*length;
+   const z=Math.sin(u*Math.PI)*length*.12+Math.pow(Math.abs(v),1.6)*width*.22+Math.sin(u*9+phase)*Math.pow(Math.abs(v),3)*.012;
+   vertices.push(x,y,z);const light=.83+.14*u+.03*(1-Math.abs(v));colors.push(light,light,light);
+   if(j<rows&&k<columns){const p=j*(columns+1)+k;indices.push(p,p+columns+1,p+1,p+1,p+columns+1,p+columns+2)}
+  }
+ }
+ const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(vertices,3));geometry.setAttribute('color',new T.Float32BufferAttribute(colors,3));geometry.setIndex(indices);geometry.computeVertexNormals();
+ const leaf=new T.Mesh(geometry,material);parent.add(leaf);
+ const midrib=[];for(let j=0;j<=12;j++){const u=j/12;midrib.push(new T.Vector3(0,u*length,Math.sin(u*Math.PI)*length*.12+.002))}
+ const veins=new T.Line(new T.BufferGeometry().setFromPoints(midrib),new T.LineBasicMaterial({color:0xc4deba,transparent:true,opacity:.24}));leaf.add(veins);
+ return leaf;
+}
 function branch(parent,origin,dir,length,width,depth,material,seed){
+ const bend=new T.Vector3((seeded(seed+91)-.5)*length*.20,0,(seeded(seed+92)-.5)*length*.20);
+ const mid=origin.clone().addScaledVector(dir,length*.5).add(bend);
  const end=origin.clone().addScaledVector(dir,length);
- cylinderBetween(parent,origin,end,width,width*.62,material,7);
- mesh(new T.IcosahedronGeometry(width*.65,0),material,parent,end.x,end.y,end.z);
+ organicStem(parent,[origin,mid,end],width,width*.48,material,8);
+ mesh(new T.SphereGeometry(width*.49,8,6),material,parent,end.x,end.y,end.z);
  if(depth<=0)return;
  for(let j=0;j<2;j++){
- const v=dir.clone().add(new T.Vector3((j?1:-1)*(.42+seeded(seed+j)*.35),.25, (seeded(seed+j+8)-.5)*.6)).normalize();
- branch(parent,end,v,length*(.58+seeded(seed+j+2)*.16),width*.68,depth-1,material,seed*2+j+1);
+  const v=dir.clone().add(new T.Vector3((j?1:-1)*(.36+seeded(seed+j)*.25),.18,(seeded(seed+j+8)-.5)*.45)).normalize();
+  branch(parent,end,v,length*(.6+seeded(seed+j+2)*.13),width*.56,depth-1,material,seed*2+j+1);
  }
 }
-
 const decorRoot=new T.Group();scene.add(decorRoot);
 const decorMoveLabel=document.createElement('div');decorMoveLabel.style.cssText='position:absolute;z-index:35;pointer-events:none;padding:7px 11px;border:1px solid #9fffe0;border-radius:10px;background:#092b3bf2;color:#c7ffe9;font:600 12px system-ui;white-space:nowrap;transform:translate(-50%,-100%);box-shadow:0 0 18px #63ffc955';decorMoveLabel.hidden=true;layer.append(decorMoveLabel);
 let decorSignature='';
@@ -1593,18 +1622,20 @@ if(item[0]==='해조류'){
    for(let stem=0;stem<(k===2?1:stems);stem++){
     const angle=stem*2.399,bx=Math.cos(angle)*.16,bz=Math.sin(angle)*.16,hh=height*(.7+(stem%3)*.16);
     cylinderBetween(g,new T.Vector3(bx,0,bz),new T.Vector3(bx+.1,hh,bz),.018,.01,c,5);
-    if(k===2){for(let j=0;j<18;j++){const p=j*2.4,y=.15+j*.045;const end=new T.Vector3(Math.cos(p)*.16,y,Math.sin(p)*.16);cylinderBetween(g,new T.Vector3(0,y,0),end,.008,.005,c,4);mesh(new T.SphereGeometry(.058,7,5),c,g,end.x,end.y,end.z);}}
-    else if(k===3){const fan=mesh(new T.SphereGeometry(1,10,7),c,g,bx,hh*.75,bz);fan.scale.set(.3,.35,.045);fan.rotation.y=angle;}
+    if(k===2){for(let j=0;j<18;j++){const p=j*2.4,y=.15+j*.045;const end=new T.Vector3(Math.cos(p)*.16,y,Math.sin(p)*.16);cylinderBetween(g,new T.Vector3(0,y,0),end,.008,.005,c,4);mesh(new T.SphereGeometry(.047,12,8),c,g,end.x,end.y,end.z);}}
+    else if(k===3){const fan=sculptLeaf(g,.65,.3,c,stem);fan.position.set(bx,hh*.35,bz);fan.rotation.y=angle;}
     else if(k===1){branch(g,new T.Vector3(bx,.1,bz),new T.Vector3(Math.cos(angle)*.22,1,Math.sin(angle)*.22).normalize(),hh*.45,.025,2,c,stem+i);}
     else for(let j=0;j<(k===4?10:5);j++){
-     const side=j%2?-1:1,leaf=mesh(new T.SphereGeometry(1,8,5),c,g,bx+side*.12,.12+j*hh/(k===4?12:6),bz);
-     leaf.scale.set(k===4?.2:k===5?.14:.26,k===4?.018:k===5?.16:.055,k===4?.045:.085);leaf.rotation.z=side*(k===5?.15:.5);leaf.rotation.y=angle*.3;
+     const side=j%2?-1:1,leaf=sculptLeaf(g,k===4?.26:k===5?.45:.37,k===4?.028:k===5?.07:.085,c,j+stem);
+     leaf.position.set(bx,.12+j*hh/(k===4?12:6),bz);
+     leaf.rotation.z=side*(k===4?1.08:k===5?.32:.85);leaf.rotation.y=angle*.35;
     }
    }kelps.push({g,phase:i*1.9});
   }else if(item[0]==='산호'){
    if(k<4){const count=[3,4,3,3][k];for(let j=0;j<count;j++){const angle=j*2.4;branch(g,new T.Vector3(Math.cos(angle)*.12,.04,Math.sin(angle)*.12),new T.Vector3(Math.cos(angle)*.35,1,Math.sin(angle)*.35).normalize(),[.6,.48,.7,.45][k],k===3?.085:.055,2,c,i+j+3);}}
    else if(k===4){const mound=mesh(new T.SphereGeometry(.55,16,10),c,g,0,.35,0);mound.scale.y=.65;
-    for(let j=0;j<12;j++){const p=j*2.4,ring=mesh(new T.TorusGeometry(.12,.018,4,12),c,g,Math.cos(p)*.35,.48+(j%3)*.05,Math.sin(p)*.35);ring.rotation.x=-Math.PI/2;}}
+    const grooveMaterial=new T.LineBasicMaterial({color:0xf1d4d5,transparent:true,opacity:.38});
+    for(let j=0;j<9;j++){const points=[];for(let n=0;n<=36;n++){const theta=n/36*Math.PI,phi=j/9*Math.PI*2+Math.sin(theta*5+j)*.14;points.push(new T.Vector3(Math.sin(theta)*Math.cos(phi)*.554,.35+Math.cos(theta)*.36,Math.sin(theta)*Math.sin(phi)*.554))}g.add(new T.Line(new T.BufferGeometry().setFromPoints(points),grooveMaterial));}}
    else if(k===5){mesh(new T.CylinderGeometry(.09,.13,.8,7),c,g,0,.4,0);for(let j=0;j<3;j++){const plate=mesh(new T.CylinderGeometry(.7-j*.15,.63-j*.15,.075,18),c,g,(j%2?-.1:.1),.5+j*.24,0);plate.rotation.z=(j-1)*.07;}}
    else if(k===6){for(let j=0;j<11;j++){const angle=(j/10-.5)*2.2,end=new T.Vector3(Math.sin(angle)*.9,Math.cos(angle)*.9+.4,Math.sin(j)*.035);cylinderBetween(g,new T.Vector3(0,.03,0),end,.018,.007,c,5);for(let n=1;n<5;n++){const p=end.clone().multiplyScalar(n/5);cylinderBetween(g,p,p.clone().add(new T.Vector3(.1,.13,0)),.009,.003,c,4);}}}
   }else if(item[0]==='말미잘'){
@@ -1614,7 +1645,7 @@ if(item[0]==='해조류'){
     const angle=j*2.399,r=.12+(j%4)*.085,root=new T.Group();root.position.set(Math.cos(angle)*r,.2,Math.sin(angle)*r);g.add(root);
     const height=d.kind===24?.48+(j%5)*.055:.35+(j%4)*.075;
     const p1=new T.Vector3(Math.cos(angle)*.04,height*.5,Math.sin(angle)*.04),p2=new T.Vector3(Math.cos(angle)*.15,height,Math.sin(angle)*.15);
-    cylinderBetween(root,new T.Vector3(),p1,.021,.018,c,9);cylinderBetween(root,p1,p2,.018,.012,c,9);
+    organicStem(root,[new T.Vector3(),p1.clone().add(new T.Vector3(.025,0,-.015)),p2],.022,.010,c,12);
     if(d.kind!==24){const bulb=mesh(new T.SphereGeometry(d.kind===25?.052:.034,12,8),c,root,p2.x,p2.y,p2.z);bulb.scale.y=1.3;}
     anemoneArms.push({root,phase:j*.8+i,amplitude:.07,speed:.001+(j%3)*.0001});
    }
