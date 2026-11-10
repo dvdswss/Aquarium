@@ -439,10 +439,9 @@ function startAquariaDecorMove(index,newPurchase=false){
  document.getElementById('aquariaShop').hidden=true;
  let bar=document.getElementById('aquariaDecorMoveBar');
  if(!bar){bar=document.createElement('div');bar.id='aquariaDecorMoveBar';bar.style.cssText='position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 58px);transform:translateX(-50%);z-index:9998;width:min(380px,94vw);padding:12px;background:#092b3bf5;border:1px solid #8af2d9;border-radius:15px;color:#eafbf8;text-align:center;font:13px system-ui';
- bar.innerHTML='<p id="aquariaDecorMoveName"></p><p>장식을 직접 잡아 끌어 옮긴 뒤 저장해줘</p><label style="display:none">좌우 <input id="aquariaDecorMoveX" aria-label="장식 좌우 위치" type="range" min="4" max="96" step="1" style="width:100%"></label><label style="display:none">앞뒤 <input id="aquariaDecorMoveY" aria-label="장식 앞뒤 위치" type="range" min="79" max="96" step="0.5" style="width:100%"></label><div style="display:flex;gap:8px;align-items:center;justify-content:center;margin:10px 0"><button type="button" id="aquariaDecorRotateLeft" aria-label="장식 왼쪽으로 15도 회전">↶ 15°</button><output id="aquariaDecorRotateAngle">0°</output><button type="button" id="aquariaDecorRotateRight" aria-label="장식 오른쪽으로 15도 회전">15° ↷</button><button type="button" id="aquariaDecorRotateReset">방향 초기화</button></div><button type="button" id="aquariaDecorMoveDone">배치 저장</button> <button type="button" id="aquariaDecorMoveCancel">취소</button>';document.body.append(bar);
+ bar.innerHTML='<p id="aquariaDecorMoveName"></p><p>장식을 직접 잡아 끌어 옮긴 뒤 저장해줘</p><label style="display:none">좌우 <input id="aquariaDecorMoveX" aria-label="장식 좌우 위치" type="range" min="4" max="96" step="1" style="width:100%"></label><label style="display:none">앞뒤 <input id="aquariaDecorMoveY" aria-label="장식 앞뒤 위치" type="range" min="79" max="96" step="0.5" style="width:100%"></label><div style="margin:10px 0"><label for="aquariaDecorRotateSlider">방향 <output id="aquariaDecorRotateAngle">0°</output></label><input id="aquariaDecorRotateSlider" aria-label="장식 회전 각도" type="range" min="0" max="360" step="0.1" style="display:block;width:100%;touch-action:pan-y"><div style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="aquariaDecorRotateNumber" aria-label="장식 각도 직접 입력" type="number" min="0" max="360" step="0.1" inputmode="decimal" style="width:90px"><span>도</span><button type="button" id="aquariaDecorRotateReset">방향 초기화</button></div></div><button type="button" id="aquariaDecorMoveDone">배치 저장</button> <button type="button" id="aquariaDecorMoveCancel">취소</button>';document.body.append(bar);
  document.getElementById('aquariaDecorMoveDone').onclick=()=>finishAquariaDecorMove(true);
- document.getElementById('aquariaDecorRotateLeft').onclick=()=>rotateAquariaDecor(-15);
- document.getElementById('aquariaDecorRotateRight').onclick=()=>rotateAquariaDecor(15);
+ for(const id of ['aquariaDecorRotateSlider','aquariaDecorRotateNumber'])document.getElementById(id).oninput=e=>{if(e.target.value==='')return;const angle=Number(e.target.value);if(Number.isFinite(angle))setAquariaDecorAngle(angle);};
  document.getElementById('aquariaDecorRotateReset').onclick=()=>rotateAquariaDecor(0,true);
  for(const id of ['aquariaDecorMoveX','aquariaDecorMoveY'])document.getElementById(id).oninput=()=>previewAquariaDecorMove(Number(document.getElementById('aquariaDecorMoveX').value)/100,Number(document.getElementById('aquariaDecorMoveY').value)/100);
  document.getElementById('aquariaDecorMoveCancel').onclick=()=>finishAquariaDecorMove(false);
@@ -452,14 +451,23 @@ function startAquariaDecorMove(index,newPurchase=false){
  document.getElementById('aquariaDecorMoveCancel').textContent=newPurchase?'기본 위치에 두기':'취소';
  document.getElementById('aquariaDecorMoveX').value=d.x*100;document.getElementById('aquariaDecorMoveY').value=d.y*100;
  document.getElementById('aquariaDecorRotateAngle').textContent=(Number(d.rotation)||0)+'°';
+ document.getElementById('aquariaDecorRotateSlider').value=Number(d.rotation)||0;document.getElementById('aquariaDecorRotateNumber').value=Number(d.rotation)||0;
  bar.hidden=false;window.dispatchEvent(new Event('aquaria-decor-sync'));
+}
+
+
+function setAquariaDecorAngle(angle){
+ const d=state.decorations[aquariaDecorMoveIndex];if(!d||!Number.isFinite(angle))return;
+ d.rotation=Math.round(Math.max(0,Math.min(360,angle))*10)/10;
+ document.getElementById('aquariaDecorRotateAngle').textContent=d.rotation+'°';
+ document.getElementById('aquariaDecorRotateSlider').value=d.rotation;
+ document.getElementById('aquariaDecorRotateNumber').value=d.rotation;
+ window.dispatchEvent(new Event('aquaria-decor-sync'));
 }
 
 function rotateAquariaDecor(delta,reset=false){
  const d=state.decorations[aquariaDecorMoveIndex];if(!d)return;
- d.rotation=reset?0:(((Number(d.rotation)||0)+delta)%360+360)%360;
- document.getElementById('aquariaDecorRotateAngle').textContent=d.rotation+'°';
- window.dispatchEvent(new Event('aquaria-decor-sync'));
+ setAquariaDecorAngle(reset?0:(((Number(d.rotation)||0)+delta)%360+360)%360);
 }
 
 function previewAquariaDecorMove(x,y,worldX,worldZ){
