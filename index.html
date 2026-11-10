@@ -269,7 +269,7 @@ function loadAquariaFishPhoto(i,img){
 }
 
 const aquariaDecorCatalog=[["해조류","초록 켈프",10,0,"#58bca3"],["해조류","붉은 해조",14,1,"#d47799"],["해조류","바다 포도",18,2,"#8acb80"],["해조류","부채 해조",20,3,"#b7a669"],["해조류","깃털 해조",24,4,"#80c3ac"],["해조류","갈색 켈프",16,5,"#ba996b"],["해조류","청록 해초",22,0,"#63cecc"],["해조류","보랏빛 해조",28,1,"#b296d8"],["산호","핑크 가지산호",20,0,"#f1a1c5"],["산호","보라 가지산호",25,1,"#b99ade"],["산호","민트 산호",30,2,"#83d7cb"],["산호","오렌지 산호",28,3,"#f2b18a"],["산호","둥근 산호",35,4,"#dfa0bc"],["산호","테이블 산호",42,5,"#b3a0e1"],["산호","부채 산호",48,6,"#d88fae"],["말미잘","핑크 말미잘",38,7,"#f2a6be"],["지형","조약돌 무리",15,0,"#8195af"],["지형","큰 암석",25,1,"#718ca5"],["지형","바위 동굴",45,2,"#7086a1"],["지형","낮은 돌기둥",35,3,"#8ba4b9"],["지형","고대 아치",65,4,"#90a2ba"],["지형","무너진 유적",55,5,"#778fa9"],["지형","계단식 암초",50,6,"#6d9e9c"],["지형","수정 군락",75,7,"#bba6e2"],["말미잘","민트 말미잘",42,7,"#8bdac7"],["말미잘","크림 말미잘",45,7,"#f1d7a7"]];
-const aquariaDecorSizes=[[30,58,1.15,"키 큰 해조"],[35,42,0.95,"작은 해조"],[28,35,0.85,"작은 군락"],[48,42,1.15,"넓은 부채"],[36,56,1.1,"가늘고 긴 잎"],[30,62,1.25,"긴 켈프"],[40,52,1,"촘촘한 해초"],[36,48,1.05,"중간 해조"],[38,44,1.15,"중간 산호"],[45,50,1.3,"큰 가지산호"],[34,40,1,"작은 가지산호"],[42,38,1.2,"굵은 가지산호"],[44,31,1.1,"낮고 둥근 산호"],[68,48,1.65,"넓은 판산호"],[55,64,1.55,"키 큰 부채산호"],[38,30,1.15,"중간 말미잘"],[24,17,0.85,"작은 조약돌"],[57,43,1.5,"큰 바위"],[78,58,1.8,"물고기 은신처"],[35,70,1.7,"키 큰 기둥"],[88,87,2.1,"대형 유적"],[70,48,1.6,"넓은 유적"],[73,43,1.7,"계단형 암초"],[34,48,1.1,"작은 수정 군락"],[42,35,1.2,"긴 촉수 말미잘"],[48,32,1.35,"큰 촉수 말미잘"]];
+const aquariaDecorSizes=[[31,46,1.05,"키 큰 해조"],[32,36,0.9,"작은 해조"],[26,31,0.85,"작은 군락"],[39,35,1,"넓은 부채"],[30,43,1,"가늘고 긴 잎"],[29,50,1.1,"긴 켈프"],[35,42,1,"촘촘한 해초"],[32,39,0.95,"중간 해조"],[34,37,1.05,"중간 산호"],[39,42,1.15,"큰 가지산호"],[33,36,1,"작은 가지산호"],[36,33,1.05,"굵은 가지산호"],[37,28,1,"낮고 둥근 산호"],[49,36,1.3,"넓은 판산호"],[43,48,1.25,"키 큰 부채산호"],[33,28,1,"중간 말미잘"],[23,16,0.8,"작은 조약돌"],[43,34,1.2,"큰 바위"],[58,44,1.45,"물고기 은신처"],[28,51,1.35,"키 큰 기둥"],[63,62,1.6,"대형 유적"],[52,37,1.3,"넓은 유적"],[54,34,1.35,"계단형 암초"],[29,37,0.95,"작은 수정 군락"],[35,32,1.05,"긴 촉수 말미잘"],[39,29,1.1,"큰 촉수 말미잘"]];
 function aquariaDecorSize(kind){return aquariaDecorSizes[kind]||[40,44,1.1,'중간 장식'];}
 
 function aquariaDecorInit(){
@@ -347,11 +347,16 @@ function aquariaDecorIcon(item){
  }
 
  // Surface detail remains inside the silhouette rather than adding visual clutter.
- if(type==='산호'&&k<4){for(let j=0;j<18;j++){const x=24+(j*13)%33,y=32+(j*7)%28;s+=oval(x,y,.65,.85,'#ffe8db');}}
+
  if(type==='해조류'&&k!==2){for(let j=0;j<5;j++){const x=21+j*9;s+=path('M40 69Q'+x+' 46 '+x+' '+(24+j%3*7),.45,'#d4f3db');}}
  if(type==='지형'&&(k===1||k===2)){s+=path('M24 34l5 8l-3 9l8 6M55 39l-7 7l4 8',.85,'#3d526c');for(let j=0;j<12;j++)s+=oval(17+(j*11)%45,58+(j*5)%10,1.4,.65,j%2?'#799985':'#b7c6c7');}
  if(type==='지형'&&[3,4,5].includes(k)){for(let j=0;j<6;j++){const x=k===3?36:19;s+=path('M'+x+' '+(30+j*6)+'l5 2l-2 3',.7,'#50677e');}s+=path('M16 68l10 -3l4 4M54 67l7 -2l5 4',2,'#76a18c');}
- return '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80" aria-hidden="true">'+s+'</svg>';
+ const crop=type==='지형'?(k===0?'7 51 68 27':k===1||k===2?'6 20 68 56':k===6?'5 29 70 47':'5 5 72 73'):type==='말미잘'?'9 15 62 61':type==='산호'?(k===4?'10 26 60 50':k===5?'7 29 66 46':'5 7 70 68'):'6 4 68 72';
+ const dimensions=aquariaDecorSize(idx);
+ const shadeColor=(amount)=>{const rgb=[1,3,5].map(offset=>parseInt(c.slice(offset,offset+2),16));return '#'+rgb.map(v=>Math.round(amount>0?v+(255-v)*amount:v*(1+amount)).toString(16).padStart(2,'0')).join('')};
+ s=s.replaceAll('fill="'+c+'"','fill="url(#surfaceShade)"');
+ return '<svg xmlns="http://www.w3.org/2000/svg" width="'+dimensions[0]*2+'" height="'+dimensions[1]*2+'" viewBox="'+crop+'" preserveAspectRatio="xMidYMax meet" aria-hidden="true"><defs><linearGradient id="surfaceShade" x1="0%" y1="0%" x2="80%" y2="100%"><stop offset="0" stop-color="'+shadeColor(.20)+'"/><stop offset=".45" stop-color="'+c+'"/><stop offset="1" stop-color="'+shadeColor(-.18)+'"/></linearGradient></defs>'+s+'</svg>';
+
 }
 const aquariaDecorImageCache=new Map();
 function aquariaDecorImage(item){
@@ -1581,10 +1586,10 @@ function syncDecorations(){
 
    if(aquariaDecorMoveIndex!==i&&aquariaDecorInspectIndex!==i)setTimeout(()=>{ring.visible=false},5500);
   }
-  const c=mat(item[4]);
+  const c=mat(item[4]);c.color.lerp(new T.Color(0x93acaa),.10);
   
 if(item[0]==='해조류'){
-   const height=.9+k*.13,stems=d.kind===6?7:k===5?3:5;
+   const height=[1.25,.95,.85,.9,1.25,1.5,1.15,1.05][d.kind]||1,stems=d.kind===6?5:k===5?3:4;
    for(let stem=0;stem<(k===2?1:stems);stem++){
     const angle=stem*2.399,bx=Math.cos(angle)*.16,bz=Math.sin(angle)*.16,hh=height*(.7+(stem%3)*.16);
     cylinderBetween(g,new T.Vector3(bx,0,bz),new T.Vector3(bx+.1,hh,bz),.018,.01,c,5);
@@ -1597,14 +1602,14 @@ if(item[0]==='해조류'){
     }
    }kelps.push({g,phase:i*1.9});
   }else if(item[0]==='산호'){
-   if(k<4){const count=[3,5,4,3][k];for(let j=0;j<count;j++){const angle=j*2.4;branch(g,new T.Vector3(Math.cos(angle)*.12,.04,Math.sin(angle)*.12),new T.Vector3(Math.cos(angle)*.35,1,Math.sin(angle)*.35).normalize(),[.6,.48,.7,.45][k],k===3?.13:.075,k===1?3:2,c,i+j+3);}}
+   if(k<4){const count=[3,4,3,3][k];for(let j=0;j<count;j++){const angle=j*2.4;branch(g,new T.Vector3(Math.cos(angle)*.12,.04,Math.sin(angle)*.12),new T.Vector3(Math.cos(angle)*.35,1,Math.sin(angle)*.35).normalize(),[.6,.48,.7,.45][k],k===3?.085:.055,2,c,i+j+3);}}
    else if(k===4){const mound=mesh(new T.SphereGeometry(.55,16,10),c,g,0,.35,0);mound.scale.y=.65;
     for(let j=0;j<12;j++){const p=j*2.4,ring=mesh(new T.TorusGeometry(.12,.018,4,12),c,g,Math.cos(p)*.35,.48+(j%3)*.05,Math.sin(p)*.35);ring.rotation.x=-Math.PI/2;}}
    else if(k===5){mesh(new T.CylinderGeometry(.09,.13,.8,7),c,g,0,.4,0);for(let j=0;j<3;j++){const plate=mesh(new T.CylinderGeometry(.7-j*.15,.63-j*.15,.075,18),c,g,(j%2?-.1:.1),.5+j*.24,0);plate.rotation.z=(j-1)*.07;}}
    else if(k===6){for(let j=0;j<11;j++){const angle=(j/10-.5)*2.2,end=new T.Vector3(Math.sin(angle)*.9,Math.cos(angle)*.9+.4,Math.sin(j)*.035);cylinderBetween(g,new T.Vector3(0,.03,0),end,.018,.007,c,5);for(let n=1;n<5;n++){const p=end.clone().multiplyScalar(n/5);cylinderBetween(g,p,p.clone().add(new T.Vector3(.1,.13,0)),.009,.003,c,4);}}}
   }else if(item[0]==='말미잘'){
    mesh(new T.CylinderGeometry(.48,.30,.18,14),c,g,0,.13,0);
-   const count=d.kind===24?30:d.kind===25?16:24;
+   const count=d.kind===24?24:d.kind===25?18:22;
    for(let j=0;j<count;j++){
     const angle=j*2.399,r=.12+(j%4)*.085,root=new T.Group();root.position.set(Math.cos(angle)*r,.2,Math.sin(angle)*r);g.add(root);
     const height=d.kind===24?.48+(j%5)*.055:.35+(j%4)*.075;
@@ -1629,10 +1634,10 @@ if(item[0]==='해조류'){
   const shade=c.clone();shade.color.multiplyScalar(.65);
   if(item[0]==='산호'){
    const stems=[];g.traverse(o=>{if(o.isMesh&&o.geometry?.type==='CylinderGeometry')stems.push(o)});
-   for(let j=0;j<Math.min(stems.length,24);j++){
+   for(let j=0;j<Math.min(stems.length,12);j++){
     const stem=stems[j],length=stem.geometry.parameters.height||.2;
     const tip=new T.Vector3(0,length*.42,0).applyQuaternion(stem.quaternion).add(stem.position);
-    mesh(new T.SphereGeometry(.022,5,4),highlight,g,tip.x,tip.y,tip.z);
+    mesh(new T.SphereGeometry(.015,6,4),highlight,g,tip.x,tip.y,tip.z);
    }
   }else if(item[0]==='말미잘'){
    mesh(new T.CylinderGeometry(.25,.28,.025,16),shade,g,0,.23,0);
