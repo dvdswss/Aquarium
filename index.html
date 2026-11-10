@@ -268,7 +268,7 @@ function loadAquariaFishPhoto(i,img){
  requestAnimationFrame(render);
 }
 
-const aquariaDecorCatalog=[["해조류","초록 켈프",10,0,"#58bca3"],["해조류","붉은 해조",14,1,"#d47799"],["해조류","바다 포도",18,2,"#8acb80"],["해조류","부채 해조",20,3,"#b7a669"],["해조류","깃털 해조",24,4,"#80c3ac"],["해조류","갈색 켈프",16,5,"#ba996b"],["해조류","청록 해초",22,0,"#63cecc"],["해조류","보랏빛 해조",28,1,"#b296d8"],["산호","핑크 가지산호",20,0,"#f1a1c5"],["산호","보라 가지산호",25,1,"#b99ade"],["산호","민트 산호",30,2,"#83d7cb"],["산호","오렌지 산호",28,3,"#f2b18a"],["산호","둥근 산호",35,4,"#dfa0bc"],["산호","테이블 산호",42,5,"#b3a0e1"],["산호","부채 산호",48,6,"#d88fae"],["산호","말미잘",38,7,"#f2a6be"],["지형","조약돌 무리",15,0,"#8195af"],["지형","큰 암석",25,1,"#718ca5"],["지형","바위 동굴",45,2,"#7086a1"],["지형","낮은 돌기둥",35,3,"#8ba4b9"],["지형","고대 아치",65,4,"#90a2ba"],["지형","무너진 유적",55,5,"#778fa9"],["지형","계단식 암초",50,6,"#6d9e9c"],["지형","수정 군락",75,7,"#bba6e2"]];
+const aquariaDecorCatalog=[["해조류","초록 켈프",10,0,"#58bca3"],["해조류","붉은 해조",14,1,"#d47799"],["해조류","바다 포도",18,2,"#8acb80"],["해조류","부채 해조",20,3,"#b7a669"],["해조류","깃털 해조",24,4,"#80c3ac"],["해조류","갈색 켈프",16,5,"#ba996b"],["해조류","청록 해초",22,0,"#63cecc"],["해조류","보랏빛 해조",28,1,"#b296d8"],["산호","핑크 가지산호",20,0,"#f1a1c5"],["산호","보라 가지산호",25,1,"#b99ade"],["산호","민트 산호",30,2,"#83d7cb"],["산호","오렌지 산호",28,3,"#f2b18a"],["산호","둥근 산호",35,4,"#dfa0bc"],["산호","테이블 산호",42,5,"#b3a0e1"],["산호","부채 산호",48,6,"#d88fae"],["말미잘","핑크 말미잘",38,7,"#f2a6be"],["지형","조약돌 무리",15,0,"#8195af"],["지형","큰 암석",25,1,"#718ca5"],["지형","바위 동굴",45,2,"#7086a1"],["지형","낮은 돌기둥",35,3,"#8ba4b9"],["지형","고대 아치",65,4,"#90a2ba"],["지형","무너진 유적",55,5,"#778fa9"],["지형","계단식 암초",50,6,"#6d9e9c"],["지형","수정 군락",75,7,"#bba6e2"],["말미잘","민트 말미잘",42,7,"#8bdac7"],["말미잘","크림 말미잘",45,7,"#f1d7a7"]];
 function aquariaDecorInit(){
  if(!Array.isArray(state.decorations)){
   state.decorations=Array.from({length:Math.min(24,Math.max(0,Number(state.plants)||0))},(_,i)=>({kind:8,x:.08+(i*.618)% .84,y:.76+(i%4)*.045}));
@@ -279,6 +279,7 @@ function aquariaDecorInit(){
 }
 function aquariaDecorIcon(item){
  const c=item[4],type=item[0],k=item[3];
+ if(type==='말미잘'){let arms='';for(let j=0;j<9;j++){const x=12+j*4.5;arms+='<path d="M30 48Q'+x+' 38 '+x+' '+(17+(j%3)*4)+'" fill="none" stroke="'+c+'" stroke-width="3" stroke-linecap="round"/><circle cx="'+x+'" cy="'+(17+(j%3)*4)+'" r="2.3" fill="'+c+'"/>';}return '<svg width="58" height="58" viewBox="0 0 60 60" aria-hidden="true"><ellipse cx="30" cy="48" rx="19" ry="5" fill="#946e97"/>'+arms+'</svg>';}
  const shape=type==='해조류'?'<path d="M30 50Q12 32 22 12M30 50Q49 30 38 7M30 50V16" fill="none" stroke="'+c+'" stroke-width="5"/>':type==='산호'?'<path d="M30 52V22M30 37L14 27V15M30 31L46 20V10M14 27L6 20M46 20L54 16" fill="none" stroke="'+c+'" stroke-width="5"/>':k===4?'<path d="M8 51V12H52V51H42V23H18V51Z" fill="'+c+'"/>':'<path d="M6 50L9 29L22 18L42 21L54 39L51 51Z" fill="'+c+'"/>';
  return '<svg width="58" height="58" viewBox="0 0 60 60" aria-hidden="true">'+shape+'</svg>';
 }
@@ -287,8 +288,8 @@ function openAquariaDecorShop(category='해조류'){
  const panel=document.getElementById('aquariaShop'),list=document.getElementById('aquariaShopList');
  document.getElementById('aquariaShopTitle').textContent='수족관 꾸미기 · '+state.coins+' 코인';
  list.replaceChildren();
- const tabs=document.createElement('div');tabs.style.cssText='display:flex;gap:6px;padding-bottom:12px';
- for(const group of ['해조류','산호','지형','보유 장식']){const b=document.createElement('button');b.textContent=group;b.style.opacity=group===category?'1':'.55';b.onclick=()=>openAquariaDecorShop(group);tabs.append(b)}list.append(tabs);
+ const tabs=document.createElement('div');tabs.style.cssText='display:flex;gap:6px;padding-bottom:12px;overflow-x:auto;flex-shrink:0';
+ for(const group of ['해조류','산호','말미잘','지형','보유 장식']){const b=document.createElement('button');b.textContent=group;b.style.flexShrink='0';b.style.opacity=group===category?'1':'.55';b.onclick=()=>openAquariaDecorShop(group);tabs.append(b)}list.append(tabs);
  aquariaDecorCatalog.forEach((item,kind)=>{
   const owned=state.decorations.filter(d=>d.kind===kind).length;
   const isNew=state.lastDecorPurchase?.kind===kind&&Date.now()-state.lastDecorPurchase.at<86400000;
@@ -1071,7 +1072,7 @@ for(const d of aquariaDecorInit()){
   ctx.fillStyle='#baffdf';ctx.fillText(label,labelX,y-46);ctx.restore();
  }
  if(item[0]==='해조류'){plant(x,y,19+k*3,k,t,false);}
- else if(item[0]==='산호'){
+ else if((item[0]==='산호'||item[0]==='말미잘')){
   if(k<4||k===6)coral(x,y,k===6?22:13+k*2,k);
   else if(k===4){ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y-7,12,9,0,0,Math.PI*2);ctx.fill();for(let j=0;j<9;j++)rect(x-8+j*2,y-10+(j%3)*2,1,2,'#ffe1e4');}
   else if(k===5){rect(x-2,y-17,4,17,color);rect(x-18,y-20,36,5,color);}
@@ -1519,7 +1520,7 @@ function syncDecorations(){
     const leaf=mesh(new T.SphereGeometry(1,8,5),c,g,(j%2?-.2:.2),.2+j*height/7,0);
     leaf.scale.set(k===2?.13:.25,k===2?.13:k===4?.035:.07,k===3?.22:.12);leaf.rotation.z=(j%2?-.55:.55);
    }kelps.push({g,phase:i*1.9});
-  }else if(item[0]==='산호'){
+  }else if((item[0]==='산호'||item[0]==='말미잘')){
    if(k<4||k===6)branch(g,new T.Vector3(0,.04,0),new T.Vector3(.08,1,.05).normalize(),k===6?.8:.6,.10,k===6?3:2,c,i+3);
    else if(k===4){const mound=mesh(new T.IcosahedronGeometry(.55,1),c,g,0,.34,0);mound.scale.y=.7;}
    else if(k===5){mesh(new T.CylinderGeometry(.09,.13,.7,7),c,g,0,.35,0);mesh(new T.CylinderGeometry(.8,.65,.14,12),c,g,0,.74,0);}
