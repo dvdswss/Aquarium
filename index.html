@@ -1426,7 +1426,7 @@ async function load(){
 function build(){
 const T=window.THREE;
 scene=new T.Scene();scene.background=new T.Color(0x172b51);scene.fog=new T.FogExp2(0x42527b,.037);
-camera=new T.PerspectiveCamera(54,1,.1,90);
+camera=new T.PerspectiveCamera(54,1,.1,260);
 renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'default'});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));renderer.outputColorSpace=T.SRGBColorSpace;
 layer.insertBefore(renderer.domElement,hint);
@@ -1451,7 +1451,7 @@ function seabedHeight(x,z){
   +edge*(.35+Math.sin(x*.24)*Math.cos(z*.29)*.55)
   -.23*Math.exp(-Math.pow((x+Math.sin(z*.17)*2)/2.8,2));
 }
-const groundGeometry=new T.PlaneGeometry(120,120,100,100);groundGeometry.rotateX(-Math.PI/2);
+const groundGeometry=new T.PlaneGeometry(300,300,100,100);groundGeometry.rotateX(-Math.PI/2);
 const groundPositions=groundGeometry.attributes.position,groundColors=[];
 for(let i=0;i<groundPositions.count;i++){
  const x=groundPositions.getX(i),z=groundPositions.getZ(i),height=seabedHeight(x,z);
@@ -1863,7 +1863,7 @@ window.addEventListener('aquaria-feed',event=>{
  }
 });
 function updateCamera(){
- orbit.phi=Math.max(.4,Math.min(.94,orbit.phi));
+ orbit.phi=Math.max(.4,Math.min(.88,orbit.phi));
  orbit.radius=Math.max(5.5,Math.min(27,orbit.radius));
  camera.position.set(Math.sin(orbit.theta)*Math.sin(orbit.phi)*orbit.radius,orbit.targetY+Math.cos(orbit.phi)*orbit.radius,Math.cos(orbit.theta)*Math.sin(orbit.phi)*orbit.radius);
  camera.lookAt(0,orbit.targetY,0);
