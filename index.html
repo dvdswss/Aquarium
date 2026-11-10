@@ -1661,6 +1661,39 @@ function branch(parent,origin,dir,length,width,depth,material,seed){
 const decorRoot=new T.Group();scene.add(decorRoot);
 const decorMoveLabel=document.createElement('div');decorMoveLabel.style.cssText='position:absolute;z-index:35;pointer-events:none;padding:7px 11px;border:1px solid #9fffe0;border-radius:10px;background:#092b3bf2;color:#c7ffe9;font:600 12px system-ui;white-space:nowrap;transform:translate(-50%,-100%);box-shadow:0 0 18px #63ffc955';decorMoveLabel.hidden=true;layer.append(decorMoveLabel);
 let decorSignature='';
+
+function reefStone(parent,w,height,depth,material,x,y,z,seed=1){
+ const shape=new T.Shape(),bevel=Math.min(w,height,depth)*.07;
+ shape.moveTo(-w/2,-height/2);shape.lineTo(w/2,-height/2);shape.lineTo(w/2,height/2);shape.lineTo(-w/2,height/2);shape.closePath();
+ const geometry=new T.ExtrudeGeometry(shape,{depth,steps:1,bevelEnabled:true,bevelThickness:bevel,bevelSize:bevel,bevelSegments:2,curveSegments:1});geometry.translate(0,0,-depth/2);
+ const p=geometry.attributes.position;
+ for(let j=0;j<p.count;j++){const px=p.getX(j),py=p.getY(j),pz=p.getZ(j);const n=Math.sin(px*13+py*17+pz*11+seed)*.012;p.setXYZ(j,px+n,py+n*.45,pz+n*.8)}
+ geometry.computeVertexNormals();return mesh(geometry,material,parent,x,y,z);
+}
+function reefPlate(parent,radius,material,x,y,z,phase){
+ const positions=[],indices=[],rings=7,segments=48;
+ for(let j=0;j<=rings;j++)for(let k=0;k<=segments;k++){
+  const u=j/rings,a=k/segments*Math.PI*2;
+  const r=u*radius*(1+Math.sin(a*5+phase)*.045+Math.sin(a*9-phase)*.018);
+  positions.push(Math.cos(a)*r,.06*u*u+Math.sin(a*4+phase)*.018*u,Math.sin(a)*r);
+  if(j<rings&&k<segments){const n=j*(segments+1)+k;indices.push(n,n+1,n+segments+1,n+1,n+segments+2,n+segments+1)}
+ }
+ const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));geometry.setIndex(indices);geometry.computeVertexNormals();
+ return mesh(geometry,material,parent,x,y,z);
+}
+function reefFan(parent,material){
+ const vertices=[],indices=[],rows=10,columns=22;
+ for(let j=0;j<=rows;j++)for(let k=0;k<=columns;k++){
+  const r=.12+j/rows*.95,a=(k/columns-.5)*2.2;
+  vertices.push(Math.sin(a)*r,.08+Math.cos(a)*r,Math.sin(a*4+r*6)*.025);
+  if(j<rows&&k<columns){const n=j*(columns+1)+k;indices.push(n,n+1,n+columns+1,n+1,n+columns+2,n+columns+1)}
+ }
+ const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(vertices,3));geometry.setIndex(indices);geometry.computeVertexNormals();
+ const tissue=material.clone();tissue.transparent=true;tissue.opacity=.23;tissue.depthWrite=false;tissue.vertexColors=false;parent.add(new T.Mesh(geometry,tissue));
+ const veins=new T.LineSegments(new T.WireframeGeometry(geometry),new T.LineBasicMaterial({color:material.color,transparent:true,opacity:.48}));parent.add(veins);
+ organicStem(parent,[new T.Vector3(),new T.Vector3(0,.25,.01),new T.Vector3(0,1.1,0)],.028,.007,material,10);
+}
+
 function syncDecorations(){
  const owned=aquariaDecorInit(),signature=JSON.stringify(owned);
  if(signature+'|'+aquariaDecorMoveIndex+'|'+aquariaDecorInspectIndex===decorSignature)return;decorSignature=signature+'|'+aquariaDecorMoveIndex;
@@ -1697,8 +1730,8 @@ if(item[0]==='해조류'){
    else if(k===4){const mound=mesh(new T.SphereGeometry(.55,16,10),c,g,0,.35,0);mound.scale.y=.65;
     const grooveMaterial=new T.LineBasicMaterial({color:0xf1d4d5,transparent:true,opacity:.38});
     for(let j=0;j<9;j++){const points=[];for(let n=0;n<=36;n++){const theta=n/36*Math.PI,phi=j/9*Math.PI*2+Math.sin(theta*5+j)*.14;points.push(new T.Vector3(Math.sin(theta)*Math.cos(phi)*.554,.35+Math.cos(theta)*.36,Math.sin(theta)*Math.sin(phi)*.554))}g.add(new T.Line(new T.BufferGeometry().setFromPoints(points),grooveMaterial));}}
-   else if(k===5){mesh(new T.CylinderGeometry(.09,.13,.8,7),c,g,0,.4,0);for(let j=0;j<3;j++){const plate=mesh(new T.CylinderGeometry(.7-j*.15,.63-j*.15,.075,18),c,g,(j%2?-.1:.1),.5+j*.24,0);plate.rotation.z=(j-1)*.07;}}
-   else if(k===6){for(let j=0;j<11;j++){const angle=(j/10-.5)*2.2,end=new T.Vector3(Math.sin(angle)*.9,Math.cos(angle)*.9+.4,Math.sin(j)*.035);cylinderBetween(g,new T.Vector3(0,.03,0),end,.018,.007,c,5);for(let n=1;n<5;n++){const p=end.clone().multiplyScalar(n/5);cylinderBetween(g,p,p.clone().add(new T.Vector3(.1,.13,0)),.009,.003,c,4);}}}
+   else if(k===5){organicStem(g,[new T.Vector3(),new T.Vector3(.05,.4,0),new T.Vector3(0,.85,0)],.09,.035,c,10);for(let j=0;j<3;j++){const plate=reefPlate(g,.7-j*.15,c,(j%2?-.1:.1),.5+j*.24,0,j*1.8);plate.rotation.z=(j-1)*.07;}}
+   else if(k===6){reefFan(g,c);}
   }else if(item[0]==='말미잘'){
    mesh(new T.CylinderGeometry(.48,.30,.18,14),c,g,0,.13,0);
    const count=d.kind===24?24:d.kind===25?18:22;
@@ -1713,11 +1746,11 @@ if(item[0]==='해조류'){
   }else{
    const stone=c;
    if(k===0){for(let j=0;j<6;j++){const p=j*2.4,o=mesh(new T.IcosahedronGeometry(.13+(j%3)*.04,0),stone,g,Math.cos(p)*.3,.08,Math.sin(p)*.3);o.scale.y=.5;}}
-   else if(k===1){const o=mesh(new T.IcosahedronGeometry(.75,0),stone,g,0,.4,0);o.scale.set(1.25,.75,1);}
-   else if(k===2){mesh(new T.BoxGeometry(1.6,.35,.9),stone,g,0,.95,0);mesh(new T.IcosahedronGeometry(.5,0),stone,g,-.65,.4,0);mesh(new T.IcosahedronGeometry(.5,0),stone,g,.65,.4,0);}
+   else if(k===1){const o=mesh(new T.IcosahedronGeometry(.75,2),stone,g,0,.4,0);const pos=o.geometry.attributes.position;for(let j=0;j<pos.count;j++){const x=pos.getX(j),y=pos.getY(j),z=pos.getZ(j),n=1+Math.sin(x*9+y*13+z*7)*.065;pos.setXYZ(j,x*n,y*n,z*n)}o.geometry.computeVertexNormals();o.scale.set(1.25,.75,1);}
+   else if(k===2){for(let j=0;j<7;j++){const a=j/6*Math.PI;const stoneBlock=reefStone(g,.40,.38,.85,stone,Math.cos(a)*.67,.26+Math.sin(a)*.65,0,j);stoneBlock.rotation.z=a-Math.PI/2;}}
    else if(k===3){mesh(new T.CylinderGeometry(.27,.36,1.7,7),stone,g,0,.85,0);mesh(new T.CylinderGeometry(.43,.43,.15,7),stone,g,0,1.77,0);}
-   else if(k===4){for(const x of [-.75,.75]){mesh(new T.BoxGeometry(.3,2.1,.4),stone,g,x,1.05,0);mesh(new T.BoxGeometry(.45,.16,.55),stone,g,x,2.1,0)}mesh(new T.BoxGeometry(2,.28,.6),stone,g,0,2.3,0);}
-   else if(k===5){mesh(new T.BoxGeometry(1.9,.25,.65),stone,g,0,.14,0);for(const x of [-.55,.6])mesh(new T.CylinderGeometry(.23,.27,x<0?1.1:.7,6),stone,g,x,x<0?.55:.35,0);}
+   else if(k===4){for(const x of [-.75,.75]){for(let j=0;j<6;j++)reefStone(g,.31,.32,.43,stone,x,.18+j*.33,0,j);reefStone(g,.45,.15,.55,stone,x,2.06,0,7)}for(let j=0;j<5;j++)reefStone(g,.37,.26,.58,stone,-.78+j*.39,2.27,0,j+9);}
+   else if(k===5){reefStone(g,1.9,.25,.65,stone,0,.14,0,5);for(const x of [-.55,.6])mesh(new T.CylinderGeometry(.23,.27,x<0?1.1:.7,6),stone,g,x,x<0?.55:.35,0);}
    else if(k===6){for(let j=0;j<3;j++)mesh(new T.CylinderGeometry(.95-j*.23,1-j*.23,.3,7),stone,g,0,.15+j*.3,0);}
    else{for(let j=0;j<6;j++){const p=j*2.4,o=mesh(new T.ConeGeometry(.15,.65+(j%3)*.25,5),stone,g,Math.cos(p)*.35,.4,Math.sin(p)*.35);o.rotation.z=Math.cos(p)*.25;}}
   }
