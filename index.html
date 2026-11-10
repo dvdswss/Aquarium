@@ -1567,20 +1567,50 @@ for(const eventName of ['pointerdown','pointermove','pointerup','pointercancel']
  },{capture:true,passive:false});
 }
 
-// Two softly feathered daylight patches replace the repeated geometric shafts.
+// Integrate light density through a 3D volume, rather than drawing flat sheets.
 const veils=[],shafts=[];
-const daylightCanvas=document.createElement('canvas');daylightCanvas.width=128;daylightCanvas.height=256;
-const daylightCtx=daylightCanvas.getContext('2d'),daylightImage=daylightCtx.createImageData(128,256);
-for(let y=0;y<256;y++)for(let x=0;x<128;x++){
- const v=y/255,center=64+Math.sin(v*2.1)*9,width=19+v*25;
- const feather=Math.exp(-Math.pow((x-center)/width,2)*2.4),fade=Math.pow(Math.sin(Math.PI*v),1.6);
- const n=(y*128+x)*4;daylightImage.data[n]=192;daylightImage.data[n+1]=225;daylightImage.data[n+2]=239;daylightImage.data[n+3]=Math.round(feather*fade*210);
-}
-daylightCtx.putImageData(daylightImage,0,0);
-const daylightTexture=new T.CanvasTexture(daylightCanvas);
 for(let i=0;i<3;i++){
- const material=new T.MeshBasicMaterial({map:daylightTexture,color:0xe1f5ff,transparent:true,opacity:.28,side:T.DoubleSide,depthWrite:false,blending:T.AdditiveBlending});
- const plane=mesh(new T.PlaneGeometry([8,11,7][i],26),material,scene,[-4.7,5.3,.8][i],13,[-5,-7,-3.5][i]);
+ const half=new T.Vector3([3.5,4.2,3.1][i],13,[3.1,3.6,3.4][i]);
+ const material=new T.ShaderMaterial({
+  uniforms:{localCamera:{value:new T.Vector3()},halfSize:{value:half},lightStrength:{value:.25},lightTime:{value:0}},
+  transparent:true,depthWrite:false,side:T.BackSide,blending:T.AdditiveBlending,
+  vertexShader:`
+   varying vec3 volumePosition;
+   void main(){volumePosition=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}
+  `,
+  fragmentShader:`
+   precision mediump float;
+   varying vec3 volumePosition;
+   uniform vec3 localCamera;
+   uniform vec3 halfSize;
+   uniform float lightStrength;
+   uniform float lightTime;
+   void main(){
+    vec3 direction=normalize(volumePosition-localCamera);
+    vec3 safeDirection=sign(direction)*max(abs(direction),vec3(.0001));
+    vec3 t0=(-halfSize-localCamera)/safeDirection,t1=(halfSize-localCamera)/safeDirection;
+    vec3 entry=min(t0,t1),exitPoint=max(t0,t1);
+    float begin=max(0.0,max(max(entry.x,entry.y),entry.z));
+    float end=min(min(exitPoint.x,exitPoint.y),exitPoint.z);
+    if(end<=begin)discard;
+    float stepLength=(end-begin)/24.0,total=0.0;
+    for(int j=0;j<24;j++){
+     vec3 p=localCamera+direction*(begin+(float(j)+.5)*stepLength);
+     float height=(p.y/halfSize.y+1.0)*.5;
+     float width=mix(1.0,.32,height);
+     vec2 center=vec2(sin(height*3.0+lightTime)*.09,cos(height*2.1+lightTime*.7)*.07);
+     vec2 radial=(p.xz/halfSize.xz-center)/width;
+     float density=exp(-dot(radial,radial)*3.6);
+     density*=pow(max(0.0,sin(height*3.14159265)),1.15);
+     total+=density*stepLength;
+    }
+    float alpha=(1.0-exp(-total*.15))*lightStrength;
+    if(alpha<.002)discard;
+    gl_FragColor=vec4(.72,.89,1.0,alpha);
+   }
+  `
+ });
+ const plane=mesh(new T.BoxGeometry(half.x*2,half.y*2,half.z*2),material,scene,[-4.7,5.3,.8][i],13,[-5,-7,-3.5][i]);
  plane.rotation.y=[.25,-.3,.08][i];plane.rotation.z=[-.16,.1,-.06][i];
  veils.push({plane,phase:i*2.3,baseTilt:plane.rotation.z,baseX:plane.position.x,baseY:plane.position.y,swaySpeed:.00015+i*.000035});
 }
@@ -1908,7 +1938,7 @@ function frame(t){
  }
  for(const k of kelps)k.g.rotation.z=Math.sin(t*.0008+k.phase)*.08;
  for(const arm of anemoneArms){arm.root.rotation.z=Math.sin(t*arm.speed+arm.phase)*arm.amplitude;arm.root.rotation.x=Math.cos(t*arm.speed*.86+arm.phase)*arm.amplitude*.8;}
- for(const v of veils){const wave=t*v.swaySpeed+v.phase;v.plane.material.opacity=.25+Math.sin(t*.00012+v.phase)*.025;v.plane.rotation.z=v.baseTilt+Math.sin(wave)*.026;v.plane.position.x=v.baseX+Math.sin(wave*.83)*.24;v.plane.position.y=v.baseY+Math.cos(wave*.61)*.10;}
+ for(const v of veils){const wave=t*v.swaySpeed+v.phase;v.plane.material.uniforms.lightStrength.value=.32+Math.sin(t*.00012+v.phase)*.025;v.plane.material.uniforms.lightTime.value=t*.00012+v.phase;v.plane.rotation.z=v.baseTilt+Math.sin(wave)*.026;v.plane.position.x=v.baseX+Math.sin(wave*.83)*.24;v.plane.position.y=v.baseY+Math.cos(wave*.61)*.10;v.plane.updateWorldMatrix(true,false);v.plane.material.uniforms.localCamera.value.copy(camera.position);v.plane.worldToLocal(v.plane.material.uniforms.localCamera.value);}
  for(const sh of shafts)sh.beam.material.opacity=.022+.016*(1+Math.sin(t*.00035+sh.phase));
  for(const m of motes){m.o.position.y=.3+((t*.00013+m.phase)%8);m.o.material.opacity=.07+.10*(.5+.5*Math.sin(t*.0018+m.phase));}
  for(const b of bubbles){b.o.position.y=.25+((t*.00027+b.phase)%8);}
