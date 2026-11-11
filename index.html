@@ -962,7 +962,10 @@ const aquariaSwimTraits=[
 function aquariaSwimPose(f,k,dt,effort=1,rest=false){
  const q=aquariaSwimTraits[k],drive=Math.max(0,Math.min(2.3,effort));
  f.strokePhase=(f.strokePhase??f.phase??0)+dt*.001*Math.PI*2*q[0]*(rest?.32:.65+drive*.45);
- const beat=Math.sin(f.strokePhase),amp=rest?.2:Math.min(1.6,.35+drive*.7);
+ // A slow envelope gives active swimmers a stroke-and-glide rhythm.
+ const cruising=[0,1,2,3,4,9,10,12].includes(k)&&!rest&&drive<1.8;
+ const envelope=cruising?.72+.28*Math.sin(f.strokePhase*.19+(f.phase||0)):1;
+ const beat=Math.sin(f.strokePhase),amp=(rest?.2:Math.min(1.6,.35+drive*.7))*envelope;
  return {beat,tail:beat*q[1]*amp,fin:Math.sin(f.strokePhase*1.14)*q[2]*(rest?.65:1),flex:q[3]*amp};
 }
 
@@ -1227,7 +1230,7 @@ function drawReefFish(f,t,k){
  const z=(f.z||1)*.43*sizes[k]*aquariaGrowthScale(f.life),beat=pose.beat*(rest?.15:.4+Math.min(1,f.motionSpeed||0));
  const bob=Math.sin(t*.0017+phase)*([5,11,8].includes(k)?.18:k===7?.08:.35),turn=Math.max(.15,Math.abs(f.turnEase??f.dir));
  C.save();C.translate(f.x,f.y+bob);C.rotate((f.swimPitch||0)+(typeof fishPosture==='function'?fishPosture(f,t):0));
- C.scale(dir*z*turn,z);
+ C.scale((Math.sign(f.turnEase??dir)||dir)*z*turn,z);
  const palette=[
  ['#f58037','#fbb56d','#ac472b'],['#256edb','#6aaaf5','#173e95'],
  ['#f4d04c','#fff1a0','#bd8b2c'],['#f4e8c7','#fff9e6','#b9a477'],
@@ -1538,7 +1541,8 @@ const turning=Math.max(.12,Math.cos(delta));
 f.x+=Math.cos(f.moveHeading)*step*turning;f.y+=Math.sin(f.moveHeading)*step*turning;
 f.swimPitch=Math.sin(f.moveHeading)*.20*(f.dir||1);
 if(Math.abs(dx)>2.7){
-const newDir=dx>0?1:-1;
+const facing=Math.cos(f.moveHeading);
+const newDir=Math.abs(facing)>.18?(facing>0?1:-1):f.dir;
 if(newDir!==f.dir)f.turnUntil=t+420;
 f.dir=newDir;
 }
@@ -2748,7 +2752,9 @@ for(const f of fish){
  v.lerp(desired,1-Math.exp(-traits[5]*dt*.001));
  pos.addScaledVector(v,dt);
  const radial=Math.hypot(pos.x,pos.z);
- if(radial>7.2){pos.x*=7.2/radial;pos.z*=7.2/radial;v.x*=-.25;v.z*=-.25;f.nextTurn=0;}
+ if(radial>7.2){pos.x*=7.2/radial;pos.z*=7.2/radial;// Remove outward velocity while preserving tangential motion along the glass.
+ const outward=(v.x*pos.x+v.z*pos.z)/(7.2*7.2);
+ if(outward>0){v.x-=outward*pos.x;v.z-=outward*pos.z;}f.nextTurn=0;}
  pos.y=Math.max(seabedHeight(pos.x,pos.z)+(k===7?.22:.4),Math.min(27.9,pos.y));
  const speed=v.length(),rest=['hover','perch','hide','school'].includes(mode)&&distance<.45;
  const effort=Math.min(2.3,speed/(f.swimSpeed*.8));
@@ -3161,4 +3167,18 @@ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
 font-variant-numeric:tabular-nums lining-nums!important;font-feature-settings:"tnum" 1,"lnum" 1!important;
 }
 html body #game .aquaria-shop-item strong{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;font-variant-numeric:tabular-nums!important;font-size:12px!important;font-weight:500!important}
+</style>
+
+<style id="aquaria-round-hud-polish">
+/* Three small portholes keep the water visible around the status display. */
+html body #game .pixel-controls>.oceanHud{background:transparent!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;padding:0!important;gap:8px!important;align-items:center!important}
+html body #game .pixel-controls .oceanHud>.gameStats{gap:7px!important}
+html body #game .pixel-controls .oceanHud>.gameStats>div{width:49px!important;height:49px!important;min-width:49px!important;padding:6px 0!important;border:1px solid #e4e9dc25!important;border-radius:50%!important;background:rgba(14,31,45,.42)!important;backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important;text-align:center!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;box-shadow:inset 0 1px #ffffff0b!important}
+html body #game .pixel-controls .oceanHud .gameStats span{justify-content:center!important;font-size:7px!important;gap:2px!important}
+html body #game .pixel-controls .oceanHud .gameStats strong{margin-top:2px!important;font-size:13px!important;max-width:44px;overflow:hidden;text-overflow:ellipsis}
+html body #game .pixel-controls .oceanHud .gameStats .ocean-icon{width:9px!important;height:9px!important}
+html body #game .pixel-controls .oceanHud>.oceanHudBottom{width:86px!important;padding:6px 0 6px 8px!important;border-left:1px solid #e9e1d31a!important}
+html body #game .aquaria-drawer>summary,html body #game .aquaria-quick>button{min-height:44px!important}
+html body #game .drawer-actions button:focus-visible,html body #game .aquaria-shop-item:focus-visible{outline:2px solid #d7e2ca!important;outline-offset:3px!important}
+@media(max-width:360px){html body #game .pixel-controls .oceanHud>.gameStats>div{width:44px!important;height:44px!important;min-width:44px!important}html body #game .pixel-controls .oceanHud>.oceanHudBottom{width:75px!important}}
 </style>
